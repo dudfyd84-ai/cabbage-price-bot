@@ -133,17 +133,15 @@ def build_outputs(cur, p7, p30):
     desc = f"{head}\n\n현재 {cur:,}원/kg\n→ 7일후 {p7:,}원\n→ 30일후 {p30:,}원 (예상)"
     outputs = [{"textCard": {"title": "🥬 배추 가격 예측", "description": desc, "buttons": [RETRY_BTN]}}]
 
-    if pricey:  # 비쌀 때만 대체재 추천
+    if pricey:  # 비쌀 때 대체재 추천 (가격은 best-effort, 실패해도 이름은 표시)
         alts = []
         for name, code in [("양배추", "212"), ("얼갈이배추", "215")]:
             pr = fetch_current_price(code)
-            if pr:
-                alts.append(f"· {name} {pr:,}원/kg")
-        if alts:
-            outputs.append({"textCard": {
-                "title": "💡 대체재 추천",
-                "description": "배추가 비싼 시기예요. 이런 대안은 어때요?\n\n" + "\n".join(alts),
-                "buttons": [RETRY_BTN]}})
+            alts.append(f"· {name} {pr:,}원/kg" if pr else f"· {name}")
+        outputs.append({"textCard": {
+            "title": "💡 대체재 추천",
+            "description": "배추가 비싼 시기예요. 이런 대안은 어때요?\n\n" + "\n".join(alts),
+            "buttons": [RETRY_BTN]}})
     return outputs
 
 
