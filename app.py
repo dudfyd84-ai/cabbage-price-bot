@@ -92,15 +92,15 @@ def predict_all():
     return preds, local_price
 
 
-def fetch_current_price():
-    # 현재가는 실시간 KAMIS (휴장이면 직전 평일, 실패 시 None)
+def fetch_current_price(itemcode="211"):
+    # 현재가는 실시간 KAMIS (휴장이면 직전 평일, 실패 시 None). 211=배추 212=양배추 215=얼갈이배추
     d = date.today()
     for _ in range(6):
         try:
             resp = _kamis.get("https://www.kamis.or.kr/service/price/xml.do",
                               params={"action": "ItemInfo", "p_productclscode": "02",
                                       "p_regday": d.isoformat(), "p_itemcategorycode": "200",
-                                      "p_itemcode": "211", "p_convert_kg_yn": "Y",
+                                      "p_itemcode": itemcode, "p_convert_kg_yn": "Y",
                                       "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID,
                                       "p_returntype": "json"}, timeout=15, verify=False)
             for it in resp.json()["data"]["item"]:
@@ -114,18 +114,37 @@ def fetch_current_price():
     return None
 
 
-def decide_message(cur, p7, p30):
+RETRY_BTN = {"action": "message", "label": "다시 확인", "messageText": "배추 가격"}
+
+
+def build_outputs(cur, p7, p30):
+    # 위험도 판정 + 카드형 응답(textCard). 비쌀 땐 대체재 카드 추가.
     r7 = (p7 - cur) / cur * 100 if cur else 0
     r30 = (p30 - cur) / cur * 100 if cur else 0
     if r30 > 15:
-        head = f"🚨 위험! 한 달 내 배추 폭등 예상 (+{r30:.0f}%). 지금 사두세요!"
+        head, pricey = f"🚨 위험! 한 달 내 폭등 예상 (+{r30:.0f}%)\n지금 사두세요!", True
     elif r7 > 10:
-        head = f"⚠️ 이번 주 상승세 (+{r7:.0f}%). 미리 구매를 권장합니다."
+        head, pricey = f"⚠️ 이번 주 상승세 (+{r7:.0f}%)\n미리 구매를 권장합니다.", True
     elif r7 < -10:
-        head = f"🟢 곧 내려갑니다 ({r7:.0f}%). 며칠 기다리세요!"
+        head, pricey = f"🟢 곧 내려갑니다 ({r7:.0f}%)\n며칠 기다리세요!", False
     else:
-        head = "🟢 안정적입니다. 필요한 만큼만 구매하세요."
-    return f"{head}\n\n현재 {cur:,}원/kg → 7일후 {p7:,}원 · 30일후 {p30:,}원 (예상)"
+        head, pricey = "🟢 안정적입니다\n필요한 만큼만 구매하세요.", False
+
+    desc = f"{head}\n\n현재 {cur:,}원/kg\n→ 7일후 {p7:,}원\n→ 30일후 {p30:,}원 (예상)"
+    outputs = [{"textCard": {"title": "🥬 배추 가격 예측", "description": desc, "buttons": [RETRY_BTN]}}]
+
+    if pricey:  # 비쌀 때만 대체재 추천
+        alts = []
+        for name, code in [("양배추", "212"), ("얼갈이배추", "215")]:
+            pr = fetch_current_price(code)
+            if pr:
+                alts.append(f"· {name} {pr:,}원/kg")
+        if alts:
+            outputs.append({"textCard": {
+                "title": "💡 대체재 추천",
+                "description": "배추가 비싼 시기예요. 이런 대안은 어때요?\n\n" + "\n".join(alts),
+                "buttons": [RETRY_BTN]}})
+    return outputs
 
 
 @app.get("/health")
@@ -138,15 +157,15 @@ async def predict(request: Request):
     body = await request.json()
     utter = body.get("userRequest", {}).get("utterance", "")
     if "배추" not in utter or not MODELS.get(7):
-        text = "현재 '배추' 가격 예측만 지원합니다."
-    else:
-        try:
-            preds, local_price = predict_all()
-            cur = fetch_current_price() or local_price
-            text = decide_message(cur, preds[7], preds[30])
-        except Exception as e:
-            text = f"일시적으로 예측을 가져오지 못했어요. 잠시 후 다시 시도해주세요. ({type(e).__name__})"
-    return {"version": "2.0", "template": {"outputs": [{"simpleText": {"text": text}}]}}
+        return {"version": "2.0", "template": {"outputs": [
+            {"simpleText": {"text": "현재 '배추' 가격 예측만 지원합니다."}}]}}
+    try:
+        preds, local_price = predict_all()
+        cur = fetch_current_price() or local_price
+        outputs = build_outputs(cur, preds[7], preds[30])
+    except Exception as e:
+        outputs = [{"simpleText": {"text": f"일시적으로 예측을 가져오지 못했어요. 잠시 후 다시 시도해주세요. ({type(e).__name__})"}}]
+    return {"version": "2.0", "template": {"outputs": outputs}}
 
 
 if __name__ == "__main__":
