@@ -39,5 +39,5 @@ jobs:
                   value: ${{ secrets.ASOS_KEY }}
             context:
               git:
-                url: ${{ github.repository }}.git
+                url: https://github.com/${{ github.repository }}.git
                 ref: ${{ github.ref }}
