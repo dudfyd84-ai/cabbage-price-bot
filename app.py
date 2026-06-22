@@ -16,7 +16,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 KAMIS_KEY = os.getenv("KAMIS_KEY", "")
 KAMIS_ID = os.getenv("KAMIS_ID", "")
-ASOS_KEY = os.getenv("ASOS_KEY", "")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEATHER = os.path.join(BASE_DIR, "weather_asos_data.csv")
 PRICE = os.path.join(BASE_DIR, "kamis_cabbage_daily.csv")
@@ -149,41 +148,6 @@ def build_outputs(cur, p7, p30):
 @app.get("/health")
 def health():
     return {"status": "ok", "models": [h for h, m in MODELS.items() if m]}
-
-
-@app.get("/debug/net")
-def debug_net():
-    # 클라우드에서 한국 공공 API 3종 연결 가능 여부 진단 (배포 경로 결정용, 추후 제거)
-    res = {}
-    day = (date.today() - timedelta(days=2)).strftime("%Y%m%d")
-    try:
-        r = requests.get("http://apis.data.go.kr/1360000/AsosDalyInfoService/getWthrDataList",
-                         params={"serviceKey": ASOS_KEY, "pageNo": 1, "numOfRows": 1, "dataType": "JSON",
-                                 "dataCd": "ASOS", "dateCd": "DAY", "startDt": day, "endDt": day, "stnIds": 108},
-                         timeout=10)
-        res["asos"] = r.json().get("response", {}).get("header", {}).get("resultCode", "?")
-    except Exception as e:
-        res["asos"] = "ERR:" + type(e).__name__
-    try:
-        r = _kamis.get("https://www.kamis.or.kr/service/price/xml.do",
-                       params={"action": "ItemInfo", "p_productclscode": "02", "p_regday": (date.today()-timedelta(days=3)).isoformat(),
-                               "p_itemcategorycode": "200", "p_itemcode": "211", "p_convert_kg_yn": "Y",
-                               "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
-                       timeout=10, verify=False)
-        res["kamis"] = r.json().get("data", {}).get("error_code", "?")
-    except Exception as e:
-        res["kamis"] = "ERR:" + type(e).__name__
-    try:
-        r = requests.get("http://www.garak.co.kr/homepage/publicdata/dataJsonOpen.do",
-                         params={"id": "9015", "passwd": "***REMOVED***", "dataid": "data22",
-                                 "pagesize": "10", "pageidx": "1", "portal.templet": "false", "date": day},
-                         timeout=10)
-        res["garak"] = "ok:" + str(len(r.json().get("resultData", [])))
-    except Exception as e:
-        res["garak"] = "ERR:" + type(e).__name__
-    # 환경변수 주입 여부 (값이 아니라 길이만 — 보안)
-    res["env_len"] = {"ASOS_KEY": len(ASOS_KEY), "KAMIS_KEY": len(KAMIS_KEY), "KAMIS_ID": len(KAMIS_ID)}
-    return res
 
 
 @app.post("/api/predict")
