@@ -181,6 +181,8 @@ def debug_net():
         res["garak"] = "ok:" + str(len(r.json().get("resultData", [])))
     except Exception as e:
         res["garak"] = "ERR:" + type(e).__name__
+    # 환경변수 주입 여부 (값이 아니라 길이만 — 보안)
+    res["env_len"] = {"ASOS_KEY": len(ASOS_KEY), "KAMIS_KEY": len(KAMIS_KEY), "KAMIS_ID": len(KAMIS_ID)}
     return res
 
 
