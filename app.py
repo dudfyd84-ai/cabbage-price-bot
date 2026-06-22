@@ -1,0 +1,154 @@
+# 스마트 장바구니 물가 예측 봇 — 카카오 스킬용 FastAPI 서버 (반입량 포함, 로컬 피처 기반)
+import os
+import ssl
+from datetime import date, timedelta
+
+import joblib
+import numpy as np
+import pandas as pd
+import requests
+import urllib3
+from fastapi import FastAPI, Request
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+KAMIS_KEY = os.getenv("KAMIS_KEY", "")
+KAMIS_ID = os.getenv("KAMIS_ID", "")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+WEATHER = os.path.join(BASE_DIR, "weather_asos_data.csv")
+PRICE = os.path.join(BASE_DIR, "kamis_cabbage_daily.csv")
+INTAKE = os.path.join(BASE_DIR, "garak_cabbage_intake.csv")
+
+app = FastAPI(title="내 지갑 방어 봇")
+
+MODELS = {}
+for H in (7, 30):
+    path = os.path.join(BASE_DIR, f"cabbage_model_h{H}.pkl")
+    MODELS[H] = joblib.load(path) if os.path.exists(path) else None
+
+
+class _TLS(HTTPAdapter):
+    # KAMIS 구형 TLS 호환
+    def init_poolmanager(self, *a, **k):
+        ctx = create_urllib3_context(); ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+        k["ssl_context"] = ctx
+        return super().init_poolmanager(*a, **k)
+
+
+_kamis = requests.Session(); _kamis.mount("https://", _TLS())
+
+
+def build_feature_frame():
+    # 학습과 동일한 파이프라인으로 로컬 CSV에서 전체 피처 시계열을 구성 (retrain이 매일 갱신)
+    w = pd.read_csv(WEATHER)
+    w = w[w["지점명"] == "서울"].copy()
+    w["날짜"] = pd.to_datetime(w["날짜"]); w = w.sort_values("날짜").reset_index(drop=True)
+    for c in ["평균기온", "최고기온", "일강수량"]:
+        w[c] = pd.to_numeric(w[c], errors="coerce")
+    w["일강수량"] = w["일강수량"].fillna(0)
+    for col in ["평균기온", "최고기온", "일강수량"]:
+        for lag in [30, 45, 60]:
+            w[f"{col}_lag{lag}"] = w[col].shift(lag)
+        for win in [7, 14]:
+            w[f"{col}_ma{win}"] = w[col].shift(1).rolling(win).mean()
+
+    p = pd.read_csv(PRICE)
+    p = p[(p["지역"] == "서울") & (p["품목명"] == "배추")].copy()
+    p["날짜"] = pd.to_datetime(p["날짜"])
+    p = p[["날짜", "가격"]].rename(columns={"가격": "배추가격"}).sort_values("날짜")
+
+    df = pd.merge(w, p, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
+    df["배추가격"] = df["배추가격"].ffill().bfill()
+    for lag in [7, 14, 30]:
+        df[f"가격_lag{lag}"] = df["배추가격"].shift(lag)
+
+    intake = pd.read_csv(INTAKE); intake["날짜"] = pd.to_datetime(intake["날짜"])
+    df = pd.merge(df, intake, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
+    df["배추반입량_톤"] = df["배추반입량_톤"].ffill().bfill()
+    for lag in [7, 14, 30]:
+        df[f"반입량_lag{lag}"] = df["배추반입량_톤"].shift(lag)
+    for win in [7, 14]:
+        df[f"반입량_ma{win}"] = df["배추반입량_톤"].shift(1).rolling(win).mean()
+    return df
+
+
+def predict_all():
+    # 두 모델 예측 + 로컬 최신 가격 반환
+    df = build_feature_frame()
+    preds = {}
+    for H, meta in MODELS.items():
+        if meta is None:
+            continue
+        d = df.copy()
+        d["target_month"] = (d["날짜"] + pd.Timedelta(days=H)).dt.month
+        d = d.dropna(subset=meta["features"])
+        X = d[meta["features"]].iloc[[-1]]
+        val = meta["model"].predict(X)[0]
+        preds[H] = round(float(np.expm1(val)) if meta["log_target"] else float(val))
+    local_price = int(df["배추가격"].iloc[-1])
+    return preds, local_price
+
+
+def fetch_current_price():
+    # 현재가는 실시간 KAMIS (휴장이면 직전 평일, 실패 시 None)
+    d = date.today()
+    for _ in range(6):
+        try:
+            resp = _kamis.get("https://www.kamis.or.kr/service/price/xml.do",
+                              params={"action": "ItemInfo", "p_productclscode": "02",
+                                      "p_regday": d.isoformat(), "p_itemcategorycode": "200",
+                                      "p_itemcode": "211", "p_convert_kg_yn": "Y",
+                                      "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID,
+                                      "p_returntype": "json"}, timeout=15, verify=False)
+            for it in resp.json()["data"]["item"]:
+                if it.get("countyname") == "서울":
+                    raw = str(it.get("price", "")).replace(",", "").strip()
+                    if raw not in ("", "-"):
+                        return int(raw)
+        except Exception:
+            pass
+        d -= timedelta(days=1)
+    return None
+
+
+def decide_message(cur, p7, p30):
+    r7 = (p7 - cur) / cur * 100 if cur else 0
+    r30 = (p30 - cur) / cur * 100 if cur else 0
+    if r30 > 15:
+        head = f"🚨 위험! 한 달 내 배추 폭등 예상 (+{r30:.0f}%). 지금 사두세요!"
+    elif r7 > 10:
+        head = f"⚠️ 이번 주 상승세 (+{r7:.0f}%). 미리 구매를 권장합니다."
+    elif r7 < -10:
+        head = f"🟢 곧 내려갑니다 ({r7:.0f}%). 며칠 기다리세요!"
+    else:
+        head = "🟢 안정적입니다. 필요한 만큼만 구매하세요."
+    return f"{head}\n\n현재 {cur:,}원/kg → 7일후 {p7:,}원 · 30일후 {p30:,}원 (예상)"
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "models": [h for h, m in MODELS.items() if m]}
+
+
+@app.post("/api/predict")
+async def predict(request: Request):
+    body = await request.json()
+    utter = body.get("userRequest", {}).get("utterance", "")
+    if "배추" not in utter or not MODELS.get(7):
+        text = "현재 '배추' 가격 예측만 지원합니다."
+    else:
+        try:
+            preds, local_price = predict_all()
+            cur = fetch_current_price() or local_price
+            text = decide_message(cur, preds[7], preds[30])
+        except Exception as e:
+            text = f"일시적으로 예측을 가져오지 못했어요. 잠시 후 다시 시도해주세요. ({type(e).__name__})"
+    return {"version": "2.0", "template": {"outputs": [{"simpleText": {"text": text}}]}}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
