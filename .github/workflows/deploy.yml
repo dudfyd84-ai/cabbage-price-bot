@@ -1,0 +1,43 @@
+name: Deploy to cloudtype
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Connect
+        uses: cloudtype-github-actions/connect@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          ghtoken: ${{ secrets.GHP_TOKEN }}
+
+      - name: Deploy
+        uses: cloudtype-github-actions/deploy@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          project: dudfyd84/smartaicart
+          stage: main
+          yaml: |
+            name: cabbage-price-bot
+            app: python@3.12
+            options:
+              ports: "8000"
+              start: uvicorn app:app --host 0.0.0.0 --port 8000
+              env:
+                - name: KAMIS_KEY
+                  value: ${{ secrets.KAMIS_KEY }}
+                - name: KAMIS_ID
+                  value: ${{ secrets.KAMIS_ID }}
+                - name: ASOS_KEY
+                  value: ${{ secrets.ASOS_KEY }}
+            context:
+              git:
+                url: ${{ github.repository }}.git
+                ref: ${{ github.ref }}
