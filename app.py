@@ -171,17 +171,23 @@ def retail_data():
                     cur = str(it.get("dpr2", "")).replace(",", "").strip()
                 if cur in ("", "-"):
                     continue
+                try:
+                    cur_i = int(cur)
+                except ValueError:
+                    continue
+                if cur_i <= 0:   # 결측(0원) 제외
+                    continue
                 seen.add(code)
                 yr = None
                 y = str(it.get("dpr6", "")).replace(",", "").strip()
                 try:
                     if y not in ("", "-") and int(y) > 0:
-                        yr = round((int(cur) - int(y)) / int(y) * 100)
+                        yr = round((cur_i - int(y)) / int(y) * 100)
                         if abs(yr) > 150:   # KAMIS 1년전 값 이상치 방어
                             yr = None
                 except ValueError:
                     pass
-                rows.append({"name": it.get("item_name"), "unit": it.get("unit"), "cur": int(cur), "yr": yr})
+                rows.append({"name": it.get("item_name"), "unit": it.get("unit"), "cur": cur_i, "yr": yr})
         except Exception:
             pass
         if rows:
