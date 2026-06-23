@@ -1,12 +1,21 @@
 # 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
 import os
-from datetime import date
+import ssl
+from datetime import date, timedelta
 
 import joblib
 import numpy as np
 import pandas as pd
+import requests
+import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+KAMIS_KEY = os.getenv("KAMIS_KEY", "")
+KAMIS_ID = os.getenv("KAMIS_ID", "")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEATHER = os.path.join(BASE_DIR, "weather_asos_data.csv")
@@ -113,6 +122,80 @@ def build_outputs(item, cur, p7, p30):
     return outputs
 
 
+class _TLS(HTTPAdapter):
+    def init_poolmanager(self, *a, **k):
+        ctx = create_urllib3_context(); ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+        k["ssl_context"] = ctx
+        return super().init_poolmanager(*a, **k)
+
+
+_kamis = requests.Session(); _kamis.mount("https://", _TLS())
+RETAIL_CATS = {"채소": "200", "과일": "400", "축산": "500", "수산": "600", "식량": "100"}
+_retail_cache = {}
+
+
+def _recent_weekday(offset=2):
+    d = date.today() - timedelta(days=offset)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d
+
+
+def retail_data():
+    # KAMIS 소매 부류별 현재가 + 전년대비 등락 (실시간, 당일 캐싱)
+    key = date.today().isoformat()
+    if key in _retail_cache:
+        return _retail_cache[key]
+    regday = _recent_weekday(2)
+    out = {}
+    for gname, cat in RETAIL_CATS.items():
+        rows, seen = [], set()
+        try:
+            r = _kamis.get("https://www.kamis.or.kr/service/price/xml.do",
+                           params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "01",
+                                   "p_item_category_code": cat, "p_country_code": "1101",
+                                   "p_regday": regday.isoformat(), "p_convert_kg_yn": "Y",
+                                   "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
+                           timeout=(8, 15), verify=False)
+            data = r.json().get("data", {})
+            its = data.get("item", []) if isinstance(data, dict) else []
+            if isinstance(its, dict):
+                its = [its]
+            for it in its:
+                code = str(it.get("item_code", ""))
+                if not code or code in seen:
+                    continue
+                cur = str(it.get("dpr1", "")).replace(",", "").strip()
+                if cur in ("", "-"):
+                    cur = str(it.get("dpr2", "")).replace(",", "").strip()
+                if cur in ("", "-"):
+                    continue
+                seen.add(code)
+                yr = None
+                y = str(it.get("dpr6", "")).replace(",", "").strip()
+                try:
+                    if y not in ("", "-") and int(y) > 0:
+                        yr = round((int(cur) - int(y)) / int(y) * 100)
+                        if abs(yr) > 150:   # KAMIS 1년전 값 이상치 방어
+                            yr = None
+                except ValueError:
+                    pass
+                rows.append({"name": it.get("item_name"), "unit": it.get("unit"), "cur": int(cur), "yr": yr})
+        except Exception:
+            pass
+        if rows:
+            out[gname] = rows
+    result = {"date": regday.isoformat(), "groups": out}
+    _retail_cache.clear(); _retail_cache[key] = result
+    return result
+
+
+@app.get("/api/retail")
+def api_retail():
+    return retail_data()
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "items": [i for i in ITEMS if MODELS.get(ITEMS[i])]}
@@ -200,6 +283,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   .chartbox{position:relative;height:90px;margin-top:2px;}
   footer{text-align:center;color:var(--mut);font-size:12px;margin-top:30px;}
   .loading{text-align:center;color:var(--mut);padding:40px;}
+  .sec-title{font-size:16px;font-weight:700;margin:24px 0 10px;}
+  .sub2{font-size:12px;color:var(--mut);font-weight:400;}
+  .rgroup{margin-bottom:14px;}
+  .rgroup h3{font-size:13px;color:var(--mut);margin-bottom:6px;font-weight:600;}
+  .ritems{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .ritem{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+  .ritem .n{font-size:13px;font-weight:600;}
+  .ritem .p{font-size:14px;font-weight:700;margin-top:2px;}
+  .ritem .p small{font-size:11px;color:var(--mut);font-weight:400;}
+  .ritem .y{font-size:11px;margin-top:1px;}
 </style>
 </head>
 <body>
@@ -209,8 +302,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <div class="sub" id="date">불러오는 중...</div>
   </header>
   <div class="summary" id="summary"></div>
-  <div class="grid" id="grid"><div class="loading">데이터를 불러오는 중입니다...</div></div>
-  <footer>예측: XGBoost (7일·30일 후) · 데이터: KAMIS·기상청 ASOS·가락시장<br>서울 도매가 기준 · 가격 단위 원/kg</footer>
+  <div class="sec-title">📈 예측 품목 <span class="sub2">(7·30일 후 · 도매가)</span></div>
+  <div class="grid" id="grid"><div class="loading">불러오는 중...</div></div>
+  <div class="sec-title">🛒 전체 시세 <span class="sub2" id="rdate">(소매가)</span></div>
+  <div id="retail"><div class="loading">불러오는 중...</div></div>
+  <footer>예측: XGBoost (7·30일 후, 도매) · 전체 시세: 소매가(서울)<br>데이터: KAMIS · 기상청 ASOS · 가락시장</footer>
 </div>
 <script>
 const fmt=n=>n.toLocaleString();
@@ -246,6 +342,23 @@ fetch('/api/dashboard').then(r=>r.json()).then(data=>{
         scales:{x:{display:false},y:{display:false}}}});
   });
 }).catch(e=>{document.getElementById('grid').innerHTML='<div class="loading">데이터를 불러오지 못했습니다. 잠시 후 새로고침 해주세요.</div>';});
+
+fetch('/api/retail').then(r=>r.json()).then(data=>{
+  if(data.date) document.getElementById('rdate').textContent='(소매가 · '+data.date+')';
+  const wrap=document.getElementById('retail'); wrap.innerHTML='';
+  const order=['채소','과일','축산','수산','식량'];
+  order.forEach(g=>{
+    const list=(data.groups||{})[g]; if(!list||!list.length) return;
+    const sec=document.createElement('div'); sec.className='rgroup';
+    let html='<h3>'+g+'</h3><div class="ritems">';
+    list.forEach(it=>{
+      const y = it.yr==null?'' : (it.yr>0?'<span class="y up">전년比 ▲'+it.yr+'%</span>':(it.yr<0?'<span class="y down">전년比 ▼'+Math.abs(it.yr)+'%</span>':'<span class="y">전년比 0%</span>'));
+      html+='<div class="ritem"><div class="n">'+it.name+'</div><div class="p">'+fmt(it.cur)+'<small> 원/'+(it.unit||'')+'</small></div>'+y+'</div>';
+    });
+    html+='</div>'; sec.innerHTML=html; wrap.appendChild(sec);
+  });
+  if(!wrap.innerHTML) wrap.innerHTML='<div class="loading">시세 데이터가 없습니다.</div>';
+}).catch(e=>{document.getElementById('retail').innerHTML='<div class="loading">시세를 불러오지 못했습니다.</div>';});
 </script>
 </body>
 </html>"""
