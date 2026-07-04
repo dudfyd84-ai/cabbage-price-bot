@@ -1,4 +1,4 @@
-# 매일 최신 데이터를 증분 수집하고 채소 5품목 예측 모델(H7/H30)을 재학습하는 자동화 파이프라인
+# 매일 최신 데이터를 증분 수집하고 채소·과일 11품목 소매가 예측 모델(H7/H30)을 재학습하는 자동화 파이프라인
 import os
 import ssl
 import time
@@ -18,7 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 WEATHER = os.path.join(DIR, "weather_asos_data.csv")
-VEG = os.path.join(DIR, "kamis_veg_daily.csv")
+VEG = os.path.join(DIR, "kamis_veg_retail.csv")  # 소매(체감) 기준
 INTAKE = os.path.join(DIR, "garak_cabbage_intake.csv")
 LOG = os.path.join(DIR, "retrain_log.txt")
 
@@ -26,7 +26,11 @@ ASOS_KEY = os.getenv("ASOS_KEY", "")
 KAMIS_KEY = os.getenv("KAMIS_KEY", "")
 KAMIS_ID = os.getenv("KAMIS_ID", "")
 STATIONS = {108: "서울", 159: "부산", 143: "대구", 156: "광주", 133: "대전"}
-ITEMS = {"211": "배추", "231": "무", "245": "양파", "246": "대파", "258": "마늘"}  # code: name
+ITEMS = {"211": "배추", "231": "무", "245": "양파", "246": "대파", "258": "마늘",
+         "232": "당근", "223": "오이", "213": "시금치", "214": "상추",
+         "411": "사과", "412": "배"}  # code: name
+CAT_OF = {c: ("400" if c in ("411", "412") else "200") for c in ITEMS}
+CATS = ["200", "400"]
 INTAKE_ITEMS = {"배추": INTAKE}
 
 GARAK_URL = "http://www.garak.co.kr/homepage/publicdata/dataJsonOpen.do"
@@ -92,7 +96,7 @@ def incremental_weather():
 
 
 def incremental_veg():
-    # dailyPriceByCategoryList로 채소 5품목 서울 도매가 증분 수집
+    # dailyPriceByCategoryList로 채소·과일 11품목 서울 소매가 증분 수집 (체감 기준)
     df = pd.read_csv(VEG)
     last = pd.to_datetime(df["날짜"]).max().date()
     start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
@@ -101,27 +105,32 @@ def incremental_veg():
         log(f"채소가격 최신 ({last}). 추가 없음."); return 0
     rows = []
     for d in days:
-        try:
-            r = _kamis.get(KAMIS_URL, params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "02",
-                                              "p_item_category_code": "200", "p_country_code": "1101",
-                                              "p_regday": d.isoformat(), "p_convert_kg_yn": "Y",
-                                              "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
-                           timeout=(8, 15), verify=False)
-            data = r.json().get("data", {})
-            items = data.get("item", []) if isinstance(data, dict) else []
-            if isinstance(items, dict):
-                items = [items]
-            seen = set()
-            for it in items:
-                code = str(it.get("item_code", ""))
-                if code in ITEMS and code not in seen:
-                    raw = str(it.get("dpr1", "")).replace(",", "").strip()
-                    if raw not in ("", "-"):
-                        rows.append({"날짜": d.isoformat(), "품목명": ITEMS[code], "가격": int(raw)})
-                        seen.add(code)
-        except Exception as e:
-            log(f"  채소가격 {d} 실패: {e}")
-        time.sleep(0.25)
+        for cat in CATS:
+            try:
+                r = _kamis.get(KAMIS_URL, params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "01",
+                                                  "p_item_category_code": cat, "p_country_code": "1101",
+                                                  "p_regday": d.isoformat(), "p_convert_kg_yn": "Y",
+                                                  "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
+                               timeout=(8, 15), verify=False)
+                data = r.json().get("data", {})
+                items = data.get("item", []) if isinstance(data, dict) else []
+                if isinstance(items, dict):
+                    items = [items]
+                seen = set()
+                for it in items:
+                    code = str(it.get("item_code", ""))
+                    if code in ITEMS and CAT_OF[code] == cat and code not in seen:
+                        raw = str(it.get("dpr1", "")).replace(",", "").strip()
+                        if raw not in ("", "-"):
+                            try:
+                                rows.append({"날짜": d.isoformat(), "품목명": ITEMS[code],
+                                             "단위": it.get("unit", ""), "가격": int(raw)})
+                                seen.add(code)
+                            except ValueError:
+                                pass
+            except Exception as e:
+                log(f"  채소가격 {d} {cat} 실패: {e}")
+            time.sleep(0.2)
     if rows:
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(VEG, index=False, encoding="utf-8-sig")
     log(f"채소가격 {start}~{end} 추가 {len(rows)}행.")
@@ -178,9 +187,11 @@ def retrain_all():
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
     summary = {}
     for code, name in ITEMS.items():
-        p = veg[veg["품목명"] == name][["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
+        sub = veg[veg["품목명"] == name]
+        p = sub[["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
         if len(p) < 200:
             log(f"  {name}: 데이터 부족, 건너뜀"); continue
+        unit = sub["단위"].mode().iloc[0] if "단위" in sub.columns and len(sub) else ""
         df = pd.merge(w, p, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
         df["price"] = df["price"].ffill().bfill()
         for lag in [7, 14, 30]:
@@ -209,7 +220,7 @@ def retrain_all():
             mapes[H] = round(mean_absolute_percentage_error(y.iloc[split:], np.expm1(m.predict(X.iloc[split:]))) * 100, 1)
             final = _make(); final.fit(X, np.log1p(y))
             joblib.dump({"model": final, "features": fcols, "horizon": H, "log_target": True,
-                         "item": name, "code": code, "updated": str(date.today())},
+                         "item": name, "code": code, "unit": unit, "updated": str(date.today())},
                         os.path.join(DIR, f"model_{code}_h{H}.pkl"))
         summary[name] = mapes
     latest = str(veg["날짜"].max().date())
