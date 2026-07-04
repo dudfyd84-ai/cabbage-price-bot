@@ -19,10 +19,12 @@ KAMIS_ID = os.getenv("KAMIS_ID", "")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEATHER = os.path.join(BASE_DIR, "weather_asos_data.csv")
-VEG = os.path.join(BASE_DIR, "kamis_veg_daily.csv")
+VEG = os.path.join(BASE_DIR, "kamis_veg_retail.csv")  # 소매(체감) 기준
 
 # 지원 품목 {표시명: KAMIS item_code}
-ITEMS = {"배추": "211", "무": "231", "양파": "245", "대파": "246", "마늘": "258"}
+ITEMS = {"배추": "211", "무": "231", "양파": "245", "대파": "246", "마늘": "258",
+         "당근": "232", "오이": "223", "시금치": "213", "상추": "214",
+         "사과": "411", "배": "412"}
 # 반입량(공급) 보유 품목만
 INTAKE_FILE = {"배추": os.path.join(BASE_DIR, "garak_cabbage_intake.csv")}
 # 비쌀 때 대체재 추천 (품목별)
@@ -30,14 +32,17 @@ ALT = {"배추": [("양배추", "212"), ("얼갈이배추", "215")]}
 
 app = FastAPI(title="내 지갑 방어 봇")
 
-# 품목별 H7/H30 모델 로드: MODELS[code][H]
+# 품목별 H7/H30 모델 로드: MODELS[code][H], 학습 시 저장한 소매 단위도 함께 로드
 MODELS = {}
-for code in ITEMS.values():
+UNITS = {}
+for name, code in ITEMS.items():
     MODELS[code] = {}
     for H in (7, 30):
         p = os.path.join(BASE_DIR, f"model_{code}_h{H}.pkl")
         if os.path.exists(p):
-            MODELS[code][H] = joblib.load(p)
+            meta = joblib.load(p)
+            MODELS[code][H] = meta
+            UNITS[name] = meta.get("unit") or "kg"
 
 
 def _weather_with_lags():
@@ -91,13 +96,8 @@ def predict_item(item):
     return preds, cur
 
 
-def latest_price(item):
-    veg = pd.read_csv(VEG)
-    s = veg[veg["품목명"] == item]["가격"]
-    return int(s.iloc[-1]) if len(s) else None
-
-
 def build_outputs(item, cur, p7, p30):
+    unit = UNITS.get(item, "kg")
     r7 = (p7 - cur) / cur * 100 if cur else 0
     r30 = (p30 - cur) / cur * 100 if cur else 0
     if r30 > 15:
@@ -110,7 +110,7 @@ def build_outputs(item, cur, p7, p30):
         head, pricey = "🟢 안정적입니다\n필요한 만큼만 구매하세요.", False
 
     btn = {"action": "message", "label": "다시 확인", "messageText": f"{item} 가격"}
-    desc = f"{head}\n\n현재 {cur:,}원/kg\n→ 7일후 {p7:,}원\n→ 30일후 {p30:,}원 (예상)"
+    desc = f"{head}\n\n현재 {cur:,}원/{unit}\n→ 7일후 {p7:,}원\n→ 30일후 {p30:,}원 (예상)"
     outputs = [{"textCard": {"title": f"🥬 {item} 가격 예측", "description": desc, "buttons": [btn]}}]
 
     if pricey and item in ALT:
@@ -238,7 +238,7 @@ def dashboard_data():
         level = "위험" if r30 > 15 else ("주의" if r7 > 10 else ("하락" if r7 < -10 else "안정"))
         sub = veg[veg["품목명"] == name].sort_values("날짜").tail(90)
         trend = [{"d": d.strftime("%m/%d"), "p": int(p)} for d, p in zip(sub["날짜"], sub["가격"])]
-        items.append({"name": name, "cur": cur, "p7": p7, "p30": p30,
+        items.append({"name": name, "unit": UNITS.get(name, "kg"), "cur": cur, "p7": p7, "p30": p30,
                       "r7": r7, "r30": r30, "level": level, "trend": trend})
     latest = veg["날짜"].max().strftime("%Y-%m-%d")
     return {"date": latest, "items": items}
@@ -308,17 +308,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <div class="sub" id="date">불러오는 중...</div>
   </header>
   <div class="summary" id="summary"></div>
-  <div class="sec-title">📈 예측 품목 <span class="sub2">(7·30일 후 · 도매가)</span></div>
+  <div class="sec-title">📈 예측 품목 <span class="sub2">(7·30일 후 · 소매가)</span></div>
   <div class="grid" id="grid"><div class="loading">불러오는 중...</div></div>
   <div class="sec-title">🛒 전체 시세 <span class="sub2" id="rdate">(소매가)</span></div>
   <div id="retail"><div class="loading">불러오는 중...</div></div>
-  <footer>예측: XGBoost (7·30일 후, 도매) · 전체 시세: 소매가(서울)<br>데이터: KAMIS · 기상청 ASOS · 가락시장</footer>
+  <footer>예측: XGBoost (7·30일 후, 소매) · 전체 시세: 소매가(서울)<br>데이터: KAMIS · 기상청 ASOS · 가락시장</footer>
 </div>
 <script>
 const fmt=n=>n.toLocaleString();
 const arrow=(r)=>r>0?`<span class="up">▲${r}%</span>`:(r<0?`<span class="down">▼${Math.abs(r)}%</span>`:'0%');
 fetch('/api/dashboard').then(r=>r.json()).then(data=>{
-  document.getElementById('date').textContent=data.date+' 기준 (서울 도매가)';
+  document.getElementById('date').textContent=data.date+' 기준 (서울 소매가)';
   const risky=data.items.filter(i=>i.level==='위험'||i.level==='주의');
   document.getElementById('summary').innerHTML = risky.length
     ? `이번 주 주의가 필요한 품목 <b>${risky.length}개</b>: ${risky.map(i=>i.name).join(', ')}`
@@ -329,7 +329,7 @@ fetch('/api/dashboard').then(r=>r.json()).then(data=>{
     card.innerHTML=`
       <div class="top">
         <div><div class="name">${it.name}</div>
-        <div class="cur">${fmt(it.cur)}<small> 원/kg</small></div></div>
+        <div class="cur">${fmt(it.cur)}<small> 원/${it.unit}</small></div></div>
         <span class="badge b-${it.level}">${it.level}</span>
       </div>
       <div class="preds">
