@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CartTiming — 식자재 구매 타이밍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface:#f8f9ff; --card:#ffffff; --border:#e2e8f0; --ink:#0b1c30; --muted:#64748b;
+    --primary:#064e3b; --secondary:#1e40af;
+    --teal:#0d9488; --teal-tint:#ccfbf1; --teal-ink:#0f766e;
+    --amber:#f59e0b; --amber-tint:#fef3c7; --amber-ink:#92400e;
+    --slate-tint:#f1f5f9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Hanken Grotesk','Noto Sans KR',sans-serif;background:var(--surface);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 16px 64px}
+  .num{font-weight:500;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;flex-wrap:wrap}
+  .brand{font-size:28px;font-weight:700;letter-spacing:-.01em;color:var(--primary)}
+  .brand span{color:var(--teal)}
+  .tagline{font-size:14px;color:var(--muted);margin-top:2px}
+  .asof{font-size:12px;font-weight:600;color:var(--muted)}
+
+  .banner{margin:20px 0 0;border-radius:8px;padding:12px 16px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+  .b-warn{background:linear-gradient(90deg,var(--amber-tint),rgba(254,243,199,0));border:1px solid #fde68a;color:var(--amber-ink)}
+  .b-calm{background:linear-gradient(90deg,var(--teal-tint),rgba(204,251,241,0));border:1px solid #99f6e4;color:var(--teal-ink)}
+  .banner b{font-weight:700}
+
+  .sec{font-size:24px;font-weight:600;line-height:32px;margin:32px 0 4px}
+  .sec-sub{font-size:14px;color:var(--muted);margin-bottom:12px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;
+        box-shadow:0 1px 4px rgba(11,28,48,.05);transition:border-color .15s,box-shadow .15s}
+  .card:hover{border-color:#cbd5e1;box-shadow:0 2px 8px rgba(11,28,48,.08)}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .iname{font-size:18px;font-weight:700}
+  .iunit{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+  .price{font-size:24px;font-weight:600;line-height:32px;margin-top:4px}
+  .price small{font-size:13px;color:var(--muted);font-weight:400}
+
+  .chip{border-radius:9999px;font-size:12px;font-weight:600;padding:3px 10px;white-space:nowrap}
+  .c-up{background:var(--amber-tint);color:var(--amber-ink)}
+  .c-down{background:var(--teal-tint);color:var(--teal-ink)}
+  .c-flat{background:var(--slate-tint);color:var(--muted)}
+
+  .bars{display:flex;gap:12px;align-items:flex-end;height:104px;margin:14px 0 2px}
+  .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+  .bar .v{font-size:12px;font-weight:600}
+  .bar .b{width:100%;border-radius:4px 4px 0 0;background:#cbd5e1}
+  .bar .l{font-size:12px;color:var(--muted)}
+  .bar.best .b{background:var(--teal)}
+  .bar.best .l{color:var(--teal-ink);font-weight:700}
+  .ci{font-size:12px;color:var(--muted);margin-top:8px}
+
+  .signal{display:inline-block;margin-top:12px;border-radius:9999px;font-size:13px;font-weight:600;padding:6px 14px}
+  .s-buy{background:var(--teal);color:#fff}
+  .s-soon{border:1px solid var(--teal);color:var(--teal-ink)}
+  .s-wait{border:1px solid var(--secondary);color:var(--secondary)}
+  .s-hold{background:var(--slate-tint);color:var(--muted)}
+
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+  .fchip{border:1px solid var(--border);background:#fff;border-radius:9999px;padding:6px 14px;
+         font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .fchip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+  .ghead{font-size:12px;font-weight:600;color:var(--muted);background:var(--slate-tint);
+         padding:6px 10px;border-radius:4px;margin:16px 0 2px}
+  .trow{display:flex;justify-content:space-between;align-items:center;gap:10px;
+        padding:10px 6px;border-bottom:1px solid var(--border);font-size:14px}
+  .trow .n{font-weight:500;flex:1}
+  .trow .p{font-weight:600}
+  .trow .p small{color:var(--muted);font-weight:400;font-size:12px}
+  .yr{font-size:12px;font-weight:600;border-radius:9999px;padding:2px 8px;min-width:86px;text-align:center}
+  .y-up{background:var(--amber-tint);color:var(--amber-ink)}
+  .y-down{background:var(--teal-tint);color:var(--teal-ink)}
+  .y-flat{background:var(--slate-tint);color:var(--muted)}
+
+  footer{margin-top:40px;text-align:center;font-size:12px;color:var(--muted);line-height:1.8}
+  .loading{text-align:center;color:var(--muted);padding:40px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">Cart<span>Timing</span></div>
+      <div class="tagline">식자재 구매 타이밍 인텔리전스</div>
+    </div>
+    <div class="asof num" id="asof">불러오는 중…</div>
+  </header>
+
+  <div id="banner"></div>
+
+  <div class="sec">구매 타이밍 시뮬레이션</div>
+  <div class="sec-sub">오늘 살 때와 7일·30일 뒤 살 때의 예상가 비교 · 서울 소매가 · AI 예측(XGBoost)</div>
+  <div class="grid" id="grid"><div class="loading">예측 데이터를 불러오는 중입니다…</div></div>
+
+  <div class="sec">전체 시세</div>
+  <div class="sec-sub" id="rsub">농축수산 전 품목 · 소매가 · 전년 대비</div>
+  <div class="chips" id="chips"></div>
+  <div id="retail"><div class="loading">시세를 불러오는 중입니다…</div></div>
+
+  <footer>
+    데이터 · KAMIS(한국농수산식품유통공사) · 기상청 ASOS · 가락시장<br>
+    예측 · XGBoost D+7 / D+30 · 예상 범위는 백테스트 오차(MAPE) 기반 근사치입니다
+  </footer>
+</div>
+
+<script>
+const fmt = n => n.toLocaleString();
+
+/* ── Tier 1·2: 예측 카드 + 타이밍 시뮬레이션 ── */
+fetch('/api/dashboard').then(r=>r.json()).then(data=>{
+  document.getElementById('asof').textContent = data.date + ' 기준';
+
+  const risky = data.items.filter(i=>i.level==='위험'||i.level==='주의');
+  const bn = document.getElementById('banner');
+  if (risky.length){
+    bn.innerHTML = '<div class="banner b-warn"><span>⚠</span><div><b>시장 경보</b> · 상승 예상 <b>'
+      + risky.length + '개 품목</b> — ' + risky.map(i=>i.name).join(', ')
+      + '. 가격 인상 전 구매를 검토하세요.</div></div>';
+  } else {
+    bn.innerHTML = '<div class="banner b-calm"><span>✓</span><div><b>시장 안정</b> · 전 품목 평시 수준입니다. 필요한 만큼만 구매하세요.</div></div>';
+  }
+
+  const sig = {
+    '위험': ['지금 구매 권장', 's-buy'],
+    '주의': ['조기 구매 고려', 's-soon'],
+    '하락': ['대기 권장', 's-wait'],
+    '안정': ['평시 구매', 's-hold'],
+  };
+  const tchip = t => t==='U' ? '<span class="chip c-up">▲ 상승 예상</span>'
+                : t==='D' ? '<span class="chip c-down">▼ 하락 예상</span>'
+                : '<span class="chip c-flat">— 보합</span>';
+
+  const grid = document.getElementById('grid'); grid.innerHTML='';
+  data.items.forEach(it=>{
+    const vals = [it.cur, it.p7, it.p30];
+    const labels = ['오늘', '7일 뒤', '30일 뒤'];
+    const mn = Math.min(...vals), mx = Math.max(...vals);
+    const h = v => mx===mn ? 56 : Math.round(28 + (v-mn)/(mx-mn)*48);
+    const bestIdx = vals.indexOf(mn);
+
+    let bars = '';
+    vals.forEach((v,i)=>{
+      bars += '<div class="bar'+(i===bestIdx?' best':'')+'">'
+        + '<span class="v num">'+fmt(v)+'</span>'
+        + '<div class="b" style="height:'+h(v)+'px"></div>'
+        + '<span class="l">'+labels[i]+(i===bestIdx?' · 최적':'')+'</span></div>';
+    });
+
+    const [stxt, scls] = sig[it.level] || sig['안정'];
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML =
+      '<div class="card-top"><div><span class="iname">'+it.name+'</span>'
+      + '<span class="iunit">'+it.unit+'</span>'
+      + '<div class="price num">'+fmt(it.cur)+'<small> 원</small></div></div>'
+      + tchip(it.trend ?? (it.r30>5?'U':(it.r7<-5?'D':'S'))) + '</div>'
+      + '<div class="bars">'+bars+'</div>'
+      + '<div class="ci num">예상 범위 · 7일 '+fmt(it.ci7[0])+'~'+fmt(it.ci7[1])
+      + ' · 30일 '+fmt(it.ci30[0])+'~'+fmt(it.ci30[1])+'</div>'
+      + '<span class="signal '+scls+'">'+stxt+'</span>';
+    grid.appendChild(card);
+  });
+}).catch(()=>{ document.getElementById('grid').innerHTML='<div class="loading">데이터를 불러오지 못했습니다. 잠시 후 새로고침 해주세요.</div>'; });
+
+/* ── Tier 3: 전체 시세 + 카테고리 필터 ── */
+fetch('/api/retail').then(r=>r.json()).then(data=>{
+  const order = ['채소','과일','축산','수산','식량'];
+  const groups = data.groups || {};
+  if (data.date) document.getElementById('rsub').textContent = '농축수산 전 품목 · 소매가 · 전년 대비 · ' + data.date;
+
+  const chipbar = document.getElementById('chips');
+  const cats = ['전체', ...order.filter(g=>groups[g] && groups[g].length)];
+  let active = '전체';
+
+  function render(){
+    const wrap = document.getElementById('retail'); wrap.innerHTML='';
+    order.forEach(g=>{
+      if (active!=='전체' && active!==g) return;
+      const list = groups[g]; if (!list || !list.length) return;
+      const sec = document.createElement('div');
+      let html = '<div class="ghead">'+g+' · '+list.length+'품목</div>';
+      list.forEach(it=>{
+        const yr = it.yr==null ? '<span class="yr y-flat">전년 —</span>'
+          : it.yr>0 ? '<span class="yr y-up num">전년 ▲'+it.yr+'%</span>'
+          : it.yr<0 ? '<span class="yr y-down num">전년 ▼'+Math.abs(it.yr)+'%</span>'
+          : '<span class="yr y-flat">전년 0%</span>';
+        html += '<div class="trow"><span class="n">'+it.name+'</span>'
+          + '<span class="p num">'+fmt(it.cur)+'<small> 원/'+(it.unit||'')+'</small></span>'+yr+'</div>';
+      });
+      sec.innerHTML = html; wrap.appendChild(sec);
+    });
+    if (!wrap.innerHTML) wrap.innerHTML='<div class="loading">시세 데이터가 없습니다.</div>';
+  }
+
+  chipbar.innerHTML='';
+  cats.forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'fchip'+(c===active?' on':''); b.textContent = c;
+    b.onclick = ()=>{ active=c;
+      chipbar.querySelectorAll('.fchip').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); render(); };
+    chipbar.appendChild(b);
+  });
+  render();
+}).catch(()=>{ document.getElementById('retail').innerHTML='<div class="loading">시세를 불러오지 못했습니다.</div>'; });
+</script>
+</body>
+</html>
