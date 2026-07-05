@@ -238,8 +238,14 @@ async def predict(request: Request):
     return {"version": "2.0", "template": {"outputs": outputs}}
 
 
+_dash_cache = {}
+
+
 def dashboard_data():
-    # 5품목 현재가·예측·위험도·최근 추세를 한 번에 산출
+    # 11품목 현재가·예측·위험도·추세 산출 (모델 추론이 무거워 당일 캐싱)
+    key = date.today().isoformat()
+    if key in _dash_cache:
+        return _dash_cache[key]
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
     items = []
     for name in ITEMS:
@@ -260,7 +266,9 @@ def dashboard_data():
                       "ci7": [round(p7 * (1 - m7 / 100)), round(p7 * (1 + m7 / 100))],
                       "ci30": [round(p30 * (1 - m30 / 100)), round(p30 * (1 + m30 / 100))]})
     latest = veg["날짜"].max().strftime("%Y-%m-%d")
-    return {"date": latest, "items": items}
+    result = {"date": latest, "items": items}
+    _dash_cache.clear(); _dash_cache[key] = result
+    return result
 
 
 @app.get("/api/dashboard")

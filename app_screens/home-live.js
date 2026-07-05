@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const chipSpans = headRow.querySelectorAll('.flex.gap-sm > span');
       if (chipSpans.length >= 2) { chipSpans[0].textContent = a.name; chipSpans[1].textContent = b.name; }
 
-      const paths = document.querySelectorAll('svg path');
+      const chartCard = headRow.parentElement;               // 추이 카드 컨테이너로 스코프 한정
+      const paths = chartCard.querySelectorAll('svg path');
       const toPath = it => {
         const vals = it.trend.slice(-60).map(t => t.p);
         const mn = Math.min(...vals), mx = Math.max(...vals);
@@ -70,7 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
         paths[0].setAttribute('d', toPath(a));
         paths[1].setAttribute('d', toPath(b));
       }
-      const xlabels = document.querySelectorAll('.relative.z-10 span');
+      const svgEl = chartCard.querySelector('svg');
+      const xlabels = svgEl && svgEl.nextElementSibling ? svgEl.nextElementSibling.querySelectorAll('span') : [];
       const L = ['-60일', '-45일', '-30일', '-15일', '오늘'];
       xlabels.forEach((s, i) => { if (i < L.length) s.textContent = L[i]; });
       const subEl = document.evaluate("//h3[contains(text(),'가격 추이')]/following-sibling::p",

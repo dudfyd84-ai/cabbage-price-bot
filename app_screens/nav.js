@@ -89,6 +89,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ── 5.5) 로고 클릭 → 홈 ──
+  document.querySelectorAll('header h1').forEach(h => {
+    if (h.textContent.includes('CartTiming')) {
+      h.style.cursor = 'pointer';
+      h.addEventListener('click', () => { location.href = '/app'; });
+    }
+  });
+
+  // ── 5.6) 공통 하단 탭바: 화면별 제각각인 네비를 한글 5탭으로 통일 ──
+  const SKIP_NAV = ['/app/onboarding', '/app/store-register', '/app/bom-register'];
+  if (path.startsWith('/app') && !SKIP_NAV.includes(path)) {
+    // 기존 하단 고정 네비 제거 (영문 탭·화면별 변형 정리)
+    document.querySelectorAll('nav, footer').forEach(n => {
+      const c = n.className || '';
+      if (typeof c === 'string' && c.includes('fixed') && c.includes('bottom-0') && !n.querySelector('input')) n.remove();
+    });
+    // 데스크톱 헤더 탭(예측분석 화면 상단 메뉴) 숨김
+    document.querySelectorAll('header div').forEach(d => {
+      const txts = [...d.querySelectorAll('button, a')].map(b => b.textContent.trim());
+      if (txts.includes('예측 분석') && txts.includes('스마트 딜')) d.style.display = 'none';
+    });
+
+    const TABS = [
+      ['홈', 'home', '/app'],
+      ['인벤토리', 'inventory_2', '/app/inventory'],
+      ['예측 분석', 'trending_up', '/app/item-analysis'],
+      ['스마트 딜', 'shopping_bag', '/app/deals'],
+      ['내 정보', 'person', '/app/plan'],
+    ];
+    const bar = document.createElement('nav');
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+    const inner = document.createElement('div');
+    inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+    TABS.forEach(([label, icon, href]) => {
+      const active = href === '/app' ? (path === '/app' || path === '/app/home') : path.startsWith(href);
+      const a = document.createElement('a');
+      a.href = href;
+      a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+        + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
+      a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
+        + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+      inner.appendChild(a);
+    });
+    bar.appendChild(inner);
+    document.body.appendChild(bar);
+    document.body.style.paddingBottom = '88px';
+  }
+
   // ── 6) 등록된 매장명 반영 (전 화면 헤더의 '나의 레스토랑') ──
   try {
     const store = JSON.parse(localStorage.getItem('ct_store') || 'null');
