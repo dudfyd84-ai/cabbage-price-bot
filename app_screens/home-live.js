@@ -1,8 +1,11 @@
-// 홈 대시보드의 하드코딩 수치를 /api/dashboard 실데이터 + 등록 BOM(localStorage)으로 교체
+// 홈 대시보드: /api/dashboard(예측 11품목) + /api/retail(전 품목 시세)로 실데이터 렌더링
 document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
 
-  fetch('/api/dashboard').then(r => r.json()).then(data => {
+  Promise.all([
+    fetch('/api/dashboard').then(r => r.json()),
+    fetch('/api/retail').then(r => r.json()).catch(() => ({ groups: {} })),
+  ]).then(([data, retail]) => {
     const items = [...data.items].sort((a, b) => b.r30 - a.r30);
     const risers = items.filter(i => i.r30 > 5);
     const top = items[0];
@@ -62,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (subEl) subEl.textContent = '최근 60일 실측 추이 (소매가, 서울)';
     } catch (e) {}
 
-    // 4) BOM 섹션: 등록 메뉴가 있으면 실데이터 원가 카드로 교체, 없으면 샘플 배지
+    // 4) BOM 섹션: 등록 메뉴를 "전 품목 시세 + 예측"으로 원가 계산
     try {
       const h3s = [...document.querySelectorAll('h3')];
       const bomH = h3s.find(h => h.textContent.includes('메뉴별 원가'));
@@ -76,34 +79,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 재료 단가 헬퍼: 우리 11품목 소매 단위 → g/ea 기준 단가 환산
-      const byName = Object.fromEntries(items.map(i => [i.name, i]));
-      const unitPrice = it => {
-        const u = it.unit || '';
-        if (u.includes('100g')) return { type: 'g', now: it.cur / 100, fut: it.p30 / 100 };
-        if (u.includes('kg'))   return { type: 'g', now: it.cur / 1000, fut: it.p30 / 1000 };
-        if (u.includes('10개')) return { type: 'ea', now: it.cur / 10, fut: it.p30 / 10 };
-        if (u.includes('개') || u.includes('포기')) return { type: 'ea', now: it.cur, fut: it.p30 };
+      // ── 전 품목 가격 사전 구축 ──
+      // 단가 파서: 단위 문자열 → {type: g|ml|ea, per1: 1g/1ml/1개당 가격}
+      const parseUnit = (unit, price) => {
+        const u = (unit || '').toLowerCase();
+        let m = u.match(/([\d.]+)\s*(kg|g)(?![a-z])/);
+        if (m) return { type: 'g', per1: price / (parseFloat(m[1]) * (m[2] === 'kg' ? 1000 : 1)) };
+        m = u.match(/([\d.]+)\s*(l|ml)(?![a-z])/);
+        if (m) return { type: 'ml', per1: price / (parseFloat(m[1]) * (m[2] === 'l' ? 1000 : 1)) };
+        m = (unit || '').match(/([\d.]+)?\s*(개|구|마리|포기|장|속|단|병|봉|팩)/);
+        if (m) return { type: 'ea', per1: price / (parseFloat(m[1]) || 1) };
         return null;
       };
+      const norm = s => (s || '').replace(/\(.*?\)|\s/g, '');   // 괄호·공백 제거
+
+      const priceBook = {};   // normName → {now per-base, futRatio, type, label}
+      Object.values(retail.groups || {}).flat().forEach(r => {
+        const up = parseUnit(r.unit, r.cur);
+        if (up) priceBook[norm(r.name)] = { ...up, futRatio: 1, label: r.name, predicted: false };
+      });
+      items.forEach(i => {   // 예측 11품목은 미래 비율 덮어쓰기
+        const up = parseUnit(i.unit, i.cur);
+        if (up) priceBook[norm(i.name)] = {
+          ...up, futRatio: i.cur > 0 ? i.p30 / i.cur : 1, label: i.name, predicted: true,
+        };
+      });
+
       const calc = bom => {
-        let now = 0, fut = 0, missed = [], topRise = null;
+        let now = 0, fut = 0, unmatched = [], unpredicted = 0, topRise = null;
         bom.ings.forEach(g => {
-          const it = byName[g.name];
-          const up = it && unitPrice(it);
-          const qty = g.unit === 'kg' ? g.qty * 1000 : (g.unit === 'l' ? g.qty * 1000 : g.qty);
-          const isEa = g.unit === 'ea';
-          if (up && ((up.type === 'g' && !isEa) || (up.type === 'ea' && isEa))) {
-            const q = up.type === 'g' ? qty : g.qty;
-            now += up.now * q; fut += up.fut * q;
-            const d = (up.fut - up.now) * q;
-            if (!topRise || d > topRise.d) topRise = { name: g.name, d };
-          } else missed.push(g.name);
+          const pb = priceBook[norm(g.name)];
+          const qBase = g.unit === 'kg' || g.unit === 'l' ? g.qty * 1000 : g.qty;
+          const typeOk = pb && ((pb.type === 'g' && (g.unit === 'g' || g.unit === 'kg')) ||
+                                (pb.type === 'ml' && (g.unit === 'ml' || g.unit === 'l')) ||
+                                (pb.type === 'ea' && g.unit === 'ea'));
+          if (typeOk) {
+            const c = pb.per1 * qBase;
+            now += c; fut += c * pb.futRatio;
+            if (!pb.predicted) unpredicted += 1;
+            const d = c * (pb.futRatio - 1);
+            if (!topRise || d > topRise.d) topRise = { name: pb.label, d };
+          } else unmatched.push(g.name);
         });
-        return { now, fut, missed, topRise };
+        return { now, fut, unmatched, unpredicted, topRise };
       };
 
-      // 카드 그리드: 첫 카드를 템플릿으로 등록 메뉴 수만큼 재생성
       const grid = bomH.parentElement.parentElement.querySelector('.grid');
       const tpl = grid.firstElementChild.cloneNode(true);
       grid.innerHTML = '';
@@ -132,13 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
           chip.className = 'font-label-sm text-label-sm px-sm py-xs bg-surface-container text-on-surface-variant rounded-full';
         }
 
-        const cause = card.querySelector('p.font-body-sm');
-        cause.textContent = c.topRise
-          ? `주요 원인: ${c.topRise.name} 가격 변동` + (c.missed.length ? ` · 미연동 재료 ${c.missed.length}개` : '')
-          : (c.missed.length ? `연동 가능한 재료 없음 (${c.missed.join(', ')})` : '재료 변동 없음');
+        const notes = [];
+        if (c.topRise && Math.abs(c.topRise.d) >= 1) notes.push(`주요 원인: ${c.topRise.name} 가격 변동`);
+        if (c.unpredicted) notes.push(`현재가 반영 ${c.unpredicted}개(예측 미지원)`);
+        if (c.unmatched.length) notes.push(`미연동 ${c.unmatched.join(', ')}`);
+        card.querySelector('p.font-body-sm').textContent = notes.join(' · ') || '재료 변동 없음';
 
-        const priceEl = card.querySelector('.font-data-mono');
-        priceEl.textContent = c.now > 0 ? `₩${fmt(c.fut)}` : '—';
+        card.querySelector('.font-data-mono').textContent = c.now > 0 ? `₩${fmt(c.fut)}` : '—';
         const icon = card.querySelector('.pt-sm span.material-symbols-outlined');
         icon.textContent = pct > 5 ? 'trending_up' : (pct < -5 ? 'trending_down' : 'horizontal_rule');
         icon.className = 'material-symbols-outlined ' + (pct > 5 ? 'trend-up' : (pct < -5 ? 'trend-down' : 'text-outline-variant'));
