@@ -159,7 +159,9 @@ fetch('/api/dashboard').then(r=>r.json()).then(data=>{
     card.innerHTML =
       '<div class="card-top"><div><span class="iname">'+it.name+'</span>'
       + '<span class="iunit">'+it.unit+'</span>'
-      + '<div class="price num">'+fmt(it.cur)+'<small> 원</small></div></div>'
+      + '<div class="price num">'+fmt(it.cur)+'<small> 원</small></div>'
+      + (it.per100g ? '<div class="num" style="font-size:12px;color:var(--muted);">100g당 '+fmt(it.per100g)+'원</div>' : '')
+      + '</div>'
       + tchip(it.trend ?? (it.r30>5?'U':(it.r7<-5?'D':'S'))) + '</div>'
       + '<div class="bars">'+bars+'</div>'
       + '<div class="ci num">예상 범위 · 7일 '+fmt(it.ci7[0])+'~'+fmt(it.ci7[1])
@@ -192,7 +194,9 @@ fetch('/api/retail').then(r=>r.json()).then(data=>{
           : it.yr<0 ? '<span class="yr y-down num">전년 ▼'+Math.abs(it.yr)+'%</span>'
           : '<span class="yr y-flat">전년 0%</span>';
         html += '<div class="trow"><span class="n">'+it.name+'</span>'
-          + '<span class="p num">'+fmt(it.cur)+'<small> 원/'+(it.unit||'')+'</small></span>'+yr+'</div>';
+          + '<span class="p num" style="text-align:right;">'+fmt(it.cur)+'<small> 원/'+(it.unit||'')+'</small>'
+          + (it.per100g ? '<div style="font-size:11px;color:var(--muted);font-weight:400;">100g당 '+fmt(it.per100g)+'원</div>' : '')
+          + '</span>'+yr+'</div>';
       });
       sec.innerHTML = html; wrap.appendChild(sec);
     });

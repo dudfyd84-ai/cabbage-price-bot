@@ -1,5 +1,6 @@
 # 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
 import os
+import re
 import ssl
 from datetime import date, timedelta
 
@@ -192,7 +193,15 @@ def retail_data():
                             yr = None
                 except ValueError:
                     pass
-                rows.append({"name": it.get("item_name"), "unit": it.get("unit"), "cur": cur_i, "yr": yr})
+                unit_s = str(it.get("unit") or "")
+                m = re.match(r"(\d+(?:\.\d+)?)\s*(kg|g)", unit_s.lower())
+                per100g = None
+                if m:
+                    grams = float(m.group(1)) * (1000 if m.group(2) == "kg" else 1)
+                    if grams > 0:
+                        per100g = round(cur_i / grams * 100)
+                rows.append({"name": it.get("item_name"), "unit": unit_s, "per100g": per100g,
+                             "cur": cur_i, "yr": yr})
         except Exception:
             pass
         if rows:
@@ -244,7 +253,9 @@ def dashboard_data():
         sub = veg[veg["품목명"] == name].sort_values("날짜").tail(90)
         trend = [{"d": d.strftime("%m/%d"), "p": int(p)} for d, p in zip(sub["날짜"], sub["가격"])]
         m7, m30 = MAPE_PCT.get(name, (15.0, 20.0))
-        items.append({"name": name, "unit": UNITS.get(name, "kg"), "cur": cur, "p7": p7, "p30": p30,
+        u = UNITS.get(name, "kg")
+        per100g = round(cur / 10) if "kg" in u else (cur if "100g" in u else None)  # 무게 품목만 100g 표준화
+        items.append({"name": name, "unit": u, "per100g": per100g, "cur": cur, "p7": p7, "p30": p30,
                       "r7": r7, "r30": r30, "level": level, "trend": trend,
                       "ci7": [round(p7 * (1 - m7 / 100)), round(p7 * (1 + m7 / 100))],
                       "ci30": [round(p30 * (1 - m30 / 100)), round(p30 * (1 + m30 / 100))]})
