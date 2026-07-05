@@ -1,6 +1,6 @@
-// 홈 대시보드의 하드코딩 수치를 /api/dashboard 실데이터로 교체하는 연동 스크립트
+// 홈 대시보드의 하드코딩 수치를 /api/dashboard 실데이터 + 등록 BOM(localStorage)으로 교체
 document.addEventListener('DOMContentLoaded', () => {
-  const fmt = n => n.toLocaleString();
+  const fmt = n => Math.round(n).toLocaleString();
 
   fetch('/api/dashboard').then(r => r.json()).then(data => {
     const items = [...data.items].sort((a, b) => b.r30 - a.r30);
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const [a, b] = [items[0], items[1]];
       const trendH3 = [...document.querySelectorAll('h3')].find(h => h.textContent.includes('가격 추이'));
-      const headRow = trendH3.parentElement.parentElement;           // h3 래퍼의 상위 flex 행
+      const headRow = trendH3.parentElement.parentElement;
       const chipSpans = headRow.querySelectorAll('.flex.gap-sm > span');
       if (chipSpans.length >= 2) { chipSpans[0].textContent = a.name; chipSpans[1].textContent = b.name; }
 
@@ -57,21 +57,95 @@ document.addEventListener('DOMContentLoaded', () => {
       const xlabels = document.querySelectorAll('.relative.z-10 span');
       const L = ['-60일', '-45일', '-30일', '-15일', '오늘'];
       xlabels.forEach((s, i) => { if (i < L.length) s.textContent = L[i]; });
-      const sub = document.querySelector('h3 + p.font-body-sm, .font-body-sm.text-on-surface-variant');
-      const subEl = document.evaluate("//h3[contains(text(),'가격 추이')]/following-sibling::p", document, null, 9, null).singleNodeValue;
+      const subEl = document.evaluate("//h3[contains(text(),'가격 추이')]/following-sibling::p",
+        document, null, 9, null).singleNodeValue;
       if (subEl) subEl.textContent = '최근 60일 실측 추이 (소매가, 서울)';
     } catch (e) {}
 
-    // 4) BOM 섹션: 샘플임을 명시 (BOM 등록 연동 전)
+    // 4) BOM 섹션: 등록 메뉴가 있으면 실데이터 원가 카드로 교체, 없으면 샘플 배지
     try {
       const h3s = [...document.querySelectorAll('h3')];
       const bomH = h3s.find(h => h.textContent.includes('메뉴별 원가'));
-      if (bomH) {
+      const boms = JSON.parse(localStorage.getItem('ct_bom') || '[]');
+
+      if (!boms.length) {
         const tag = document.createElement('span');
         tag.textContent = ' 샘플';
         tag.style.cssText = 'font-size:12px;font-weight:600;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:6px;';
         bomH.appendChild(tag);
+        return;
       }
+
+      // 재료 단가 헬퍼: 우리 11품목 소매 단위 → g/ea 기준 단가 환산
+      const byName = Object.fromEntries(items.map(i => [i.name, i]));
+      const unitPrice = it => {
+        const u = it.unit || '';
+        if (u.includes('100g')) return { type: 'g', now: it.cur / 100, fut: it.p30 / 100 };
+        if (u.includes('kg'))   return { type: 'g', now: it.cur / 1000, fut: it.p30 / 1000 };
+        if (u.includes('10개')) return { type: 'ea', now: it.cur / 10, fut: it.p30 / 10 };
+        if (u.includes('개') || u.includes('포기')) return { type: 'ea', now: it.cur, fut: it.p30 };
+        return null;
+      };
+      const calc = bom => {
+        let now = 0, fut = 0, missed = [], topRise = null;
+        bom.ings.forEach(g => {
+          const it = byName[g.name];
+          const up = it && unitPrice(it);
+          const qty = g.unit === 'kg' ? g.qty * 1000 : (g.unit === 'l' ? g.qty * 1000 : g.qty);
+          const isEa = g.unit === 'ea';
+          if (up && ((up.type === 'g' && !isEa) || (up.type === 'ea' && isEa))) {
+            const q = up.type === 'g' ? qty : g.qty;
+            now += up.now * q; fut += up.fut * q;
+            const d = (up.fut - up.now) * q;
+            if (!topRise || d > topRise.d) topRise = { name: g.name, d };
+          } else missed.push(g.name);
+        });
+        return { now, fut, missed, topRise };
+      };
+
+      // 카드 그리드: 첫 카드를 템플릿으로 등록 메뉴 수만큼 재생성
+      const grid = bomH.parentElement.parentElement.querySelector('.grid');
+      const tpl = grid.firstElementChild.cloneNode(true);
+      grid.innerHTML = '';
+      boms.forEach(bom => {
+        const c = calc(bom);
+        const card = tpl.cloneNode(true);
+        const img = card.querySelector('[style*="background-image"]');
+        if (img) {
+          img.style.backgroundImage = 'none';
+          img.style.cssText += 'display:flex;align-items:center;justify-content:center;background:#e5eeff;font-weight:700;font-size:20px;color:#003527;';
+          img.textContent = bom.menu[0];
+        }
+        card.querySelector('h4').textContent = bom.menu;
+
+        const pct = c.now > 0 ? Math.round((c.fut - c.now) / c.now * 100) : 0;
+        const diff = Math.round(c.fut - c.now);
+        const chip = card.querySelector('span.rounded-full');
+        if (pct > 5) {
+          chip.textContent = `+${pct}% 위험 (+${fmt(diff)}원/인분)`;
+          chip.className = 'font-label-sm text-label-sm px-sm py-xs bg-error-container text-error rounded-full';
+        } else if (pct < -5) {
+          chip.textContent = `${pct}% 안정 (${fmt(diff)}원/인분)`;
+          chip.className = 'font-label-sm text-label-sm px-sm py-xs bg-tertiary-container text-on-tertiary-container rounded-full';
+        } else {
+          chip.textContent = `변동 미미 (${diff >= 0 ? '+' : ''}${fmt(diff)}원/인분)`;
+          chip.className = 'font-label-sm text-label-sm px-sm py-xs bg-surface-container text-on-surface-variant rounded-full';
+        }
+
+        const cause = card.querySelector('p.font-body-sm');
+        cause.textContent = c.topRise
+          ? `주요 원인: ${c.topRise.name} 가격 변동` + (c.missed.length ? ` · 미연동 재료 ${c.missed.length}개` : '')
+          : (c.missed.length ? `연동 가능한 재료 없음 (${c.missed.join(', ')})` : '재료 변동 없음');
+
+        const priceEl = card.querySelector('.font-data-mono');
+        priceEl.textContent = c.now > 0 ? `₩${fmt(c.fut)}` : '—';
+        const icon = card.querySelector('.pt-sm span.material-symbols-outlined');
+        icon.textContent = pct > 5 ? 'trending_up' : (pct < -5 ? 'trending_down' : 'horizontal_rule');
+        icon.className = 'material-symbols-outlined ' + (pct > 5 ? 'trend-up' : (pct < -5 ? 'trend-down' : 'text-outline-variant'));
+
+        card.addEventListener('click', () => { location.href = '/app/bom-register'; });
+        grid.appendChild(card);
+      });
     } catch (e) {}
   }).catch(() => {});
 });

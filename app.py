@@ -290,7 +290,7 @@ def _render_screen(slug):
         html = f.read()
     inject = '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
-            "item-analysis": "item-live.js"}.get(name)
+            "item-analysis": "item-live.js", "bom-register": "bom-live.js"}.get(name)
     if live:
         inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
