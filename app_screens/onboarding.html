@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming | 식자재 원가 예측 솔루션</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed": "#001453",
+                      "surface-bright": "#f8f9ff",
+                      "outline": "#707974",
+                      "surface": "#f8f9ff",
+                      "inverse-primary": "#95d3ba",
+                      "background": "#f8f9ff",
+                      "on-primary-container": "#80bea6",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#eff4ff",
+                      "tertiary-fixed-dim": "#6bd8cb",
+                      "on-tertiary-fixed": "#00201d",
+                      "secondary-fixed-dim": "#b8c4ff",
+                      "surface-container": "#e5eeff",
+                      "surface-container-highest": "#d3e4fe",
+                      "on-secondary-fixed-variant": "#173bab",
+                      "on-surface-variant": "#404944",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#708cfd",
+                      "secondary": "#3755c3",
+                      "on-error": "#ffffff",
+                      "secondary-fixed": "#dde1ff",
+                      "on-tertiary": "#ffffff",
+                      "inverse-on-surface": "#eaf1ff",
+                      "error": "#ba1a1a",
+                      "inverse-surface": "#213145",
+                      "on-secondary-container": "#00217a",
+                      "surface-variant": "#d3e4fe",
+                      "primary-fixed": "#b0f0d6",
+                      "tertiary": "#00342f",
+                      "surface-dim": "#cbdbf5",
+                      "surface-container-high": "#dce9ff",
+                      "tertiary-container": "#004d46",
+                      "on-tertiary-fixed-variant": "#005049",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-container": "#53c2b5",
+                      "primary-fixed-dim": "#95d3ba",
+                      "outline-variant": "#bfc9c3",
+                      "on-surface": "#0b1c30",
+                      "on-primary-fixed": "#002117",
+                      "tertiary-fixed": "#89f5e7",
+                      "on-background": "#0b1c30",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#064e3b",
+                      "on-primary-fixed-variant": "#0b513d",
+                      "primary": "#003527",
+                      "surface-tint": "#2b6954"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "md": "16px",
+                      "sm": "8px",
+                      "xl": "32px",
+                      "2xl": "48px",
+                      "gutter": "12px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "container-margin": "16px",
+                      "base": "4px"
+              },
+              "fontFamily": {
+                      "body-sm": ["Hanken Grotesk"],
+                      "body-lg": ["Hanken Grotesk"],
+                      "data-mono": ["Hanken Grotesk"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "display-lg": ["Hanken Grotesk"],
+                      "label-sm": ["Hanken Grotesk"],
+                      "body-md": ["Hanken Grotesk"],
+                      "headline-lg-mobile": ["Hanken Grotesk"],
+                      "label-md": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden">
+<!-- Global Header (Small TopAppBar Logic - Not part of landing flow shell but branding is consistent) -->
+<header class="fixed top-0 left-0 w-full h-16 flex justify-between items-center px-md z-50 bg-transparent">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">CartTiming</span>
+</div>
+</header>
+<main class="relative pt-16 min-h-screen flex flex-col md:flex-row">
+<!-- Background Animation Layer -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+
+</div>
+<!-- Left Content: Value Proposition & Hero -->
+<section class="relative z-10 w-full md:w-1/2 flex flex-col justify-center px-6 md:px-12 py-12">
+<div class="max-w-xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container mb-6 animate-pulse">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="font-label-sm text-label-sm">B2B 식자재 비용 예측 AI</span>
+</div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4 leading-tight">
+                    주방의 미래 비용을<br/>
+<span class="text-primary-container bg-primary-fixed px-2 rounded">지금 확인하세요.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-md">
+                    메뉴의 BOM(원재료 명세서)을 등록하고 4주 후의 식자재 원가 변동을 AI로 예측하여 이익률을 관리하세요.
+                </p>
+<!-- Bento-style feature highlights -->
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-panel p-4 rounded-xl flex flex-col gap-2 shadow-sm">
+<span class="material-symbols-outlined text-primary">insights</span>
+<h3 class="font-label-md text-label-md">정확한 예측</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">딥러닝 모델 기반 94% 이상의 정확도</p>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col gap-2 shadow-sm">
+<span class="material-symbols-outlined text-primary">inventory_2</span>
+<h3 class="font-label-md text-label-md">재고 최적화</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">변동성 높은 품목의 선매입 시점 제안</p>
+</div>
+</div>
+<!-- Abstract Visual for Data -->
+<div class="mt-12 hidden md:block animate-float">
+<div class="relative w-full h-48 bg-surface-container rounded-2xl overflow-hidden border border-outline-variant shadow-lg p-6">
+<div class="flex justify-between items-end h-full gap-2">
+<div class="w-full bg-primary-container/20 rounded-t-lg transition-all" style="height: 40%"></div>
+<div class="w-full bg-primary-container/30 rounded-t-lg transition-all" style="height: 60%"></div>
+<div class="w-full bg-primary-container/40 rounded-t-lg transition-all" style="height: 45%"></div>
+<div class="w-full bg-primary-container/60 rounded-t-lg transition-all border-t-4 border-primary" style="height: 85%"></div>
+<div class="w-full bg-secondary-container rounded-t-lg transition-all" style="height: 70%"></div>
+</div>
+<div class="absolute top-6 right-6">
+<div class="flex items-center gap-2 bg-on-primary-fixed text-on-primary px-3 py-1 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-sm">auto_graph</span>
+                                예측 가격: +12.4% 상승 예상
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Content: Interactive Form (Stepper Flow) -->
+<section class="relative z-20 w-full md:w-1/2 flex items-center justify-center px-4 md:px-12 py-12">
+<div class="w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl overflow-hidden border border-outline-variant transition-all duration-500" id="auth-card">
+<!-- Step 1: Login/Sign-up -->
+<div class="p-8 space-y-6" id="step-1">
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">시작하기</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">귀하의 비즈니스를 지능형 주방으로 업그레이드하세요.</p>
+</div>
+<div class="space-y-3">
+<button class="w-full flex items-center justify-center gap-3 py-3 px-4 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors font-label-md text-label-md">
+<img alt="Google" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmlZzHO3m-f-RYT_z67EhEouqPJenaa3RjYqaq-FYfMJVLyENUS_91tkYjWGv4EgDfI2bLfgf18sDfLENi_CrbIVOeFDV4lP54eRsG9fkRgWIo56gea_wEvLu8ildl2N9AOLZeh5a3fh1oiW7WM7fwNTlkGy9JfkKQv_u0feexCsevymxpUruUX2sSEXQvsHoTayTD7SN3gbyBa9zhHsnz6ApROaEIGpgpTSe_RkMGjl-p1UgpSSks"/>
+                            Google로 계속하기
+                        </button>
+<button class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#FEE500] text-[#3c1e1e] rounded-xl hover:opacity-90 transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-lg">chat_bubble</span>
+                            카카오로 시작하기
+                        </button>
+</div>
+<div class="relative flex items-center py-2">
+<div class="flex-grow border-t border-outline-variant"></div>
+<span class="flex-shrink mx-4 text-outline-variant text-xs font-bold uppercase">또는 이메일로 가입</span>
+<div class="flex-grow border-t border-outline-variant"></div>
+</div>
+<form class="space-y-4" onsubmit="event.preventDefault(); goToStep(2);">
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface pl-1">이메일 주소</label>
+<input class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary focus:border-transparent outline-none transition-all" placeholder="example@business.com" required="" type="email"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface pl-1">비밀번호</label>
+<input class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary focus:border-transparent outline-none transition-all" placeholder="••••••••" required="" type="password"/>
+</div>
+<button class="w-full py-4 bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all" type="submit">
+                            다음 단계로
+                        </button>
+</form>
+<p class="text-center font-body-sm text-body-sm text-on-surface-variant">
+                        이미 계정이 있으신가요? <a class="text-secondary font-bold hover:underline" href="#">로그인</a>
+</p>
+</div>
+<!-- Step 2: Store Registration -->
+<div class="hidden p-8 space-y-6" id="step-2">
+<div class="flex items-center gap-4 mb-2">
+<button class="p-2 hover:bg-surface-container rounded-full transition-colors" onclick="goToStep(1)">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="h-1 flex-grow bg-surface-container rounded-full overflow-hidden">
+<div class="w-2/3 h-full bg-primary transition-all duration-700"></div>
+</div>
+</div>
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">가게 정보 등록</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">맞춤형 예측을 위해 가게의 업종을 선택해주세요.</p>
+</div>
+<div class="space-y-4">
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface pl-1">매장명</label>
+<input class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary outline-none transition-all" placeholder="예: 카트타이밍 키친 1호점" type="text"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface pl-1">주요 메뉴 타입</label>
+<div class="grid grid-cols-2 gap-2">
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">restaurant</span> 한식
+                                </button>
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">bakery_dining</span> 베이커리
+                                </button>
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">local_pizza</span> 양식/피자
+                                </button>
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">local_cafe</span> 카페
+                                </button>
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">ramen_dining</span> 일식/중식
+                                </button>
+<button class="menu-chip flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-secondary-container/10 transition-all font-label-md text-label-md" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-sm">more_horiz</span> 기타
+                                </button>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface pl-1">월 평균 구매액 (선택)</label>
+<select class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary outline-none transition-all">
+<option>500만원 미만</option>
+<option>500만원 - 1,000만원</option>
+<option>1,000만원 - 3,000만원</option>
+<option>3,000만원 이상</option>
+</select>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-headline-md text-headline-md rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all mt-4" onclick="window.location.reload();">
+                            설정 완료 및 대시보드로 이동
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer-like decoration -->
+<footer class="relative z-10 w-full py-8 px-md flex flex-col md:flex-row justify-between items-center gap-4 text-on-surface-variant">
+<p class="font-label-sm text-label-sm">© 2024 CartTiming Inc. 모든 권리 보유.</p>
+<div class="flex gap-6">
+<a class="font-label-sm text-label-sm hover:text-primary transition-colors" href="#">이용약관</a>
+<a class="font-label-sm text-label-sm hover:text-primary transition-colors" href="#">개인정보처리방침</a>
+<a class="font-label-sm text-label-sm hover:text-primary transition-colors" href="#">고객지원</a>
+</div>
+</footer>
+<script>
+        function goToStep(step) {
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            const card = document.getElementById('auth-card');
+
+            if (step === 2) {
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+                card.classList.add('ring-2', 'ring-primary-fixed');
+            } else {
+                step2.classList.add('hidden');
+                step1.classList.remove('hidden');
+                card.classList.remove('ring-2', 'ring-primary-fixed');
+            }
+        }
+
+        function toggleChip(btn) {
+            const isActive = btn.classList.contains('bg-secondary-container');
+            if (isActive) {
+                btn.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'border-transparent');
+                btn.classList.add('border-outline-variant');
+            } else {
+                btn.classList.add('bg-secondary-container', 'text-on-secondary-container', 'border-transparent');
+                btn.classList.remove('border-outline-variant');
+            }
+        }
+
+        // Atmospheric micro-interaction: Subtle mouse parallax on desktop
+        if (window.innerWidth > 768) {
+            document.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) / 50;
+                const moveY = (e.clientY - window.innerHeight / 2) / 50;
+                const animatedVisual = document.querySelector('.animate-float');
+                if (animatedVisual) {
+                    animatedVisual.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                }
+            });
+        }
+    </script>
+</body></html>

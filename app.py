@@ -266,6 +266,54 @@ with open(os.path.join(BASE_DIR, "dashboard.html"), encoding="utf-8") as _f:
     DASHBOARD_HTML = _f.read()
 
 
+# ── CartTiming 앱 화면 (Stitch 목업 + 실데이터 연동) ─────────
+SCREENS_DIR = os.path.join(BASE_DIR, "app_screens")
+# 라우트 슬러그 → 화면 파일. 홈은 home.html + 실데이터 스크립트
+SCREEN_ROUTES = {
+    "": "home", "home": "home", "onboarding": "onboarding",
+    "store-register": "store-register", "login": "onboarding",
+    "item-analysis": "item-analysis", "deals": "deals", "plan": "plan",
+    "inventory": "inventory", "alerts": "alerts", "orders": "orders",
+    "orders-table": "orders-table", "orders-filter": "orders-filter",
+    "bom-register": "bom-register",
+}
+_SCREEN_CACHE = {}
+
+
+def _render_screen(slug):
+    name = SCREEN_ROUTES.get(slug)
+    if not name:
+        return None
+    if name in _SCREEN_CACHE:
+        return _SCREEN_CACHE[name]
+    with open(os.path.join(SCREENS_DIR, f"{name}.html"), encoding="utf-8") as f:
+        html = f.read()
+    inject = '<script src="/app/static/nav.js"></script>'
+    if name == "home":
+        inject += '<script src="/app/static/home-live.js"></script>'
+    html = html.replace("</body>", inject + "</body>")
+    _SCREEN_CACHE[name] = html
+    return html
+
+
+@app.get("/app/static/{fname}")
+def app_static(fname: str):
+    # 화면 공통 JS 서빙 (경로 이탈 차단)
+    if fname not in ("nav.js", "home-live.js", "bom-live.js"):
+        return HTMLResponse("not found", status_code=404)
+    with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
+        return HTMLResponse(f.read(), media_type="application/javascript")
+
+
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/app/{slug}", response_class=HTMLResponse)
+def app_screen(slug: str = ""):
+    html = _render_screen(slug)
+    if html is None:
+        return HTMLResponse("화면을 찾을 수 없습니다.", status_code=404)
+    return html
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming - BOM Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .trend-up { color: #ba1a1a; }
+        .trend-down { color: #006a60; }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bfc9c3;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#001453",
+                        "surface-bright": "#f8f9ff",
+                        "outline": "#707974",
+                        "surface": "#f8f9ff",
+                        "inverse-primary": "#95d3ba",
+                        "background": "#f8f9ff",
+                        "on-primary-container": "#80bea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed-dim": "#6bd8cb",
+                        "on-tertiary-fixed": "#00201d",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-secondary-fixed-variant": "#173bab",
+                        "on-surface-variant": "#404944",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#708cfd",
+                        "secondary": "#3755c3",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#dde1ff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#213145",
+                        "on-secondary-container": "#00217a",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#b0f0d6",
+                        "tertiary": "#00342f",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#004d46",
+                        "on-tertiary-fixed-variant": "#005049",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#53c2b5",
+                        "primary-fixed-dim": "#95d3ba",
+                        "outline-variant": "#bfc9c3",
+                        "on-surface": "#0b1c30",
+                        "on-primary-fixed": "#002117",
+                        "tertiary-fixed": "#89f5e7",
+                        "on-background": "#0b1c30",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#064e3b",
+                        "on-primary-fixed-variant": "#0b513d",
+                        "primary": "#003527",
+                        "surface-tint": "#2b6954"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "gutter": "12px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container-margin": "16px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "data-mono": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-md h-16 fixed top-0 z-50 bg-surface border-b border-outline-variant shadow-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">CartTiming</h1>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs px-sm py-1 bg-surface-container rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="font-label-md text-label-md text-on-surface">나의 레스토랑</span>
+<span class="material-symbols-outlined text-[20px]">expand_more</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer">notifications</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-20 px-container-margin max-w-screen-xl mx-auto space-y-lg">
+<!-- Summary Alert Section -->
+<section class="mt-4">
+<div class="p-md bg-error-container border border-error/20 rounded-xl flex items-center gap-md shadow-sm">
+<div class="w-12 h-12 bg-on-error rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div>
+<h2 class="font-label-md text-label-md text-on-error-container">다음 달 예상 비용 분석</h2>
+<p class="font-headline-md text-headline-md font-bold text-on-error-container">+15% 지출 증가 예상</p>
+</div>
+<button class="ml-auto p-2">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Bento Grid: Main Dashboard Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Safe Stock Alert (Bento Item 1) -->
+<div class="md:col-span-4 p-md bg-secondary text-on-secondary rounded-xl shadow-lg relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 opacity-10 scale-150 group-hover:rotate-12 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">inventory_2</span>
+</div>
+<div class="relative z-10 flex flex-col h-full justify-between gap-xl">
+<div>
+<div class="flex items-center gap-xs mb-sm">
+<span class="material-symbols-outlined text-[18px]">emergency</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">재고 확보 알림</span>
+</div>
+<p class="font-headline-md text-headline-md font-bold leading-tight">마늘 가격 2주 뒤 30% 폭등 예상!</p>
+<p class="mt-sm font-body-sm text-body-sm opacity-90">사장님 재고가 7일 뒤 소진되는데, 그때 가격이 가장 비쌉니다. 지금 14일 치를 미리 발주하여 원가를 절감하세요.</p>
+</div>
+<div class="flex flex-col gap-sm w-full"><button class="bg-on-secondary text-secondary font-label-md text-label-md py-sm px-md rounded-lg w-full flex items-center justify-center gap-xs hover:bg-secondary-fixed transition-colors">최적 수량 선매입하기<span class="material-symbols-outlined text-[18px]">shopping_cart</span></button><a class="text-center font-label-sm text-label-sm text-on-secondary opacity-80 hover:opacity-100 underline decoration-on-secondary/30" href="#">가성비 대체재(냉동/수입산) 보러 가기</a></div>
+</div>
+</div>
+<!-- Advanced Chart: Price Trend (Bento Item 2) -->
+<div class="md:col-span-8 p-lg bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm">
+<div class="flex justify-between items-center mb-lg">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">핵심 식자재 가격 추이</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">AI 기반 향후 4주간 예측 트렌드</p>
+</div>
+<div class="flex gap-sm">
+<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">마늘</span>
+<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">양파</span>
+</div>
+</div>
+<!-- Simplified Vector Chart Area -->
+<div class="relative h-48 w-full bg-surface-container-low/30 rounded-lg border border-dashed border-outline-variant/50 flex items-end px-md pb-md overflow-hidden">
+<!-- Chart Simulation using SVG -->
+<svg class="absolute inset-0 w-full h-full preserve-3d" viewbox="0 0 1000 200">
+<!-- Garlic Path (Red/Up) -->
+<path d="M0,150 Q150,140 300,160 T600,100 T1000,20" fill="none" stroke="#ba1a1a" stroke-linecap="round" stroke-width="4"></path>
+<!-- Onion Path (Blue/Down) -->
+<path d="M0,50 Q200,80 400,60 T700,120 T1000,140" fill="none" stroke="#3755c3" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+<div class="flex justify-between w-full relative z-10 text-[10px] font-label-sm text-on-surface-variant">
+<span>현재</span>
+<span>1주 뒤</span>
+<span>2주 뒤</span>
+<span>3주 뒤</span>
+<span>4주 뒤</span>
+</div>
+</div>
+</div>
+<!-- BOM List: Menu Predictions (Bento Item 3 - Full Width) -->
+<div class="md:col-span-12 space-y-md">
+<div class="flex justify-between items-end">
+<h3 class="font-headline-md text-headline-md text-on-surface">메뉴별 원가 변동 예측 (BOM)</h3>
+<button class="font-label-md text-label-md text-secondary flex items-center gap-xs">
+                        전체 보기
+                        <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- BOM Card: Kimchi Stew -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center overflow-hidden" data-alt="A macro food photography shot of a bubbling red Kimchi stew in a black stone pot. The steam rises gently in a professional kitchen setting with soft warm lighting. The aesthetic is clean and modern, highlighting the vibrant colors of the ingredients. Corporate SaaS design style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCSZGYMJTSpGENbihRCnOXoFWL-6V6lJlu1bWmi2-3-aZVirNFtZ11I8NJjguNl4poac9n4utDPNb5EhwnjbpSNNK07GLnxkK9PMN_YCpOSEcMi18nBLG69mbLX8KfQxbr2ttp1BpnN0WzX_7HrxsgVUMRs35JPRBgsDjIemMEKcMgh_RElPWMM_cQxYix94RicDZksyopiBfnKMywlMp0KZXgZ_1s2PFy94909VGLE-VoagOmVl_TR')"></div>
+<span class="font-label-sm text-label-sm px-sm py-xs bg-error-container text-error rounded-full">+12% 위험 (+450원/인분)</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">김치찌개</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">주요 원인: 대파, 마늘 가격 상승</p>
+</div>
+<div class="pt-sm border-t border-outline-variant flex justify-between items-end">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">4주 뒤 원가</p>
+<p class="font-data-mono text-data-mono text-on-surface">₩4,250</p>
+</div>
+<span class="material-symbols-outlined trend-up">trending_up</span>
+</div>
+</div>
+<!-- BOM Card: Carbonara -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center overflow-hidden" data-alt="A professional plate of creamy Italian pasta carbonara topped with black pepper and parsley. The shot is captured in a bright, high-key studio environment with soft natural lighting. Minimalist presentation on a white ceramic plate, reflecting a premium B2B SaaS dashboard aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD7pVfRzRsjJpxyyDIFvTfb0SD1LsGR5cZr4OzNx7ntXxcIfRAzvF81yZQBuAfhebRej5zE6ACjXGWu83PCICFx35VPUxfzAw857YHL7dLgbsWRtrZlyiTwZE1mMVsQPV4O6GK_5VY6XQtwi4qHIGqjXr8IBmQ9bKyQnD4WZFdrcZIXOO4K5P-uPc_EquRn5zu8gwalnDT4GQXB7I2kONAJ2ERO5_ZVOzc8v9HIWCZt5-R1Yv2NFN0E')"></div>
+<span class="font-label-sm text-label-sm px-sm py-xs bg-tertiary-container text-on-tertiary-container rounded-full">-3.5% 안정 (-240원/인분)</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">까르보나라 파스타</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">주요 원인: 유제품 가격 하락세</p>
+</div>
+<div class="pt-sm border-t border-outline-variant flex justify-between items-end">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">4주 뒤 원가</p>
+<p class="font-data-mono text-data-mono text-on-surface">₩6,800</p>
+</div>
+<span class="material-symbols-outlined trend-down">trending_down</span>
+</div>
+</div>
+<!-- BOM Card: Fried Rice -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center overflow-hidden" data-alt="A close-up shot of golden egg fried rice with colorful vegetables like peas and carrots. The dish is presented in a modern, matte-finish bowl. The lighting is crisp and even, suitable for a clean SaaS interface. High contrast, professional culinary photography style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDvGMJPQ0cputCrWEd7zYL0BWUsxVXJPnkTXtZzD7d9KumYp421MtoJJ0dRKAZhDI1DHasryMXHpF6GnBNFs99zy1xBomjNnliV2nSsXmbtuYkyB7Jn1NyIX2OZmfWd_jOToGHV-LmgGH-OBdc5mPerhEpN1dsi90XlVsXgTx9x8xgvUg3Akpu6wLUBgfsCaucZ-1mIsryagx9AHXy-ktxCXy8P2rnZ2x9218EzuIfebeCgPrJUg15')"></div>
+<span class="font-label-sm text-label-sm px-sm py-xs bg-surface-container text-on-surface-variant rounded-full">변동 없음 (+0원/인분)</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">야채 볶음밥</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">주요 원인: 곡물 가격 보합세</p>
+</div>
+<div class="pt-sm border-t border-outline-variant flex justify-between items-end">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">4주 뒤 원가</p>
+<p class="font-data-mono text-data-mono text-on-surface">₩2,100</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">horizontal_rule</span>
+</div>
+</div>
+<!-- BOM Card: Beef Salad -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center overflow-hidden" data-alt="Fresh vibrant beef salad with thin slices of steak and crisp green lettuce. Bright, clean light-mode aesthetic with soft focus background. Professional food styling, commercial quality photography for a high-end SaaS data platform." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDvmadz52l8eeVjLKsTkuAYlJhclBYjwW4k3PH_sxa5wh5UJc1BX1-eIX3_8dLK1EqLW5sbXEZOVNyagpP_iKBpir2Ssuc6pSxwP5X02KBlNvxF3lIGSdkEUNGV-IhRG3vTi4nPfZW7EGD70sX8aipHP_Wj1rD1YPZxDPhb8r6Pe6qs3_3GUXv39gQor6G4xT7pxtz5eTO5c6bGvb-Zks_IYrO5KgKsojbAF0MRUp_WnLMhhjRBDeLZ')"></div>
+<span class="font-label-sm text-label-sm px-sm py-xs bg-error-container text-error rounded-full">+8.2% 상승 (+680원/인분)</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">소고기 샐러드</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">주요 원인: 소고기 수입가 상승</p>
+</div>
+<div class="pt-sm border-t border-outline-variant flex justify-between items-end">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">4주 뒤 원가</p>
+<p class="font-data-mono text-data-mono text-on-surface">₩8,950</p>
+</div>
+<span class="material-symbols-outlined trend-up">trending_up</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-sm bg-surface border-t border-outline-variant shadow-lg rounded-t-xl">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">홈</span>
+</a>
+<!-- Predictions -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-sm text-label-sm">예측 분석</span>
+</a>
+<!-- Smart Deal -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-sm text-label-sm">스마트 딜</span>
+</a>
+<!-- My Page -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">내 정보</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.bg-surface-container-lowest');
+            cards.forEach(card => {
+                card.addEventListener('mousedown', () => {
+                    card.style.transform = 'scale(0.98)';
+                    card.style.transition = 'transform 0.1s';
+                });
+                card.addEventListener('mouseup', () => {
+                    card.style.transform = 'scale(1)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+</body></html>

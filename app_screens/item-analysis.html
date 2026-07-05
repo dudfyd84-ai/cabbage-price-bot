@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming | 마늘 원가 분석</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#002117",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "primary": "#003527",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dde1ff",
+                    "outline-variant": "#bfc9c3",
+                    "outline": "#707974",
+                    "surface-dim": "#cbdbf5",
+                    "tertiary": "#00342f",
+                    "on-tertiary-fixed": "#00201d",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "primary-fixed": "#b0f0d6",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "tertiary-container": "#004d46",
+                    "on-secondary-fixed": "#001453",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#2b6954",
+                    "on-tertiary-container": "#53c2b5",
+                    "surface-bright": "#f8f9ff",
+                    "on-background": "#0b1c30",
+                    "inverse-primary": "#95d3ba",
+                    "inverse-surface": "#213145",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-container": "#708cfd",
+                    "tertiary-fixed": "#89f5e7",
+                    "on-secondary-container": "#00217a",
+                    "surface-container-low": "#eff4ff",
+                    "surface": "#f8f9ff",
+                    "secondary": "#3755c3",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#404944",
+                    "surface-variant": "#d3e4fe",
+                    "primary-container": "#064e3b",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "on-primary-container": "#80bea6",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "surface-container-high": "#dce9ff",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#95d3ba"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "12px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "container-margin": "16px",
+                    "2xl": "48px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "data-mono": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"]
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chart-gradient-bg {
+            background: linear-gradient(to bottom, rgba(112, 140, 253, 0.05), transparent);
+        }
+        .confidence-area {
+            fill: rgba(30, 64, 175, 0.08);
+        }
+        .historical-line {
+            stroke-dasharray: 0;
+            transition: all 0.5s ease;
+        }
+        .prediction-line {
+            stroke-dasharray: 4 4;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-container-margin py-sm sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-headline-md" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">CartTiming</h1>
+</div>
+<div class="hidden md:flex gap-6">
+<button class="text-primary font-bold transition-colors duration-200">인벤토리</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">예측 분석</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">스마트 딜</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">내 정보</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-label-sm">JD</div>
+</div>
+</header>
+<main class="max-w-[1280px] mx-auto px-container-margin py-md space-y-6">
+<!-- Header & Breadcrumbs -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="text-label-sm font-label-sm">예측 분석</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-label-sm font-label-sm text-primary font-bold">식재료 분석</span>
+</nav>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">마늘 원가 분석</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">글로벌 공급망 및 지역 기상 패턴 기반 실시간 예측</p>
+</div>
+<div class="flex items-center bg-white border border-outline-variant p-1 rounded-lg self-start">
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">1주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">2주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all bg-secondary text-white shadow-sm">4주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">8주</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Main Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Main Chart Container (Lg: 8 cols) -->
+<div class="lg:col-span-8 bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
+<div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">과거 시세</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 border-2 border-dashed border-secondary rounded-full"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">예측 시세</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-secondary/10 rounded-sm"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">95% 신뢰 구간</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-secondary text-label-md font-label-md hover:underline">
+<span class="material-symbols-outlined text-[18px]">download</span> 데이터 내보내기
+                    </button>
+</div>
+<div class="relative w-full h-[320px] md:h-[400px] p-md chart-gradient-bg">
+<!-- Simple SVG Chart Mockup for Layout -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 300">
+<!-- Grid Lines -->
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="50" y2="50"></line>
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="150" y2="150"></line>
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="250" y2="250"></line>
+<!-- Confidence Area -->
+<path class="confidence-area" d="M 400 150 L 500 130 L 600 145 L 700 120 L 800 100 L 800 220 L 700 200 L 600 210 L 500 190 L 400 150 Z"></path>
+<!-- Historical Line -->
+<path class="historical-line" d="M 0 250 L 100 230 L 200 240 L 300 200 L 400 150" fill="none" stroke="#1E40AF" stroke-width="3"></path>
+<!-- Prediction Line -->
+<path class="prediction-line" d="M 400 150 L 500 160 L 600 180 L 700 160 L 800 160" fill="none" stroke="#1E40AF" stroke-width="3"></path>
+<!-- Current Position Marker -->
+<circle cx="400" cy="150" fill="#1E40AF" r="6" stroke="#FFFFFF" stroke-width="2"></circle>
+</svg>
+<!-- Axis Labels -->
+<div class="absolute bottom-0 left-0 right-0 flex justify-between px-md py-xs text-label-sm font-label-sm text-outline">
+<span>9월 12일</span>
+<span>9월 26일</span>
+<span class="text-secondary font-bold">오늘</span>
+<span>10월 14일</span>
+<span>10월 28일</span>
+</div>
+</div>
+</div>
+<!-- Summary Section (Lg: 4 cols) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- AI Summary Card -->
+<div class="bg-primary-container p-lg rounded-xl text-on-primary-container space-y-4 shadow-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined animate-pulse-subtle">auto_awesome</span>
+<h3 class="font-headline-md text-headline-md">AI 인사이트</h3>
+</div>
+<div class="space-y-4">
+<div class="pb-4 border-b border-on-primary-container/20">
+<p class="text-label-sm opacity-80 mb-1">예상 평균 가격</p>
+<p class="text-display-lg font-display-lg">$4.12<span class="text-label-md font-label-md opacity-60 ml-1">/ lb</span></p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-label-sm opacity-80 mb-1">예측 변동폭</p>
+<div class="flex items-center gap-1 text-headline-md text-error-container">
+<span class="material-symbols-outlined">trending_up</span>
+<span>+6.4%</span>
+</div>
+</div>
+<div>
+<p class="text-label-sm opacity-80 mb-1">신뢰도</p>
+<div class="flex items-center gap-1 text-headline-md text-primary-fixed">
+<span>94%</span>
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary-fixed text-on-primary-fixed font-bold rounded-lg text-label-md hover:opacity-90 transition-opacity">
+                        전략 수정하기
+                    </button>
+</div>
+<!-- Driver of Change List -->
+<div class="bg-white border border-outline-variant p-lg rounded-xl shadow-sm space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">변동 주요 원인</h3>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-error-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[18px]">rainy</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">기상 악화 (중국)</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">산둥성 폭우로 인해 마늘 수확이 약 10일 지연될 것으로 예상됩니다.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">calendar_month</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">계절적 수요 급증</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">4분기 과거 데이터 분석 결과, 식자재 도매 구매량이 15% 증가하는 경향을 보입니다.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-[18px]">local_shipping</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">해상 운임 지수</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">표준 컨테이너 운임이 안정화 추세에 접어들어, 공급 측면의 가격 상승 압박이 완화되고 있습니다.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Secondary Prediction Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container rounded-lg text-secondary">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-bold text-on-surface-variant uppercase">재고 상태</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">권장 재고량</h4>
+<p class="text-headline-md font-headline-md text-on-surface">2,400 lbs</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-secondary transition-colors">지금 주문 시 약 600,000원 절감 가능 →</p>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-error transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container rounded-lg text-error">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<span class="px-2 py-1 bg-error-container rounded text-[10px] font-bold text-on-error-container uppercase">위험 알림</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">변동성 점수</h4>
+<p class="text-headline-md font-headline-md text-error">높음 (7.2)</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-error transition-colors">공급망 차질 내역 보기 →</p>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<span class="px-2 py-1 bg-primary-fixed rounded text-[10px] font-bold text-on-primary-fixed-variant uppercase">스마트 딜</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">대체 공급처</h4>
+<p class="text-headline-md font-headline-md text-primary">Ventura Farms</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-primary transition-colors">현재 거래처보다 8% 저렴 →</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center px-gutter py-xs bg-surface border-t border-outline-variant shadow-sm z-50 md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">inventory_2</span>
+<span class="font-label-sm text-label-sm">인벤토리</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-label-sm text-label-sm">예측분석</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">local_offer</span>
+<span class="font-label-sm text-label-sm">스마트 딜</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="font-label-sm text-label-sm">내 정보</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for prediction toggles
+        const buttons = document.querySelectorAll('.flex.items-center.bg-white.border button');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => {
+                    b.classList.remove('bg-secondary', 'text-white', 'shadow-sm');
+                    b.classList.add('text-on-surface-variant', 'hover:bg-surface-container-low');
+                });
+                btn.classList.add('bg-secondary', 'text-white', 'shadow-sm');
+                btn.classList.remove('text-on-surface-variant', 'hover:bg-surface-container-low');
+                
+                // Simulate chart updating (minor visual shift)
+                const histLine = document.querySelector('.historical-line');
+                const predLine = document.querySelector('.prediction-line');
+                if (histLine && predLine) {
+                    histLine.style.opacity = '0.7';
+                    predLine.style.opacity = '0.7';
+                    setTimeout(() => {
+                        histLine.style.opacity = '1';
+                        predLine.style.opacity = '1';
+                    }, 300);
+                }
+            });
+        });
+    </script>
+</body></html>

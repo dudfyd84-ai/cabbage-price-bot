@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>알림 설정 - CartTiming</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#80bea6",
+                        "primary-container": "#064e3b",
+                        "tertiary-fixed-dim": "#6bd8cb",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#002117",
+                        "surface-container": "#e5eeff",
+                        "inverse-primary": "#95d3ba",
+                        "on-tertiary-fixed-variant": "#005049",
+                        "on-secondary-container": "#00217a",
+                        "inverse-on-surface": "#eaf1ff",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "secondary": "#3755c3",
+                        "primary-fixed": "#b0f0d6",
+                        "surface-tint": "#2b6954",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#dde1ff",
+                        "secondary-container": "#708cfd",
+                        "on-surface": "#0b1c30",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-container": "#53c2b5",
+                        "primary-fixed-dim": "#95d3ba",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#404944",
+                        "surface": "#f8f9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-secondary-fixed": "#001453",
+                        "background": "#f8f9ff",
+                        "tertiary-container": "#004d46",
+                        "outline": "#707974",
+                        "inverse-surface": "#213145",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0b513d",
+                        "tertiary": "#00342f",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-background": "#0b1c30",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#00201d",
+                        "on-secondary-fixed-variant": "#173bab",
+                        "primary": "#003527",
+                        "outline-variant": "#bfc9c3",
+                        "tertiary-fixed": "#89f5e7",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "gutter": "12px",
+                        "container-margin": "16px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "base": "4px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "data-mono": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f8f9ff;
+            color: #0b1c30;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #064e3b;
+        }
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(100%);
+            background-color: #ffffff;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        /* Mobile-First Layout Restrictions */
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+            min-height: 100vh;
+            padding-bottom: 80px; /* Space for BottomNavBar */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface">
+<div class="app-container">
+<!-- TopAppBar (From JSON Hierarchy) -->
+<header class="flex items-center justify-between px-container-margin w-full h-16 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<button aria-label="Back" class="p-2 rounded-full hover:bg-surface-container-low transition-colors duration-200 text-primary">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed">Notification Settings</h1>
+</div>
+<button aria-label="More options" class="p-2 rounded-full hover:bg-surface-container-low transition-colors duration-200 text-primary">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="px-container-margin py-lg space-y-md">
+<!-- Hero Header Section -->
+<section class="mb-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs md:font-headline-lg md:text-headline-lg">알림 설정</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">CartTiming의 스마트한 예측 및 관리 정보를 실시간으로 받아보세요.</p>
+</section>
+<!-- Notification Categories (Bento Grid on Desktop, Stacked on Mobile) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-md">
+<!-- Category 1: 신규 주문 알림 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex items-start justify-between custom-shadow hover:border-secondary transition-colors duration-300">
+<div class="flex gap-md">
+<div class="mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">신규 주문 알림</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">새로운 주문이 발생했을 때 실시간으로 알려드립니다.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0 ml-sm">
+<input checked="" class="toggle-checkbox hidden" id="toggle-1" type="checkbox"/>
+<label class="toggle-label absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-outline-variant rounded-full transition-colors duration-200 after:content-[''] after:absolute after:h-5 after:w-5 after:left-0.5 after:bottom-0.5 after:bg-white after:rounded-full after:transition-transform after:duration-200" for="toggle-1"></label>
+</div>
+</div>
+<!-- Category 2: 재고 부족 알림 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex items-start justify-between custom-shadow hover:border-secondary transition-colors duration-300">
+<div class="flex gap-md">
+<div class="mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">재고 부족 알림</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">설정한 안전 재고 이하로 떨어지면 알림을 보냅니다.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0 ml-sm">
+<input checked="" class="toggle-checkbox hidden" id="toggle-2" type="checkbox"/>
+<label class="toggle-label absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-outline-variant rounded-full transition-colors duration-200 after:content-[''] after:absolute after:h-5 after:w-5 after:left-0.5 after:bottom-0.5 after:bg-white after:rounded-full after:transition-transform after:duration-200" for="toggle-2"></label>
+</div>
+</div>
+<!-- Category 3: 가격 변동 알림 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex items-start justify-between custom-shadow hover:border-secondary transition-colors duration-300">
+<div class="flex gap-md">
+<div class="mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">가격 변동 알림</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">관심 품목의 급격한 가격 변동 시 예측 정보를 제공합니다.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0 ml-sm">
+<input class="toggle-checkbox hidden" id="toggle-3" type="checkbox"/>
+<label class="toggle-label absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-outline-variant rounded-full transition-colors duration-200 after:content-[''] after:absolute after:h-5 after:w-5 after:left-0.5 after:bottom-0.5 after:bg-white after:rounded-full after:transition-transform after:duration-200" for="toggle-3"></label>
+</div>
+</div>
+<!-- Category 4: 스마트 딜 & 프로모션 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex items-start justify-between custom-shadow hover:border-secondary transition-colors duration-300">
+<div class="flex gap-md">
+<div class="mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="local_offer" style="font-variation-settings: 'FILL' 1;">local_offer</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">스마트 딜 &amp; 프로모션</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">최적의 구매 시점 및 특가 정보를 안내합니다.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0 ml-sm">
+<input checked="" class="toggle-checkbox hidden" id="toggle-4" type="checkbox"/>
+<label class="toggle-label absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-outline-variant rounded-full transition-colors duration-200 after:content-[''] after:absolute after:h-5 after:w-5 after:left-0.5 after:bottom-0.5 after:bg-white after:rounded-full after:transition-transform after:duration-200" for="toggle-4"></label>
+</div>
+</div>
+<!-- Category 5: 시스템 알림 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex items-start justify-between custom-shadow hover:border-secondary transition-colors duration-300">
+<div class="flex gap-md">
+<div class="mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="settings">settings</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">시스템 알림</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">서비스 업데이트 및 중요 공지사항을 알려드립니다.</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0 ml-sm">
+<input checked="" class="toggle-checkbox hidden" id="toggle-5" type="checkbox"/>
+<label class="toggle-label absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-outline-variant rounded-full transition-colors duration-200 after:content-[''] after:absolute after:h-5 after:w-5 after:left-0.5 after:bottom-0.5 after:bg-white after:rounded-full after:transition-transform after:duration-200" for="toggle-5"></label>
+</div>
+</div>
+</div>
+<!-- Contextual Prediction Visual -->
+<div class="mt-2xl relative rounded-2xl overflow-hidden h-48 flex items-center justify-center bg-inverse-surface">
+
+<div class="relative z-10 text-center px-lg">
+<span class="material-symbols-outlined text-secondary-fixed text-4xl mb-sm" data-icon="auto_awesome">auto_awesome</span>
+<p class="text-white font-label-md text-label-md">CartTiming AI is constantly monitoring market trends.</p>
+<p class="text-surface-dim font-body-sm text-body-sm mt-xs">We notify you only when it matters most.</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (From JSON Hierarchy) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 px-container-margin bg-surface-container dark:bg-surface-container-lowest shadow-sm h-16 max-w-[1280px] left-1/2 -translate-x-1/2">
+<!-- Inventory Tab -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/20 transition-transform active:scale-90 px-2 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-sm text-label-sm">Inventory</span>
+</a>
+<!-- Orders Tab -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/20 transition-transform active:scale-90 px-2 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-sm text-label-sm">Orders</span>
+</a>
+<!-- Trends Tab -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/20 transition-transform active:scale-90 px-2 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-label-sm text-label-sm">Trends</span>
+</a>
+<!-- Settings Tab (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+</div>
+<script>
+        // Simple Micro-interaction for toggles
+        document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const parent = this.closest('div.bg-surface-container-lowest');
+                if (this.checked) {
+                    parent.classList.add('border-primary-container');
+                    parent.classList.remove('border-outline-variant');
+                } else {
+                    parent.classList.remove('border-primary-container');
+                    parent.classList.add('border-outline-variant');
+                }
+            });
+        });
+
+        // Initialize active state styling for already checked boxes
+        document.querySelectorAll('.toggle-checkbox:checked').forEach(toggle => {
+             const parent = toggle.closest('div.bg-surface-container-lowest');
+             parent.classList.add('border-primary-container');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming | 주문 관리</title>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "on-surface": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#2b6954",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "inverse-surface": "#213145",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#b0f0d6",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#002117",
+                    "on-tertiary-fixed": "#00201d",
+                    "tertiary-fixed": "#89f5e7",
+                    "outline-variant": "#bfc9c3",
+                    "surface-dim": "#cbdbf5",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#001453",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-bright": "#f8f9ff",
+                    "tertiary-container": "#004d46",
+                    "tertiary": "#00342f",
+                    "primary-fixed-dim": "#95d3ba",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "on-primary-container": "#80bea6",
+                    "on-error": "#ffffff",
+                    "secondary": "#3755c3",
+                    "on-background": "#0b1c30",
+                    "surface": "#f8f9ff",
+                    "primary-container": "#064e3b",
+                    "primary": "#003527",
+                    "on-secondary-container": "#00217a",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#dde1ff",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "on-surface-variant": "#404944",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#53c2b5",
+                    "surface-container-highest": "#d3e4fe",
+                    "surface-container-high": "#dce9ff",
+                    "inverse-primary": "#95d3ba",
+                    "surface-container": "#e5eeff",
+                    "secondary-container": "#708cfd",
+                    "background": "#f8f9ff",
+                    "outline": "#707974"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "base": "4px",
+                    "container-margin": "16px",
+                    "md": "16px",
+                    "2xl": "48px",
+                    "gutter": "12px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "data-mono": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .order-card-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .order-card-transition:active {
+            transform: scale(0.98);
+            background-color: var(--surface-container-low);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex items-center justify-between px-md h-16">
+<div class="flex items-center gap-sm">
+<button class="p-sm rounded-full hover:bg-surface-variant transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">CartTiming</h1>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-sm rounded-full hover:bg-surface-variant transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-20 px-container-margin max-w-5xl mx-auto">
+<!-- Dashboard Header & Filter -->
+<section class="mb-lg">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">주문 관리</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">거래 내역을 실시간으로 확인하고 관리하세요.</p>
+</div>
+<!-- Date Range Filter -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary ml-2" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<div class="flex items-center gap-xs font-label-md text-label-md">
+<span class="text-on-surface-variant">2024.05.01</span>
+<span class="text-outline">~</span>
+<span class="text-on-surface-variant">2024.05.31</span>
+</div>
+<button class="ml-2 px-md py-base bg-secondary text-on-secondary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+                    필터
+                </button>
+</div>
+</div>
+<!-- Summary Chips -->
+<div class="flex gap-sm overflow-x-auto pb-base no-scrollbar">
+<div class="flex-shrink-0 px-md py-sm bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">list_alt</span>
+                전체 주문: 124
+            </div>
+<div class="flex-shrink-0 px-md py-sm bg-surface-container-high text-on-surface rounded-full font-label-md text-label-md flex items-center gap-xs border border-outline-variant">
+<span class="material-symbols-outlined text-[18px] text-error">pending_actions</span>
+                대기 중: 12
+            </div>
+<div class="flex-shrink-0 px-md py-sm bg-surface-container-high text-on-surface rounded-full font-label-md text-label-md flex items-center gap-xs border border-outline-variant">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+                배송 중: 8
+            </div>
+</div>
+</section>
+<!-- Orders Table/List -->
+<div class="grid grid-cols-1 gap-md mb-lg">
+<!-- Order Header (Desktop Only) -->
+<div class="hidden md:grid grid-cols-6 px-lg py-sm bg-surface-container text-on-surface-variant font-label-sm text-label-sm rounded-t-xl border-x border-t border-outline-variant">
+<div class="col-span-1">주문 ID</div>
+<div class="col-span-1">날짜</div>
+<div class="col-span-2">거래처</div>
+<div class="col-span-1">합계 금액</div>
+<div class="col-span-1 text-right">상태</div>
+</div>
+<!-- Order Items -->
+<div class="flex flex-col gap-sm md:gap-0">
+<!-- Order 1: Completed -->
+<div class="order-card-transition bg-white border border-outline-variant p-md md:px-lg md:py-md md:grid md:grid-cols-6 md:items-center hover:shadow-md cursor-pointer md:border-b md:first:rounded-t-none md:last:rounded-b-xl group">
+<div class="flex justify-between md:block col-span-1 mb-base md:mb-0">
+<span class="font-data-mono text-data-mono text-secondary">#20240520-01</span>
+<span class="md:hidden font-label-sm text-label-sm px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed">완료</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant col-span-1 mb-base md:mb-0">2024.05.20</div>
+<div class="font-label-md text-label-md text-on-surface col-span-2 mb-sm md:mb-0 flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">store</span>
+                    서울 도매 마늘
+                </div>
+<div class="font-headline-md text-[18px] font-bold text-on-surface col-span-1">₩150,000</div>
+<div class="hidden md:flex justify-end col-span-1">
+<span class="px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">완료</span>
+</div>
+</div>
+<!-- Order 2: Shipping -->
+<div class="order-card-transition bg-white border border-outline-variant p-md md:px-lg md:py-md md:grid md:grid-cols-6 md:items-center hover:shadow-md cursor-pointer md:border-t-0 md:border-b group">
+<div class="flex justify-between md:block col-span-1 mb-base md:mb-0">
+<span class="font-data-mono text-data-mono text-secondary">#20240520-02</span>
+<span class="md:hidden font-label-sm text-label-sm px-md py-xs rounded-full bg-secondary-fixed text-on-secondary-fixed">배송 중</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant col-span-1 mb-base md:mb-0">2024.05.20</div>
+<div class="font-label-md text-label-md text-on-surface col-span-2 mb-sm md:mb-0 flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">factory</span>
+                    그린 밸리 농산
+                </div>
+<div class="font-headline-md text-[18px] font-bold text-on-surface col-span-1">₩2,420,000</div>
+<div class="hidden md:flex justify-end col-span-1">
+<span class="px-md py-xs rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">배송 중</span>
+</div>
+</div>
+<!-- Order 3: Pending -->
+<div class="order-card-transition bg-white border border-outline-variant p-md md:px-lg md:py-md md:grid md:grid-cols-6 md:items-center hover:shadow-md cursor-pointer md:border-t-0 md:border-b group">
+<div class="flex justify-between md:block col-span-1 mb-base md:mb-0">
+<span class="font-data-mono text-data-mono text-secondary">#20240519-08</span>
+<span class="md:hidden font-label-sm text-label-sm px-md py-xs rounded-full bg-surface-container-highest text-on-surface-variant">대기 중</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant col-span-1 mb-base md:mb-0">2024.05.19</div>
+<div class="font-label-md text-label-md text-on-surface col-span-2 mb-sm md:mb-0 flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">local_shipping</span>
+                    인천 냉동 물류
+                </div>
+<div class="font-headline-md text-[18px] font-bold text-on-surface col-span-1">₩890,500</div>
+<div class="hidden md:flex justify-end col-span-1">
+<span class="px-md py-xs rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">대기 중</span>
+</div>
+</div>
+<!-- Order 4: Completed -->
+<div class="order-card-transition bg-white border border-outline-variant p-md md:px-lg md:py-md md:grid md:grid-cols-6 md:items-center hover:shadow-md cursor-pointer md:border-t-0 md:border-b group">
+<div class="flex justify-between md:block col-span-1 mb-base md:mb-0">
+<span class="font-data-mono text-data-mono text-secondary">#20240519-04</span>
+<span class="md:hidden font-label-sm text-label-sm px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed">완료</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant col-span-1 mb-base md:mb-0">2024.05.19</div>
+<div class="font-label-md text-label-md text-on-surface col-span-2 mb-sm md:mb-0 flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">store</span>
+                    부산 프리미엄 스파이스
+                </div>
+<div class="font-headline-md text-[18px] font-bold text-on-surface col-span-1">₩45,000</div>
+<div class="hidden md:flex justify-end col-span-1">
+<span class="px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">완료</span>
+</div>
+</div>
+<!-- Order 5: Completed -->
+<div class="order-card-transition bg-white border border-outline-variant p-md md:px-lg md:py-md md:grid md:grid-cols-6 md:items-center hover:shadow-md cursor-pointer md:border-t-0 md:last:rounded-b-xl group">
+<div class="flex justify-between md:block col-span-1 mb-base md:mb-0">
+<span class="font-data-mono text-data-mono text-secondary">#20240518-12</span>
+<span class="md:hidden font-label-sm text-label-sm px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed">완료</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant col-span-1 mb-base md:mb-0">2024.05.18</div>
+<div class="font-label-md text-label-md text-on-surface col-span-2 mb-sm md:mb-0 flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">factory</span>
+                    글로벌 곡물 상사
+                </div>
+<div class="font-headline-md text-[18px] font-bold text-on-surface col-span-1">₩1,120,000</div>
+<div class="hidden md:flex justify-end col-span-1">
+<span class="px-md py-xs rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">완료</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Load More -->
+<div class="flex justify-center mt-xl">
+<button class="flex items-center gap-sm px-xl py-md border border-outline rounded-full font-label-md text-label-md text-on-surface hover:bg-surface-variant transition-colors active:scale-95">
+            이전 내역 더보기
+            <span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t border-outline-variant shadow-lg flex justify-around items-center h-16 px-sm md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 duration-100">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-sm text-label-sm">인벤토리</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 duration-100">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-sm text-label-sm">시장동향</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-transform duration-100">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-sm text-label-sm">주문내역</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 duration-100">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">인사이트</span>
+</button>
+</nav>
+<!-- Desktop Sidebar (Hidden on Mobile) -->
+<div class="hidden md:flex fixed left-0 top-16 bottom-0 w-20 bg-surface border-r border-outline-variant flex-col items-center py-lg gap-xl z-40">
+<div class="w-12 h-12 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-variant cursor-pointer transition-colors" title="인벤토리">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-variant cursor-pointer transition-colors" title="시장동향">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-primary-container text-on-primary-container cursor-pointer" title="주문내역">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-variant cursor-pointer transition-colors" title="인사이트">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+</div>
+<script>
+    document.querySelectorAll('.order-card-transition').forEach(card => {
+        card.addEventListener('click', () => {
+            const orderId = card.querySelector('.font-data-mono').textContent;
+            console.log(`Navigating to details for ${orderId}`);
+            card.classList.add('bg-surface-container');
+            setTimeout(() => card.classList.remove('bg-surface-container'), 300);
+        });
+    });
+</script>
+</body></html>

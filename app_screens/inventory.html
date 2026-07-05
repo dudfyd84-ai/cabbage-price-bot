@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming - 재고 최적화 제안</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#b0f0d6",
+                    "primary": "#003527",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "error": "#ba1a1a",
+                    "on-surface": "#0b1c30",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#95d3ba",
+                    "secondary-container": "#708cfd",
+                    "surface": "#f8f9ff",
+                    "surface-bright": "#f8f9ff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-container": "#064e3b",
+                    "secondary": "#3755c3",
+                    "on-secondary-fixed": "#001453",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#00342f",
+                    "inverse-primary": "#95d3ba",
+                    "surface-container": "#e5eeff",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#dce9ff",
+                    "outline-variant": "#bfc9c3",
+                    "secondary-fixed": "#dde1ff",
+                    "on-tertiary-fixed": "#00201d",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#004d46",
+                    "surface-tint": "#2b6954",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "outline": "#707974",
+                    "surface-dim": "#cbdbf5",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-background": "#0b1c30",
+                    "on-secondary-container": "#00217a",
+                    "surface-variant": "#d3e4fe",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "on-primary-container": "#80bea6",
+                    "on-primary-fixed": "#002117",
+                    "inverse-surface": "#213145",
+                    "tertiary-fixed": "#89f5e7",
+                    "background": "#f8f9ff",
+                    "on-tertiary-container": "#53c2b5",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "on-surface-variant": "#404944",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "2xl": "48px",
+                    "container-margin": "16px",
+                    "xs": "4px",
+                    "base": "4px",
+                    "gutter": "12px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "data-mono": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-md h-16 w-full">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100">menu</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">재고 최적화 제안</h1>
+</div>
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100">notifications</button>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100">account_circle</button>
+</div>
+</header>
+<main class="pt-20 px-md max-w-lg mx-auto space-y-lg">
+<!-- Hero Section: Potential Savings -->
+<section class="mt-4">
+<div class="relative overflow-hidden bg-primary-container text-on-primary-container p-lg rounded-xl shadow-lg">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary opacity-20 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<p class="font-label-md text-label-md text-on-primary-container/80 mb-xs">이번 달 총 절감 가능액</p>
+<div class="flex items-baseline gap-xs">
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-on-primary-container">₩450,000</span>
+</div>
+<p class="mt-sm font-body-sm text-body-sm text-on-primary-container/70">모든 권장 사항을 적용하여 식자재 원가를 절감하세요.</p>
+</div>
+</div>
+</section>
+<!-- Section Title -->
+<section>
+<div class="flex items-center justify-between mb-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">품목별 제안</h2>
+<button class="flex items-center gap-xs text-secondary font-label-md text-label-md">
+                    필터링
+                    <span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Recommendation List -->
+<div class="space-y-md">
+<!-- Card 1: Garlic -->
+<article class="glass-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="flex p-md gap-md">
+<div class="w-20 h-20 rounded-lg bg-cover bg-center shrink-0 border border-outline-variant" data-alt="A clean, professional studio photograph of peeled garlic cloves in a small rustic wooden bowl. The lighting is soft and natural, emphasizing textures and fresh qualities. The background is a minimalist, light slate gray, maintaining a modern and high-end B2B SaaS aesthetic with professional clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDwpeOkXKmo8k_GZCjTFck1qOKhXf6z8Bgj9yPlXBX52hIKRZqZ7eoXvZBTrd_r2R02WK7RmafXQgkbyEk6XdH8_8Dw9KU37F8AWr_jXXOYPUWHnuvv_POiojvs4FrujFv0C4qL5cQBw4E09bDAEy1O0T-wTros3Vb-2oJNCyGqjKUMWQ9Fjf1jOfs8mvN5jdZadtqvxcAKZ3qUalPLW67kEB9oBKPI6X65u1xD-kJ1WB9V0K_D2xyN')"></div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">깐마늘</h3>
+<span class="bg-primary text-white font-label-sm text-label-sm px-3 py-1 rounded-full">선매입 권장</span>
+</div>
+<div class="mt-xs flex items-center gap-sm">
+<span class="text-error flex items-center font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+                                    2주 뒤 30% 폭등 예상
+                                </span>
+</div>
+</div>
+</div>
+<div class="px-md pb-md space-y-sm">
+<div class="bg-surface-container-low p-sm rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">권장 구매량</span>
+<span class="font-label-md text-label-md text-on-surface">향후 14일치 (약 20kg)</span>
+</div>
+<div class="flex items-center justify-between text-primary font-bold">
+<span class="font-body-sm text-body-sm">예상 절감액</span>
+<span class="font-label-md text-label-md text-primary">₩120,000 절감 예상</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed py-xs border-t border-outline-variant/30">
+                            주요 산지 장마로 인한 출하량 감소 및 도매가 상승 확실시. 선제적 재고 확보가 필요합니다.
+                        </p>
+<button class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-3 rounded-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-sm">
+                            지금 바로 구매하기
+                            <span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Onion -->
+<article class="glass-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="flex p-md gap-md">
+<div class="w-20 h-20 rounded-lg bg-cover bg-center shrink-0 border border-outline-variant" data-alt="Close-up commercial shot of fresh red and white onions with paper-thin golden skins, arranged artfully on a professional clean surface. The mood is authoritative and crisp, with sharp focus and bright high-key lighting, matching a sophisticated enterprise inventory management dashboard style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCiC-Et_TjNqIoq1i2i1iME7m5Ve4PlKXf8bcgJ-rvGkiMi9BKmhRha-YiryocrKo8ZFRnLhoMyjR_EO-xxNY7obi2yUrzQKOYzMfs9Q952W35ZkeoAQLFzgm9OMQWSiY4KS6Lou-j20K-BCRz4_7mUuVsmyBxO02KsmCzeK111WMHbeugF-aYJzeEa-uv0qAKUYxdTH-Whuvk3OA6EPI6Ph8Ohm16Jbliw8-G1CC2XsK3ag-mcpFtg')"></div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">양파</h3>
+<span class="bg-secondary text-white font-label-sm text-label-sm px-3 py-1 rounded-full">구매 대기</span>
+</div>
+<div class="mt-xs flex items-center gap-sm">
+<span class="text-primary-container flex items-center font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">trending_down</span>
+                                    1주 뒤 15% 하락 예상
+                                </span>
+</div>
+</div>
+</div>
+<div class="px-md pb-md space-y-sm">
+<div class="bg-surface-container-low p-sm rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">권장 구매량</span>
+<span class="font-label-md text-label-md text-on-surface">3일치 소량 분할 구매</span>
+</div>
+<div class="flex items-center justify-between text-secondary font-bold">
+<span class="font-body-sm text-body-sm">예상 절감액</span>
+<span class="font-label-md text-label-md">₩45,000 절감 예상</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed py-xs border-t border-outline-variant/30">
+                            제주 지역 조생양파 출하가 본격화됨에 따라 공급량 증대로 가격 하향 조정이 예상됩니다.
+                        </p>
+<button class="w-full border border-secondary text-secondary font-label-md text-label-md py-3 rounded-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-sm">
+                            거래처 연락하기
+                            <span class="material-symbols-outlined text-[20px]">phone_in_talk</span>
+</button>
+</div>
+</article>
+<!-- Card 3: Cabbage -->
+<article class="glass-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="flex p-md gap-md">
+<div class="w-20 h-20 rounded-lg bg-cover bg-center shrink-0 border border-outline-variant" data-alt="Vibrant green napa cabbage heads with crisp, detailed leaf textures. The photograph is professionally lit using a cool studio light setup, highlighting fresh farm-to-table quality suitable for a high-end B2B supply chain platform. The composition is clean and minimalist on a soft neutral background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA2tcAt92sVuJv_B7YCD10F2bdiZb5jXKehyTd14S3_LayqFbJeacoqMvdDJTx6efaW1BTmkb2eu1WD7c7Mnc2Fbm8FtDE2iBhrfBJJ6bQC-OWWKj8zFBXcROwJ5NFKWzVfg71Q11JfBgr7T0XD6Mo3T4IiiXiBJ-DWPvZWLFBblPHJKGUSVUpp7mcY5sqw8VYBF_8bZKXjuwzEA1g8DIJn6ZEukjgfpkDmNxjZKcFLF_vBdjh84wFQ')"></div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">배추</h3>
+<span class="bg-primary text-white font-label-sm text-label-sm px-3 py-1 rounded-full">선매입 권장</span>
+</div>
+<div class="mt-xs flex items-center gap-sm">
+<span class="text-error flex items-center font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+                                    내일 12% 상승 확정
+                                </span>
+</div>
+</div>
+</div>
+<div class="px-md pb-md space-y-sm">
+<div class="bg-surface-container-low p-sm rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">권장 구매량</span>
+<span class="font-label-md text-label-md text-on-surface">향후 7일치 (약 50망)</span>
+</div>
+<div class="flex items-center justify-between text-primary font-bold">
+<span class="font-body-sm text-body-sm">예상 절감액</span>
+<span class="font-label-md text-label-md">₩85,000 절감 예상</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed py-xs border-t border-outline-variant/30">
+                            운송비 인상 소급 적용으로 인해 명일 오전 경매가부터 인상폭 반영 예정입니다.
+                        </p>
+<button class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-3 rounded-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-sm">
+                            지금 바로 구매하기
+                            <span class="material-symbols-outlined text-[20px]">bolt</span>
+</button>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container dark:bg-surface-container-lowest shadow-[0_-1px_4px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 w-full pb-safe px-4">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-sm text-label-sm">인벤토리</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-sm text-label-sm">시장동향</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-sm text-label-sm">주문내역</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">인사이트</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for scroll effects on header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-md');
+                header.classList.remove('shadow-sm');
+            } else {
+                header.classList.add('shadow-sm');
+                header.classList.remove('shadow-md');
+            }
+        });
+    </script>
+</body></html>
