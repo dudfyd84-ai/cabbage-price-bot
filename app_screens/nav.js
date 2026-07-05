@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     '인벤토리': '/app/inventory', 'Inventory': '/app/inventory',
     '알림 설정': '/app/alerts',
     '주문 관리': '/app/orders',
+    '주문 내역': '/app/orders',
+    '시장 동향': '/',
+    '인사이트': '/app/item-analysis',
   };
   document.querySelectorAll('a, button').forEach(el => {
     const t = (el.textContent || '').trim();

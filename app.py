@@ -289,8 +289,10 @@ def _render_screen(slug):
     with open(os.path.join(SCREENS_DIR, f"{name}.html"), encoding="utf-8") as f:
         html = f.read()
     inject = '<script src="/app/static/nav.js"></script>'
-    if name == "home":
-        inject += '<script src="/app/static/home-live.js"></script>'
+    live = {"home": "home-live.js", "inventory": "inventory-live.js",
+            "item-analysis": "item-live.js"}.get(name)
+    if live:
+        inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
     _SCREEN_CACHE[name] = html
     return html
@@ -299,7 +301,7 @@ def _render_screen(slug):
 @app.get("/app/static/{fname}")
 def app_static(fname: str):
     # 화면 공통 JS 서빙 (경로 이탈 차단)
-    if fname not in ("nav.js", "home-live.js", "bom-live.js"):
+    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js"):
         return HTMLResponse("not found", status_code=404)
     with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
         return HTMLResponse(f.read(), media_type="application/javascript")
