@@ -23,15 +23,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (e) {}
 
-    // 2) 재고 확보 알림 카드: 최대 상승 품목으로 교체
+    // 2) 재고 확보 알림 카드: 최대 상승 품목 + 입력된 재고 일수 기반 실계산
     try {
       const card = document.querySelector('.bg-secondary');
       if (top && top.r30 > 5) {
         card.querySelector('p.font-headline-md').textContent =
           `${top.name} 가격 30일 뒤 ${top.r30}% 상승 예상!`;
-        card.querySelector('p.font-body-sm').textContent =
-          `현재 ${fmt(top.cur)}원/${top.unit} → 30일 뒤 ${fmt(top.p30)}원 예상` +
-          ` (범위 ${fmt(top.ci30[0])}~${fmt(top.ci30[1])}원). 상승 전 필요 물량 선구매를 검토하세요.`;
+        const stock = JSON.parse(localStorage.getItem('ct_stock') || '{}');
+        const sd = parseInt(stock[top.name]) || 0;
+        let msg;
+        if (sd > 0) {
+          const dep = sd <= 7 ? top.cur + (top.p7 - top.cur) * sd / 7
+            : sd <= 30 ? top.p7 + (top.p30 - top.p7) * (sd - 7) / 23 : top.p30;
+          const save = Math.round(dep - top.cur);
+          msg = `보유 재고가 D+${sd}에 소진됩니다. 그 시점 예상가 ${fmt(dep)}원/${top.unit}` +
+            (save > 0
+              ? ` — 지금 ${sd + 14}일치를 선매입하면 ${top.unit}당 ${fmt(save)}원 절감됩니다.`
+              : ' — 소진 직전 재구매가 유리합니다.');
+        } else {
+          msg = `현재 ${fmt(top.cur)}원/${top.unit} → 30일 뒤 ${fmt(top.p30)}원 예상` +
+            ` (범위 ${fmt(top.ci30[0])}~${fmt(top.ci30[1])}원). 재고 최적화 화면에서 보유 재고를 입력하면 맞춤 제안을 계산합니다.`;
+        }
+        card.querySelector('p.font-body-sm').textContent = msg;
       }
     } catch (e) {}
 

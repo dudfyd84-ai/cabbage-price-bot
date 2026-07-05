@@ -32,6 +32,8 @@ ITEMS = {"211": "배추", "231": "무", "245": "양파", "246": "대파", "258":
 CAT_OF = {c: ("400" if c in ("411", "412") else "200") for c in ITEMS}
 CATS = ["200", "400"]
 INTAKE_ITEMS = {"배추": INTAKE}
+ALL_RETAIL = os.path.join(DIR, "kamis_all_retail.csv")   # 전 품목(농축수산) 일별 시세
+ALL_CATS = {"100": "식량", "200": "채소", "400": "과일", "500": "축산", "600": "수산"}
 
 GARAK_URL = "http://www.garak.co.kr/homepage/publicdata/dataJsonOpen.do"
 GARAK_BASE = {"id": "9015", "passwd": "***REMOVED***", "dataid": "data22",
@@ -137,6 +139,53 @@ def incremental_veg():
     return len(rows)
 
 
+def incremental_all_retail():
+    # 농축수산 전 품목 소매가 증분 수집 (BOM 원가·예측 확장용 히스토리 축적)
+    if not os.path.exists(ALL_RETAIL):
+        log("전품목 시세 파일 없음(백필 전). 건너뜀."); return 0
+    df = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    days = list(weekdays(start, end))
+    if not days:
+        log(f"전품목 시세 최신 ({last}). 추가 없음."); return 0
+    rows = []
+    for d in days:
+        for cat, gname in ALL_CATS.items():
+            try:
+                r = _kamis.get(KAMIS_URL, params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "01",
+                                                  "p_item_category_code": cat, "p_country_code": "1101",
+                                                  "p_regday": d.isoformat(), "p_convert_kg_yn": "Y",
+                                                  "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
+                               timeout=(8, 15), verify=False)
+                data = r.json().get("data", {})
+                its = data.get("item", []) if isinstance(data, dict) else []
+                if isinstance(its, dict):
+                    its = [its]
+                seen = set()
+                for it in its:
+                    code = str(it.get("item_code", ""))
+                    raw = str(it.get("dpr1", "")).replace(",", "").strip()
+                    if not code or code in seen or raw in ("", "-"):
+                        continue
+                    try:
+                        price = int(raw)
+                    except ValueError:
+                        continue
+                    if price <= 0:
+                        continue
+                    seen.add(code)
+                    rows.append({"날짜": d.isoformat(), "부류": gname, "품목코드": code,
+                                 "품목명": it.get("item_name", ""), "단위": it.get("unit", ""), "가격": price})
+            except Exception as e:
+                log(f"  전품목 {d} {cat} 실패: {e}")
+            time.sleep(0.15)
+    if rows:
+        pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(ALL_RETAIL, index=False, encoding="utf-8-sig")
+    log(f"전품목 시세 {start}~{end} 추가 {len(rows)}행.")
+    return len(rows)
+
+
 def incremental_intake():
     df = pd.read_csv(INTAKE)
     last = pd.to_datetime(df["날짜"]).max().date()
@@ -231,6 +280,7 @@ def main():
     log("===== 재학습 파이프라인 시작 =====")
     incremental_weather()
     incremental_veg()
+    incremental_all_retail()
     incremental_intake()
     summary, latest = retrain_all()
     perf = " | ".join(f"{n} H7:{m[7]}% H30:{m[30]}%" for n, m in summary.items())
