@@ -343,21 +343,43 @@ SCREEN_ROUTES = {
 _SCREEN_CACHE = {}
 
 
+def _inject_home(html):
+    # 홈 목업의 하드코딩 품목(마늘/양파)을 실데이터 상위 상승품목으로 치환 → 첫 페인트 깜빡임 제거
+    try:
+        items = sorted(dashboard_data()["items"], key=lambda x: x["r30"], reverse=True)
+        a, b = items[0], items[1]
+        html = html.replace(
+            "마늘 가격 2주 뒤 30% 폭등 예상!",
+            f"{a['name']} 가격 30일 뒤 {a['r30']}% 상승 예상!")
+        html = html.replace(">마늘</span>", f">{a['name']}</span>", 1)
+        html = html.replace(">양파</span>", f">{b['name']}</span>", 1)
+    except Exception:
+        pass
+    return html
+
+
 def _render_screen(slug):
     name = SCREEN_ROUTES.get(slug)
     if not name:
         return None
-    if name in _SCREEN_CACHE:
-        return _SCREEN_CACHE[name]
+    # 홈은 실데이터 주입이라 일단위로 캐시(그 외 화면은 정적 캐시)
+    cache_key = f"home_{date.today().isoformat()}" if name == "home" else name
+    if cache_key in _SCREEN_CACHE:
+        return _SCREEN_CACHE[cache_key]
     with open(os.path.join(SCREENS_DIR, f"{name}.html"), encoding="utf-8") as f:
         html = f.read()
+    if name == "home":
+        html = _inject_home(html)
     inject = '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
             "item-analysis": "item-live.js", "bom-register": "bom-live.js"}.get(name)
     if live:
         inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
-    _SCREEN_CACHE[name] = html
+    if name == "home":   # 지난 날짜의 홈 캐시만 정리(다른 화면 캐시는 보존)
+        for k in [k for k in _SCREEN_CACHE if k.startswith("home_")]:
+            del _SCREEN_CACHE[k]
+    _SCREEN_CACHE[cache_key] = html
     return html
 
 
