@@ -37,6 +37,10 @@ jobs:
                   value: ${{ secrets.KAMIS_ID }}
                 - name: ASOS_KEY
                   value: ${{ secrets.ASOS_KEY }}
+                - name: DEV_USER
+                  value: ${{ secrets.DEV_USER }}
+                - name: DEV_PASS_HASH
+                  value: ${{ secrets.DEV_PASS_HASH }}
             context:
               git:
                 url: https://github.com/${{ github.repository }}.git

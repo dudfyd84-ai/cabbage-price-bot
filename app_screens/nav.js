@@ -2,9 +2,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const path = location.pathname;
 
-  // ── 0) 첫 방문(매장 미등록) → 온보딩부터 시작. 재방문자는 홈 유지 ──
+  // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
   if (path === '/app' || path === '/app/' || path === '/app/home') {
-    if (!localStorage.getItem('ct_store')) {
+    if (!localStorage.getItem('ct_store') && !localStorage.getItem('ct_dev')) {
       location.replace('/app/onboarding');
       return;
     }

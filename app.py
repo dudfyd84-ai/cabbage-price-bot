@@ -3,6 +3,9 @@ import os
 import re
 import ssl
 import json
+import time
+import hmac
+import hashlib
 from datetime import date, timedelta
 
 import joblib
@@ -11,13 +14,41 @@ import pandas as pd
 import requests
 import urllib3
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 KAMIS_KEY = os.getenv("KAMIS_KEY", "")
 KAMIS_ID = os.getenv("KAMIS_ID", "")
+
+# 개발자 게이트: 환경변수로만 주입(코드/깃에 비번 없음). 미설정 시 게이트 비활성(앱 공개).
+DEV_USER = os.getenv("DEV_USER", "")
+DEV_PASS_HASH = os.getenv("DEV_PASS_HASH", "").lower()   # sha256 hex
+
+
+def _dev_enabled():
+    return bool(DEV_USER and DEV_PASS_HASH)
+
+
+def _dev_make_token():
+    # 서명 토큰: exp.hmac(비번해시를 키로). 비번 바뀌면 기존 토큰 자동 무효.
+    exp = str(int(time.time()) + 7 * 86400)
+    sig = hmac.new(DEV_PASS_HASH.encode(), exp.encode(), hashlib.sha256).hexdigest()
+    return f"{exp}.{sig}"
+
+
+def _dev_valid(token):
+    if not token or "." not in token:
+        return False
+    exp, sig = token.rsplit(".", 1)
+    good = hmac.new(DEV_PASS_HASH.encode(), exp.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, good):
+        return False
+    try:
+        return int(exp) > time.time()
+    except ValueError:
+        return False
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEATHER = os.path.join(BASE_DIR, "weather_asos_data.csv")
@@ -339,13 +370,38 @@ def app_static(fname: str):
         return HTMLResponse(f.read(), media_type="application/javascript")
 
 
+@app.post("/api/dev-login")
+async def dev_login(request: Request):
+    # 서버측 검증(상수시간 비교). 성공 시 httponly 서명쿠키 발급.
+    if not _dev_enabled():
+        return JSONResponse({"ok": False, "error": "not_configured"}, status_code=503)
+    body = await request.json()
+    user = str(body.get("user", ""))
+    pw = str(body.get("password", ""))
+    pw_hash = hashlib.sha256(pw.encode()).hexdigest()
+    ok = hmac.compare_digest(user, DEV_USER) and hmac.compare_digest(pw_hash, DEV_PASS_HASH)
+    if not ok:
+        return JSONResponse({"ok": False, "error": "invalid"}, status_code=401)
+    resp = JSONResponse({"ok": True})
+    resp.set_cookie("ct_dev", _dev_make_token(), max_age=7 * 86400,
+                    httponly=True, samesite="lax", secure=True, path="/")
+    return resp
+
+
 @app.get("/app", response_class=HTMLResponse)
 @app.get("/app/{slug}", response_class=HTMLResponse)
-def app_screen(slug: str = ""):
+def app_screen(request: Request, slug: str = ""):
+    # 게이트 활성 시 유효 쿠키 없으면 로그인 페이지로 전환 (앱 전체 잠금)
+    if _dev_enabled() and not _dev_valid(request.cookies.get("ct_dev")):
+        return HTMLResponse(LOGIN_HTML)
     html = _render_screen(slug)
     if html is None:
         return HTMLResponse("화면을 찾을 수 없습니다.", status_code=404)
     return html
+
+
+with open(os.path.join(BASE_DIR, "dev_login.html"), encoding="utf-8") as _lf:
+    LOGIN_HTML = _lf.read()
 
 
 if __name__ == "__main__":
