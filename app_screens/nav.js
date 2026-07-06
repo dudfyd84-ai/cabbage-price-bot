@@ -2,6 +2,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   const path = location.pathname;
 
+  // ── 0) 첫 방문(매장 미등록) → 온보딩부터 시작. 재방문자는 홈 유지 ──
+  if (path === '/app' || path === '/app/' || path === '/app/home') {
+    if (!localStorage.getItem('ct_store')) {
+      location.replace('/app/onboarding');
+      return;
+    }
+  }
+
   // ── 1) 공통 네비: placeholder 앵커를 텍스트 매칭으로 라우팅 ──
   const ROUTES = {
     '홈': '/app', 'Home': '/app',
