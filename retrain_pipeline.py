@@ -1,6 +1,7 @@
 # 매일 최신 데이터를 증분 수집하고 채소·과일 11품목 소매가 예측 모델(H7/H30)을 재학습하는 자동화 파이프라인
 import os
 import ssl
+import json
 import time
 from datetime import date, timedelta, datetime
 
@@ -234,7 +235,7 @@ def retrain_all():
             n = f"{col}_ma{win}"; w[n] = w[col].shift(1).rolling(win).mean(); wf.append(n)
 
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
-    summary = {}
+    summary, acc_items = {}, {}
     for code, name in ITEMS.items():
         sub = veg[veg["품목명"] == name]
         p = sub[["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
@@ -266,14 +267,42 @@ def retrain_all():
             X, y = d[fcols], d["target"]
             split = int(len(d) * 0.8)
             m = _make(); m.fit(X.iloc[:split], np.log1p(y.iloc[:split]))
-            mapes[H] = round(mean_absolute_percentage_error(y.iloc[split:], np.expm1(m.predict(X.iloc[split:]))) * 100, 1)
+            pred = np.expm1(m.predict(X.iloc[split:]))
+            act = y.iloc[split:].values
+            now = d["price"].iloc[split:].values                       # 예측 시점 현재가
+            mapes[H] = round(mean_absolute_percentage_error(act, pred) * 100, 1)
+            wape = round(np.abs(act - pred).sum() / np.abs(act).sum() * 100, 1)
+            dir_ok = int((np.sign(pred - now) == np.sign(act - now)).sum())
+            acc_items.setdefault(name, {})[f"h{H}"] = {
+                "n": len(act), "wape": wape, "mape": mapes[H],
+                "dir_acc": round(dir_ok / len(act) * 100) if len(act) else 0,
+                "period": [str(d["날짜"].iloc[split].date()), str(d["날짜"].iloc[-1].date())]}
             final = _make(); final.fit(X, np.log1p(y))
             joblib.dump({"model": final, "features": fcols, "horizon": H, "log_target": True,
                          "item": name, "code": code, "unit": unit, "updated": str(date.today())},
                         os.path.join(DIR, f"model_{code}_h{H}.pkl"))
         summary[name] = mapes
     latest = str(veg["날짜"].max().date())
+    _write_accuracy(acc_items, latest)
     return summary, latest
+
+
+def _write_accuracy(acc_items, latest):
+    # 품목별 out-of-sample 백테스트 성능을 accuracy.json으로 저장 (전체 가중집계 포함)
+    overall = {}
+    for H in ("h7", "h30"):
+        rows = [v[H] for v in acc_items.values() if H in v]
+        if not rows:
+            continue
+        tot_n = sum(r["n"] for r in rows)
+        overall[H] = {
+            "n": tot_n,
+            "wape": round(sum(r["wape"] * r["n"] for r in rows) / tot_n, 1),
+            "mape": round(sum(r["mape"] * r["n"] for r in rows) / tot_n, 1),
+            "dir_acc": round(sum(r["dir_acc"] * r["n"] for r in rows) / tot_n)}
+    with open(os.path.join(DIR, "accuracy.json"), "w", encoding="utf-8") as f:
+        json.dump({"generated": str(date.today()), "data_latest": latest,
+                   "overall": overall, "items": acc_items}, f, ensure_ascii=False, indent=1)
 
 
 def main():

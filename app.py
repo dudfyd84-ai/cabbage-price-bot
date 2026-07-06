@@ -2,6 +2,7 @@
 import os
 import re
 import ssl
+import json
 from datetime import date, timedelta
 
 import joblib
@@ -266,9 +267,21 @@ def dashboard_data():
                       "ci7": [round(p7 * (1 - m7 / 100)), round(p7 * (1 + m7 / 100))],
                       "ci30": [round(p30 * (1 - m30 / 100)), round(p30 * (1 + m30 / 100))]})
     latest = veg["날짜"].max().strftime("%Y-%m-%d")
-    result = {"date": latest, "items": items}
+    result = {"date": latest, "items": items, "accuracy": _load_accuracy()}
     _dash_cache.clear(); _dash_cache[key] = result
     return result
+
+
+def _load_accuracy():
+    # 백테스트 성능(accuracy.json)을 로드 (재학습 시 갱신, 없으면 None)
+    p = os.path.join(BASE_DIR, "accuracy.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 
 @app.get("/api/dashboard")

@@ -77,7 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
       xlabels.forEach((s, i) => { if (i < L.length) s.textContent = L[i]; });
       const subEl = document.evaluate("//h3[contains(text(),'가격 추이')]/following-sibling::p",
         document, null, 9, null).singleNodeValue;
-      if (subEl) subEl.textContent = '최근 60일 실측 추이 (소매가, 서울)';
+      const ov = data.accuracy && data.accuracy.overall && data.accuracy.overall.h30;
+      if (subEl) subEl.textContent = '최근 60일 실측 추이 (소매가, 서울)' +
+        (ov ? ` · AI 검증 30일 방향 적중률 ${ov.dir_acc}% / 평균오차 ${ov.wape}%` : '');
     } catch (e) {}
 
     // 4) BOM 섹션: 등록 메뉴를 "전 품목 시세 + 예측"으로 원가 계산

@@ -26,12 +26,27 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('span').forEach(s => {
         if (s.textContent.trim() === '95% 신뢰 구간') s.textContent = '예상 범위 (백테스트 오차 기반)';
       });
-      // 하드코딩 "신뢰도 94%" → 실제 백테스트 오차율로 교체
-      const mape30 = it.cur > 0 ? Math.round((it.ci30[1] - it.p30) / it.p30 * 100) : null;
+      // 하드코딩 "신뢰도 94%" → 실제 백테스트 성능(accuracy.json)으로 교체
+      const acc = (data.accuracy && data.accuracy.items[it.name]) || null;
+      const a30 = acc && acc.h30;
       document.querySelectorAll('p, span, div').forEach(el => {
-        if (el.children.length === 0 && el.textContent.trim() === '신뢰도') el.textContent = '백테스트 오차(30일)';
-        if (el.children.length <= 1 && /^94%/.test(el.textContent.trim()) && mape30 != null) el.innerHTML = `±${mape30}%`;
+        if (el.children.length === 0 && el.textContent.trim() === '신뢰도') el.textContent = '방향 적중률(30일)';
+        if (el.children.length <= 1 && /^94%/.test(el.textContent.trim()))
+          el.innerHTML = a30 ? `${a30.dir_acc}%` : '—';
       });
+      // 변동 주요 원인 리스트 하단에 검증 성능 한 줄 추가
+      if (a30 && !document.getElementById('ct-backtest')) {
+        const causeCard = [...document.querySelectorAll('h3, h4, p, span')].find(e => e.textContent.trim() === '변동 주요 원인');
+        const box = causeCard && causeCard.parentElement;
+        if (box) {
+          const note = document.createElement('p');
+          note.id = 'ct-backtest';
+          note.className = 'font-body-sm text-body-sm text-on-surface-variant';
+          note.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid #e0e4e0;';
+          note.textContent = `검증: 최근 ${a30.n.toLocaleString()}건 out-of-sample 백테스트에서 30일 평균오차 ${a30.wape}%(WAPE), 방향 적중률 ${a30.dir_acc}% (${a30.period[0]}~${a30.period[1]}).`;
+          box.appendChild(note);
+        }
+      }
     } catch (e) {}
 
     // 2) 호라이즌별 차트 렌더 (과거 30일 실측 x0~400 + 예측 x400~800)
