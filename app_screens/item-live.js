@@ -15,12 +15,23 @@ document.addEventListener('DOMContentLoaded', () => {
       : d <= 7 ? it.cur + (it.ci7[k] - it.cur) * d / 7
       : it.ci7[k] + (it.ci30[k] - it.ci7[k]) * (d - 7) / 23;
 
-    // 1) 제목·부제
+    // 1) 제목·부제 + 과장 문구 정정 (통계적 신뢰구간이 아니므로 정직하게 표기)
     try {
       document.querySelector('h2').textContent = `${it.name} 원가 분석`;
       document.title = `CartTiming | ${it.name} 원가 분석`;
       const sub = document.querySelector('h2 + p');
       if (sub) sub.textContent = `KAMIS 소매가 · 기상 시차효과 기반 AI 예측 (${data.date} 기준)`;
+
+      // 범례 "95% 신뢰 구간" → "예상 범위(백테스트 오차 기반)"
+      document.querySelectorAll('span').forEach(s => {
+        if (s.textContent.trim() === '95% 신뢰 구간') s.textContent = '예상 범위 (백테스트 오차 기반)';
+      });
+      // 하드코딩 "신뢰도 94%" → 실제 백테스트 오차율로 교체
+      const mape30 = it.cur > 0 ? Math.round((it.ci30[1] - it.p30) / it.p30 * 100) : null;
+      document.querySelectorAll('p, span, div').forEach(el => {
+        if (el.children.length === 0 && el.textContent.trim() === '신뢰도') el.textContent = '백테스트 오차(30일)';
+        if (el.children.length <= 1 && /^94%/.test(el.textContent.trim()) && mape30 != null) el.innerHTML = `±${mape30}%`;
+      });
     } catch (e) {}
 
     // 2) 호라이즌별 차트 렌더 (과거 30일 실측 x0~400 + 예측 x400~800)
