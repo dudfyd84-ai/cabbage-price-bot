@@ -1,0 +1,47 @@
+name: Daily retrain
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # 매일 06:00 KST (UTC+9)
+  workflow_dispatch: {}      # 수동 실행 허용
+
+concurrency:
+  group: retrain
+  cancel-in-progress: false
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHP_TOKEN }}   # PAT로 체크아웃해야 이후 push가 deploy 워크플로를 트리거
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Retrain
+        env:
+          KAMIS_KEY: ${{ secrets.KAMIS_KEY }}
+          KAMIS_ID: ${{ secrets.KAMIS_ID }}
+          ASOS_KEY: ${{ secrets.ASOS_KEY }}
+          PYTHONUTF8: "1"
+        run: python retrain_pipeline.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name cabbage-bot
+          git config user.email dudfyd84@gmail.com
+          git add -A
+          if git diff --cached --quiet; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git commit -m "chore: daily data/model update (cloud)"
+            git push origin main
+          fi
