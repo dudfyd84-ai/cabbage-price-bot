@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: {}   # 수동 실행(Run workflow 버튼) 허용
 
 jobs:
   deploy:
