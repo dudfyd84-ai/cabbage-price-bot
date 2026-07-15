@@ -37,7 +37,7 @@ ALL_RETAIL = os.path.join(DIR, "kamis_all_retail.csv")   # 전 품목(농축수�
 ALL_CATS = {"100": "식량", "200": "채소", "400": "과일", "500": "축산", "600": "수산"}
 
 GARAK_URL = "http://www.garak.co.kr/homepage/publicdata/dataJsonOpen.do"
-GARAK_BASE = {"id": "9015", "passwd": "***REMOVED***", "dataid": "data22",
+GARAK_BASE = {"id": os.getenv("GARAK_ID", ""), "passwd": os.getenv("GARAK_PASSWD", ""), "dataid": "data22",
               "pagesize": "1000", "pageidx": "1", "portal.templet": "false"}
 KAMIS_URL = "https://www.kamis.or.kr/service/price/xml.do"
 

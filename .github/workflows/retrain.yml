@@ -31,6 +31,8 @@ jobs:
           KAMIS_KEY: ${{ secrets.KAMIS_KEY }}
           KAMIS_ID: ${{ secrets.KAMIS_ID }}
           ASOS_KEY: ${{ secrets.ASOS_KEY }}
+          GARAK_ID: ${{ secrets.GARAK_ID }}
+          GARAK_PASSWD: ${{ secrets.GARAK_PASSWD }}
           PYTHONUTF8: "1"
         run: python retrain_pipeline.py
 
