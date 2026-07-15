@@ -30,8 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     cards.forEach(c => {
       const name = c.querySelector('input[type="text"]')?.value?.trim();
       const qty = parseFloat(c.querySelector('input[type="number"]')?.value);
+      const manualPriceInput = c.querySelector('.manual-price');
+      const manualPrice = manualPriceInput && manualPriceInput.value ? parseFloat(manualPriceInput.value) : 0;
       const unit = c.querySelector('select')?.value;
-      if (name && qty > 0) ings.push({ name, qty, unit });
+      if (name && qty > 0) ings.push({ name, qty, unit, manualPrice });
     });
     if (!ings.length) { alert('식재료를 1개 이상 입력해주세요.'); return; }
 

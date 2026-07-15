@@ -166,15 +166,15 @@
 <div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30">
 <div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
 <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-<div class="md:col-span-5">
+<div class="md:col-span-4">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
 <input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="text" value="돼지고기 (앞다리살)"/>
 </div>
-<div class="md:col-span-3">
+<div class="md:col-span-2">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
 <input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="number" value="200"/>
 </div>
-<div class="md:col-span-3">
+<div class="md:col-span-2">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
 <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md appearance-none">
 <option selected="" value="g">g</option>
@@ -183,6 +183,10 @@
 <option value="l">l</option>
 <option value="ea">ea</option>
 </select>
+</div>
+<div class="md:col-span-3">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
+<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price" type="number" placeholder="선택입력"/>
 </div>
 <div class="md:col-span-1 flex justify-end">
 <button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors">delete</button>
@@ -193,15 +197,15 @@
 <div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30">
 <div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
 <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-<div class="md:col-span-5">
+<div class="md:col-span-4">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
 <input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="text" value="묵은지"/>
 </div>
-<div class="md:col-span-3">
+<div class="md:col-span-2">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
 <input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="number" value="300"/>
 </div>
-<div class="md:col-span-3">
+<div class="md:col-span-2">
 <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
 <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
 <option selected="" value="g">g</option>
@@ -210,6 +214,10 @@
 <option value="l">l</option>
 <option value="ea">ea</option>
 </select>
+</div>
+<div class="md:col-span-3">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
+<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price" type="number" placeholder="선택입력"/>
 </div>
 <div class="md:col-span-1 flex justify-end">
 <button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors">delete</button>
@@ -276,15 +284,15 @@
             newCard.innerHTML = `
                 <div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-                    <div class="md:col-span-5">
+                    <div class="md:col-span-4">
                         <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
                         <input type="text" placeholder="식재료명 입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
                     </div>
-                    <div class="md:col-span-3">
+                    <div class="md:col-span-2">
                         <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
                         <input type="number" placeholder="0" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
                     </div>
-                    <div class="md:col-span-3">
+                    <div class="md:col-span-2">
                         <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
                         <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
                             <option value="g">g</option>
@@ -293,6 +301,10 @@
                             <option value="l">l</option>
                             <option value="ea">ea</option>
                         </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
+                        <input type="number" placeholder="선택입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price">
                     </div>
                     <div class="md:col-span-1 flex justify-end">
                         <button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors delete-btn">delete</button>

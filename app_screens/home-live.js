@@ -136,7 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pb.predicted) unpredicted += 1;
             const d = c * (pb.futRatio - 1);
             if (!topRise || d > topRise.d) topRise = { name: pb.label, d };
-          } else unmatched.push(g.name);
+          } else if (g.manualPrice && g.manualPrice > 0) {
+            now += g.manualPrice; fut += g.manualPrice;
+          } else {
+            unmatched.push(g.name);
+          }
         });
         return { now, fut, unmatched, unpredicted, topRise };
       };
