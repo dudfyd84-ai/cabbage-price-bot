@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const calc = bom => {
         let now = 0, fut = 0, unmatched = [], unpredicted = 0, topRise = null;
         bom.ings.forEach(g => {
-          const pb = priceBook[norm(g.name)];
+          const pb = priceBook[norm(g.name)] || (g.kamis ? priceBook[norm(g.kamis)] : null);
           const qBase = g.unit === 'kg' || g.unit === 'l' ? g.qty * 1000 : g.qty;
           const typeOk = pb && ((pb.type === 'g' && (g.unit === 'g' || g.unit === 'kg')) ||
                                 (pb.type === 'ml' && (g.unit === 'ml' || g.unit === 'l')) ||

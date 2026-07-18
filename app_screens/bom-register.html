@@ -10,7 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <!-- Configures Tailwind with the provided Design System tokens -->
 <script id="tailwind-config">
       tailwind.config = {
@@ -133,200 +132,945 @@
   </head>
 <body class="bg-surface-container-low text-on-background min-h-screen pb-32">
 <!-- Top AppBar (from Shared Components) -->
-<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-margin h-16 w-full bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline">
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-margin h-16 w-full bg-surface border-b border-outline-variant">
 <div class="flex items-center gap-4">
-<button class="material-symbols-outlined text-primary dark:text-primary-fixed p-2 transition-colors duration-200 active:opacity-70 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-full">arrow_back</button>
-<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">BOM Registration</h1>
+<button class="material-symbols-outlined text-primary p-2 transition-colors duration-200 active:opacity-70 hover:bg-surface-container-low rounded-full">arrow_back</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">메뉴 BOM 등록</h1>
 </div>
-<button class="material-symbols-outlined text-primary dark:text-primary-fixed p-2 transition-colors duration-200 active:opacity-70 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-full">more_vert</button>
+<button class="material-symbols-outlined text-primary p-2 transition-colors duration-200 active:opacity-70 hover:bg-surface-container-low rounded-full">more_vert</button>
 </header>
+
 <main class="mt-20 px-container-margin max-w-2xl mx-auto space-y-lg">
 <!-- Header: Menu Info Input -->
 <section class="space-y-md">
 <h2 class="font-headline-md text-headline-md text-on-background">메뉴 정보 입력</h2>
-<div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs" for="menu-name">메뉴명</label>
-<div class="relative">
-<input class="w-full bg-surface-container-lowest border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 rounded-lg py-md px-md text-body-md transition-all" id="menu-name" placeholder="예: 김치찌개" type="text"/>
-<div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
-<span class="material-symbols-outlined">restaurant_menu</span>
-</div>
-</div>
+<div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant space-y-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-sm">
+        <div class="flex-1">
+            <label class="font-label-md text-label-md text-on-surface-variant block mb-xs" for="menu-name">메뉴명</label>
+            <div class="relative">
+                <input class="w-full bg-surface-container-lowest border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 rounded-lg py-md px-md text-body-md transition-all font-semibold" id="menu-name" placeholder="예: 김치찌개, 된장찌개, 제육볶음" type="text"/>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
+                    <span class="material-symbols-outlined">restaurant_menu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 카테고리 탭 -->
+    <div class="space-y-sm pt-xs">
+        <div class="flex border-b border-outline-variant text-xs gap-md overflow-x-auto whitespace-nowrap scrollbar-none">
+            <button type="button" class="tab-btn pb-2 px-1 text-primary border-b-2 border-primary font-bold shrink-0" data-tab="korean">🍚 한식 (15종)</button>
+            <button type="button" class="tab-btn pb-2 px-1 text-on-surface-variant hover:text-primary font-medium shrink-0" data-tab="western">🍔 양식 (12종)</button>
+            <button type="button" class="tab-btn pb-2 px-1 text-on-surface-variant hover:text-primary font-medium shrink-0" data-tab="chijap">🍜 중식·일식 (10종)</button>
+            <button type="button" class="tab-btn pb-2 px-1 text-on-surface-variant hover:text-primary font-medium shrink-0" data-tab="snack">🌶️ 분식·야식 (8종)</button>
+        </div>
+        <div id="tab-content" class="flex flex-wrap gap-sm items-center min-h-[32px] pt-xs">
+            <!-- JS로 자동 완성 렌더링 -->
+        </div>
+    </div>
 </div>
 </section>
+
 <!-- Main Section: Ingredient List -->
 <section class="space-y-md">
 <div class="flex justify-between items-center">
 <h2 class="font-headline-md text-headline-md text-on-background">식재료 리스트</h2>
-<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container p-1 px-2 rounded-full">총 <span id="item-count">2</span>개</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container p-1 px-2 rounded-full">총 <span id="item-count">0</span>개</span>
 </div>
+
+<!-- Empty State Container -->
+<div id="empty-state" class="glass-panel p-xl rounded-xl border border-dashed border-outline-variant flex flex-col items-center justify-center text-center space-y-md py-12 transition-all duration-300">
+<span class="material-symbols-outlined text-[48px] text-outline-variant animate-pulse">receipt_long</span>
+<div class="space-y-xs">
+<p class="font-label-md text-label-md text-on-background">상단에 메뉴명을 입력해 주세요</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">메뉴명을 입력하시거나 추천 메뉴를 선택하시면<br>4주 후 AI 시세 예측 리포트 및 식재료를 자동 로드합니다.</p>
+</div>
+</div>
+
 <!-- Ingredient Cards Container -->
-<div class="space-y-md" id="ingredient-container">
-<!-- Card 1 -->
-<div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30">
-<div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
-<div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-<div class="md:col-span-4">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="text" value="돼지고기 (앞다리살)"/>
+<div class="space-y-md hidden transition-all duration-300 opacity-0" id="ingredient-container">
+<!-- Cards will be dynamically inserted here -->
 </div>
-<div class="md:col-span-2">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="number" value="200"/>
-</div>
-<div class="md:col-span-2">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
-<select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md appearance-none">
-<option selected="" value="g">g</option>
-<option value="kg">kg</option>
-<option value="ml">ml</option>
-<option value="l">l</option>
-<option value="ea">ea</option>
-</select>
-</div>
-<div class="md:col-span-3">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price" type="number" placeholder="선택입력"/>
-</div>
-<div class="md:col-span-1 flex justify-end">
-<button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors">delete</button>
-</div>
-</div>
-</div>
-<!-- Card 2 -->
-<div class="glass-panel p-md rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30">
-<div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
-<div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-<div class="md:col-span-4">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="text" value="묵은지"/>
-</div>
-<div class="md:col-span-2">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md" type="number" value="300"/>
-</div>
-<div class="md:col-span-2">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
-<select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
-<option selected="" value="g">g</option>
-<option value="kg">kg</option>
-<option value="ml">ml</option>
-<option value="l">l</option>
-<option value="ea">ea</option>
-</select>
-</div>
-<div class="md:col-span-3">
-<label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
-<input class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price" type="number" placeholder="선택입력"/>
-</div>
-<div class="md:col-span-1 flex justify-end">
-<button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors">delete</button>
-</div>
-</div>
-</div>
-</div>
+
 <!-- Add Ingredient Button -->
-<button class="w-full flex items-center justify-center gap-2 py-lg border-2 border-dashed border-outline-variant rounded-xl text-primary font-label-md text-label-md hover:bg-primary-fixed/30 transition-all duration-200" id="add-ingredient">
+<button class="w-full flex items-center justify-center gap-2 py-lg border-2 border-dashed border-outline-variant rounded-xl text-primary font-label-md text-label-md hover:bg-primary-fixed/30 transition-all duration-200 hidden" id="add-ingredient">
 <span class="material-symbols-outlined">add_circle</span>
-                + 식재료 추가
+                + 직접 식재료 추가
             </button>
 </section>
+
 <!-- Visual Context Card -->
 <div class="glass-panel p-md rounded-xl border border-outline-variant overflow-hidden flex items-center gap-md">
-<div class="h-24 w-24 flex-shrink-0 rounded-lg bg-cover bg-center" data-alt="A macro close-up photograph of a professional stainless steel kitchen counter with fresh ingredients like red chilies, green onions, and garlic bulbs artistically arranged. The lighting is bright and clean, emphasizing the texture of the vegetables and the sleek metal surface. The aesthetic is modern, professional, and culinary-focused, following a light-mode color palette with subtle shadows." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1Bl90B9K5iFSWpK4uNJ6PqSaMQznRe-ZcIuZdK5n4kx8YtouvDeFn5wtWPwpr6_moFlCA3DhM598WyIWOa1wDLhNENdL1Cl6hs1b0IrjWOJgMgJsSTAnfySfBO3Wz578uQx5_5aRsItr0fQ0P1WuGoR6ljYdPsCUMedNCvmmVcRsgs31-ICUDMuEMToH0sTsBQIVcvzsOxXuRbh5Zj6FkHxBtBTgelWvHNpzccbYSENzUNl-BFegN')"></div>
+<div class="h-24 w-24 flex-shrink-0 rounded-lg bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1Bl90B9K5iFSWpK4uNJ6PqSaMQznRe-ZcIuZdK5n4kx8YtouvDeFn5wtWPwpr6_moFlCA3DhM598WyIWOa1wDLhNENdL1Cl6hs1b0IrjWOJgMgJsSTAnfySfBO3Wz578uQx5_5aRsItr0fQ0P1WuGoR6ljYdPsCUMedNCvmmVcRsgs31-ICUDMuEMToH0sTsBQIVcvzsOxXuRbh5Zj6FkHxBtBTgelWvHNpzccbYSENzUNl-BFegN')"></div>
 <div>
-<h4 class="font-label-md text-label-md text-on-background">재료 단가 실시간 연동</h4>
-<p class="font-body-sm text-body-sm text-on-surface-variant">입력하신 재료들은 카트타이밍의 AI 예측 시스템과 연동되어 실시간 마진율을 계산합니다.</p>
+<h4 class="font-label-md text-label-md text-on-background">AI 4주 원가 변동 알림 서비스</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">BOM 등록 시 실시간 도소매 마켓 트렌드와 기후 모형을 결합해 원가 위험 요소를 추적 분석합니다.</p>
 </div>
 </div>
 </main>
-<!-- Bottom Navigation Bar (Contextual Footer) -->
-<footer class="fixed bottom-0 left-0 w-full z-50 bg-surface dark:bg-on-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-outline-variant dark:border-outline p-container-margin">
-<div class="max-w-2xl mx-auto">
-<button class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-md rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200">
+
+<!-- Custom Success Modal -->
+<div id="success-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-on-background/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div class="glass-panel max-w-sm w-full mx-container-margin p-lg rounded-2xl shadow-xl border border-outline-variant text-center space-y-md bg-surface">
+        <span class="material-symbols-outlined text-[64px] text-primary animate-bounce">check_circle</span>
+        <div class="space-y-xs">
+            <h3 class="font-headline-md text-headline-md text-on-background">BOM 등록 완료!</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                🎉 BOM 등록이 성공적으로 처리되었습니다.<br>
+                4주 뒤 원가 상승률이 높은 식재료가 발견되면 카카오톡 알림을 보내드립니다.
+            </p>
+        </div>
+        <div class="flex flex-col gap-sm w-full">
+            <button type="button" id="btn-modal-view-list" class="w-full bg-primary text-on-primary font-label-md py-sm rounded-xl shadow-lg hover:brightness-110 transition-all">
+                등록된 BOM 목록 보기
+            </button>
+            <button type="button" id="btn-modal-add-more" class="w-full bg-surface border border-outline-variant text-on-surface-variant font-label-md py-sm rounded-xl hover:bg-surface-container transition-all">
+                추가 등록하기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<footer class="fixed bottom-0 left-0 w-full z-50 bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-outline-variant p-container-margin">
+<div class="max-w-2xl mx-auto flex items-center justify-between gap-md">
+<div class="hidden sm:flex flex-col">
+<span class="text-xs text-on-surface-variant">총 식재료</span>
+<span class="text-base font-bold text-primary"><span id="footer-count">0</span>개 항목</span>
+</div>
+<button id="btn-submit-bom" class="flex-1 w-full bg-primary text-on-primary font-headline-md text-headline-md py-md rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all duration-200">
                 BOM 등록 완료
             </button>
 </div>
 </footer>
-<!-- BottomNavBar (Hidden on this transactional screen as per instructions, but kept as reference if needed) -->
-<nav class="hidden md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface dark:bg-on-background rounded-t-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-outline-variant dark:border-outline flex justify-around items-center px-gutter py-sm">
-<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant">
-<span class="material-symbols-outlined">inventory_2</span>
-<span class="font-label-sm text-label-sm">Inventory</span>
-</div>
-<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
-<span class="font-label-sm text-label-sm">BOM</span>
-</div>
-<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant">
-<span class="material-symbols-outlined">payments</span>
-<span class="font-label-sm text-label-sm">Pricing</span>
-</div>
-<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant">
-<span class="material-symbols-outlined">analytics</span>
-<span class="font-label-sm text-label-sm">Reports</span>
-</div>
-</nav>
+
 <script>
-        // Simple Interaction logic for adding/removing items
         const container = document.getElementById('ingredient-container');
+        const emptyState = document.getElementById('empty-state');
         const addButton = document.getElementById('add-ingredient');
         const countDisplay = document.getElementById('item-count');
+        const footerCountDisplay = document.getElementById('footer-count');
+        const menuNameInput = document.getElementById('menu-name');
+        const tabContent = document.getElementById('tab-content');
+        
+        const successModal = document.getElementById('success-modal');
+        const modalViewListBtn = document.getElementById('btn-modal-view-list');
+        const modalAddMoreBtn = document.getElementById('btn-modal-add-more');
+        const submitBomBtn = document.getElementById('btn-submit-bom');
 
-        let itemCount = 2;
+        let itemCount = 0;
+
+        const presets = {
+            // 한식 15종 프리셋
+            '김치찌개': [
+                { name: '돼지고기 (앞다리살)', qty: 200, unit: 'g', kamis: '' },
+                { name: '묵은지', qty: 300, unit: 'g', kamis: '배추' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' },
+                { name: '두부', qty: 1, unit: 'ea', kamis: '' }
+            ],
+            '된장찌개': [
+                { name: '두부', qty: 1, unit: 'ea', kamis: '' },
+                { name: '감자', qty: 100, unit: 'g', kamis: '' },
+                { name: '애호박', qty: 100, unit: 'g', kamis: '' },
+                { name: '양파', qty: 50, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 30, unit: 'g', kamis: '대파' }
+            ],
+            '부대찌개': [
+                { name: '스팸/소시지', qty: 250, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 60, unit: 'g', kamis: '대파' },
+                { name: '두부', qty: 1, unit: 'ea', kamis: '' }
+            ],
+            '제육볶음': [
+                { name: '돼지고기 (앞다리살)', qty: 300, unit: 'g', kamis: '' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' }
+            ],
+            '닭볶음탕': [
+                { name: '닭고기', qty: 800, unit: 'g', kamis: '' },
+                { name: '감자', qty: 150, unit: 'g', kamis: '' },
+                { name: '당근', qty: 80, unit: 'g', kamis: '당근' },
+                { name: '대파', qty: 60, unit: 'g', kamis: '대파' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' }
+            ],
+            '소불고기': [
+                { name: '소고기', qty: 400, unit: 'g', kamis: '' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 60, unit: 'g', kamis: '대파' },
+                { name: '당근', qty: 50, unit: 'g', kamis: '당근' }
+            ],
+            '오이무침': [
+                { name: '오이', qty: 200, unit: 'g', kamis: '오이' },
+                { name: '양파', qty: 50, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 20, unit: 'g', kamis: '대파' }
+            ],
+            '시금치나물': [
+                { name: '시금치', qty: 200, unit: 'g', kamis: '시금치' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' },
+                { name: '대파', qty: 20, unit: 'g', kamis: '대파' }
+            ],
+            '겉절이': [
+                { name: '배추', qty: 500, unit: 'g', kamis: '배추' },
+                { name: '마늘', qty: 30, unit: 'g', kamis: '마늘' },
+                { name: '대파', qty: 40, unit: 'g', kamis: '대파' }
+            ],
+            '소고기무국': [
+                { name: '소고기', qty: 200, unit: 'g', kamis: '' },
+                { name: '무', qty: 300, unit: 'g', kamis: '무' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '갈비탕': [
+                { name: '소갈비', qty: 400, unit: 'g', kamis: '' },
+                { name: '무', qty: 200, unit: 'g', kamis: '무' },
+                { name: '대파', qty: 60, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 20, unit: 'g', kamis: '마늘' }
+            ],
+            '춘천닭갈비': [
+                { name: '닭고기', qty: 350, unit: 'g', kamis: '' },
+                { name: '양배추', qty: 200, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' }
+            ],
+            '비빔밥': [
+                { name: '시금치', qty: 80, unit: 'g', kamis: '시금치' },
+                { name: '당근', qty: 50, unit: 'g', kamis: '당근' },
+                { name: '애호박', qty: 60, unit: 'g', kamis: '' },
+                { name: '계란', qty: 1, unit: 'ea', kamis: '' }
+            ],
+            '아구찜': [
+                { name: '아구', qty: 500, unit: 'g', kamis: '' },
+                { name: '콩나물', qty: 300, unit: 'g', kamis: '' },
+                { name: '대파', qty: 60, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 30, unit: 'g', kamis: '마늘' }
+            ],
+            '감자탕': [
+                { name: '돼지뼈', qty: 600, unit: 'g', kamis: '' },
+                { name: '우거지 (배추)', qty: 200, unit: 'g', kamis: '배추' },
+                { name: '감자', qty: 150, unit: 'g', kamis: '' },
+                { name: '대파', qty: 80, unit: 'g', kamis: '대파' }
+            ],
+
+            // 양식 12종 프리셋
+            '토마토파스타': [
+                { name: '스파게티면', qty: 100, unit: 'g', kamis: '' },
+                { name: '토마토소스', qty: 150, unit: 'g', kamis: '' },
+                { name: '양파', qty: 50, unit: 'g', kamis: '양파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '크림파스타': [
+                { name: '스파게티면', qty: 100, unit: 'g', kamis: '' },
+                { name: '베이컨', qty: 50, unit: 'g', kamis: '' },
+                { name: '양파', qty: 60, unit: 'g', kamis: '양파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '찹스테이크': [
+                { name: '소고기', qty: 200, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '당근', qty: 30, unit: 'g', kamis: '당근' }
+            ],
+            '감바스': [
+                { name: '새우', qty: 150, unit: 'g', kamis: '' },
+                { name: '올리브오일', qty: 100, unit: 'ml', kamis: '' },
+                { name: '마늘', qty: 40, unit: 'g', kamis: '마늘' }
+            ],
+            '코울슬로': [
+                { name: '양배추', qty: 200, unit: 'g', kamis: '' },
+                { name: '당근', qty: 30, unit: 'g', kamis: '당근' },
+                { name: '양파', qty: 20, unit: 'g', kamis: '양파' }
+            ],
+            '시저샐러드': [
+                { name: '상추 (로메인)', qty: 150, unit: 'g', kamis: '상추' },
+                { name: '닭가슴살', qty: 100, unit: 'g', kamis: '' },
+                { name: '드레싱', qty: 30, unit: 'g', kamis: '' }
+            ],
+            '포테이토샐러드': [
+                { name: '감자', qty: 200, unit: 'g', kamis: '' },
+                { name: '당근', qty: 40, unit: 'g', kamis: '당근' },
+                { name: '오이', qty: 30, unit: 'g', kamis: '오이' },
+                { name: '양파', qty: 20, unit: 'g', kamis: '양파' }
+            ],
+            '미트볼스튜': [
+                { name: '미트볼', qty: 150, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '당근', qty: 40, unit: 'g', kamis: '당근' },
+                { name: '마늘', qty: 10, unit: 'g', kamis: '마늘' }
+            ],
+            '사과샐러드': [
+                { name: '사과', qty: 200, unit: 'g', kamis: '사과' },
+                { name: '견과류', qty: 30, unit: 'g', kamis: '' },
+                { name: '드레싱', qty: 30, unit: 'g', kamis: '' }
+            ],
+            '라따뚜이': [
+                { name: '호박', qty: 100, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '맥앤치즈': [
+                { name: '마카로니', qty: 120, unit: 'g', kamis: '' },
+                { name: '치즈', qty: 60, unit: 'g', kamis: '' },
+                { name: '베이컨', qty: 30, unit: 'g', kamis: '' },
+                { name: '양파', qty: 30, unit: 'g', kamis: '양파' }
+            ],
+            '비프스튜': [
+                { name: '소고기', qty: 250, unit: 'g', kamis: '' },
+                { name: '감자', qty: 120, unit: 'g', kamis: '' },
+                { name: '당근', qty: 80, unit: 'g', kamis: '당근' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' }
+            ],
+
+            // 중식, 일식 10종
+            '짜장면': [
+                { name: '생면', qty: 150, unit: 'g', kamis: '' },
+                { name: '춘장', qty: 50, unit: 'g', kamis: '' },
+                { name: '돼지고기', qty: 80, unit: 'g', kamis: '' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' }
+            ],
+            '짬뽕': [
+                { name: '생면', qty: 150, unit: 'g', kamis: '' },
+                { name: '오징어/해물', qty: 120, unit: 'g', kamis: '' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' }
+            ],
+            '탕수육': [
+                { name: '돼지등심', qty: 250, unit: 'g', kamis: '' },
+                { name: '전분가루', qty: 80, unit: 'g', kamis: '' },
+                { name: '당근', qty: 30, unit: 'g', kamis: '당근' },
+                { name: '오이', qty: 30, unit: 'g', kamis: '오이' }
+            ],
+            '마라탕': [
+                { name: '숙주', qty: 100, unit: 'g', kamis: '' },
+                { name: '배추', qty: 100, unit: 'g', kamis: '배추' },
+                { name: '청경채', qty: 80, unit: 'g', kamis: '' },
+                { name: '양파', qty: 50, unit: 'g', kamis: '양파' }
+            ],
+            '규동': [
+                { name: '우삼겹', qty: 150, unit: 'g', kamis: '' },
+                { name: '양파', qty: 100, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 40, unit: 'g', kamis: '대파' }
+            ],
+            '돈카츠': [
+                { name: '돼지등심', qty: 180, unit: 'g', kamis: '' },
+                { name: '빵가루', qty: 50, unit: 'g', kamis: '' },
+                { name: '양배추', qty: 100, unit: 'g', kamis: '' }
+            ],
+            '라멘': [
+                { name: '라멘생면', qty: 120, unit: 'g', kamis: '' },
+                { name: '돈골스프', qty: 300, unit: 'ml', kamis: '' },
+                { name: '대파', qty: 30, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 10, unit: 'g', kamis: '마늘' }
+            ],
+            '타코야끼': [
+                { name: '문어', qty: 60, unit: 'g', kamis: '' },
+                { name: '반죽믹스', qty: 150, unit: 'g', kamis: '' },
+                { name: '양파', qty: 30, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 20, unit: 'g', kamis: '대파' }
+            ],
+            '마파두부': [
+                { name: '두부', qty: 1, unit: 'ea', kamis: '' },
+                { name: '다진돼지고기', qty: 80, unit: 'g', kamis: '' },
+                { name: '양파', qty: 60, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 40, unit: 'g', kamis: '대파' }
+            ],
+            '오코노미야끼': [
+                { name: '양배추', qty: 250, unit: 'g', kamis: '' },
+                { name: '베이컨', qty: 40, unit: 'g', kamis: '' },
+                { name: '부침가루', qty: 100, unit: 'g', kamis: '' }
+            ],
+
+            // 분식, 야식 8종
+            '떡볶이': [
+                { name: '떡볶이떡', qty: 200, unit: 'g', kamis: '' },
+                { name: '사각어묵', qty: 100, unit: 'g', kamis: '' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' },
+                { name: '양배추', qty: 80, unit: 'g', kamis: '' }
+            ],
+            '김밥': [
+                { name: '김밥용김', qty: 2, unit: 'ea', kamis: '' },
+                { name: '당근', qty: 60, unit: 'g', kamis: '당근' },
+                { name: '시금치', qty: 50, unit: 'g', kamis: '시금치' },
+                { name: '단무지', qty: 2, unit: 'ea', kamis: '' }
+            ],
+            '골뱅이소면': [
+                { name: '골뱅이통조림', qty: 150, unit: 'g', kamis: '' },
+                { name: '소면', qty: 100, unit: 'g', kamis: '' },
+                { name: '오이', qty: 80, unit: 'g', kamis: '오이' },
+                { name: '대파 (파채)', qty: 60, unit: 'g', kamis: '대파' }
+            ],
+            '닭발': [
+                { name: '무뼈닭발', qty: 250, unit: 'g', kamis: '' },
+                { name: '양파', qty: 80, unit: 'g', kamis: '양파' },
+                { name: '대파', qty: 40, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '야채곱창': [
+                { name: '곱창', qty: 200, unit: 'g', kamis: '' },
+                { name: '양배추', qty: 150, unit: 'g', kamis: '' },
+                { name: '당근', qty: 40, unit: 'g', kamis: '당근' },
+                { name: '대파', qty: 40, unit: 'g', kamis: '대파' }
+            ],
+            '부추전': [
+                { name: '부추', qty: 150, unit: 'g', kamis: '' },
+                { name: '오징어', qty: 80, unit: 'g', kamis: '' },
+                { name: '부침가루', qty: 120, unit: 'g', kamis: '' }
+            ],
+            '어묵탕': [
+                { name: '모둠어묵', qty: 250, unit: 'g', kamis: '' },
+                { name: '무', qty: 150, unit: 'g', kamis: '무' },
+                { name: '대파', qty: 50, unit: 'g', kamis: '대파' },
+                { name: '마늘', qty: 15, unit: 'g', kamis: '마늘' }
+            ],
+            '군만두': [
+                { name: '냉동만두', qty: 8, unit: 'ea', kamis: '' },
+                { name: '양배추', qty: 50, unit: 'g', kamis: '' },
+                { name: '식용유', qty: 30, unit: 'ml', kamis: '' }
+            ]
+        };
+
+        const tabTags = {
+            korean: [
+                { label: '🍚 한식', menu: '김치찌개' },
+                { label: '🍲 된장찌개', menu: '된장찌개' },
+                { label: '🥓 부대찌개', menu: '부대찌개' },
+                { label: '🔥 제육볶음', menu: '제육볶음' },
+                { label: '🐔 닭볶음탕', menu: '닭볶음탕' },
+                { label: '🥩 소불고기', menu: '소불고기' },
+                { label: '🥒 오이무침', menu: '오이무침' },
+                { label: '🌱 시금치나물', menu: '시금치나물' },
+                { label: '🥬 겉절이', menu: '겉절이' },
+                { label: '🥣 소고기무국', menu: '소고기무국' },
+                { label: '🍖 갈비탕', menu: '갈비탕' },
+                { label: '🐓 닭갈비', menu: '춘천닭갈비' },
+                { label: '🍳 비빔밥', menu: '비빔밥' },
+                { label: '🐟 아구찜', menu: '아구찜' },
+                { label: '🥔 감자탕', menu: '감자탕' }
+            ],
+            western: [
+                { label: '🍝 토마토파스타', menu: '토마토파스타' },
+                { label: '🥛 크림파스타', menu: '크림파스타' },
+                { label: '🥩 찹스테이크', menu: '찹스테이크' },
+                { label: '🍤 감바스', menu: '감바스' },
+                { label: '🥗 코울슬로', menu: '코울슬로' },
+                { label: '🥬 시저샐러드', menu: '시저샐러드' },
+                { label: '🥔 포테이토샐러드', menu: '포테이토샐러드' },
+                { label: '🍲 미트볼스튜', menu: '미트볼스튜' },
+                { label: '🍎 사과샐러드', menu: '사과샐러드' },
+                { label: '🍆 라따뚜이', menu: '라따뚜이' },
+                { label: '🧀 맥앤치즈', menu: '맥앤치즈' },
+                { label: '🥣 비프스튜', menu: '비프스튜' }
+            ],
+            chijap: [
+                { label: '🍜 짜장면', menu: '짜장면' },
+                { label: '🔥 짬뽕', menu: '짬뽕' },
+                { label: '🐷 탕수육', menu: '탕수육' },
+                { label: '🌶️ 마라탕', menu: '마라탕' },
+                { label: '🥩 규동', menu: '규동' },
+                { label: '🐷 돈카츠', menu: '돈카츠' },
+                { label: '🍜 라멘', menu: '라멘' },
+                { label: '🐙 타코야끼', menu: '타코야끼' },
+                { label: '🌶️ 마파두부', menu: '마파두부' },
+                { label: '🥬 오코노미야끼', menu: '오코노미야끼' }
+            ],
+            snack: [
+                { label: '🌶️ 떡볶이', menu: '떡볶이' },
+                { label: '🍙 김밥', menu: '김밥' },
+                { label: '🐚 골뱅이소면', menu: '골뱅이소면' },
+                { label: '🔥 닭발', menu: '닭발' },
+                { label: '🐷 야채곱창', menu: '야채곱창' },
+                { label: '🌱 부추전', menu: '부추전' },
+                { label: '🍢 어묵탕', menu: '어묵탕' },
+                { label: '🥟 군만두', menu: '군만두' }
+            ]
+        };
+
+        const norm = s => (s || '').replace(/\(.*?\)|\s/g, '');
+
+        function parseUnit(unitStr, price) {
+            const u = (unitStr || '').toLowerCase();
+            if (u === 'kg') return { type: 'g', per1: price / 1000 };
+            if (u === 'g') return { type: 'g', per1: price };
+            if (u === 'l') return { type: 'ml', per1: price / 1000 };
+            if (u === 'ml') return { type: 'ml', per1: price };
+
+            let m = u.match(/([\d.]+)\s*(kg|g)(?![a-z])/);
+            if (m) return { type: 'g', per1: price / (parseFloat(m[1]) * (m[2] === 'kg' ? 1000 : 1)) };
+            m = u.match(/([\d.]+)\s*(l|ml)(?![a-z])/);
+            if (m) return { type: 'ml', per1: price / (parseFloat(m[1]) * (m[2] === 'l' ? 1000 : 1)) };
+            m = (unitStr || '').match(/([\d.]+)?\s*(개|구|마리|포기|장|속|단|병|봉|팩)/);
+            if (m) return { type: 'ea', per1: price / (parseFloat(m[1]) || 1) };
+            return null;
+        }
+
+        // 4주 후 AI 가격 변동 예측 시각화 (단일 바 통합)
+        function calculateCardEstimate(card) {
+            const nameInput = card.querySelector('.name-input');
+            const qtyInput = card.querySelector('.qty-input');
+            const unitSelect = card.querySelector('.unit-select');
+            const kamisSelect = card.querySelector('.kamis-select');
+            
+            const previewTitle = card.querySelector('.card-title-text');
+            const previewQty = card.querySelector('.card-qty-preview');
+            const previewPrice = card.querySelector('.card-price-preview');
+
+            const unifiedContainer = card.querySelector('.unified-estimate-container');
+            const unifiedText = card.querySelector('.estimate-unified-text');
+
+            // Collapsed 뷰 업데이트
+            previewTitle.textContent = nameInput.value || '식재료명 미입력';
+            previewQty.textContent = `${qtyInput.value || '0'}${unitSelect.value}`;
+
+            const name = nameInput.value.trim();
+            const kamis = kamisSelect.value;
+            const qty = parseFloat(qtyInput.value);
+            const unit = unitSelect.value;
+
+            if (!qty || qty <= 0) {
+                previewPrice.textContent = '';
+                previewPrice.className = 'hidden';
+                unifiedContainer.classList.add('hidden');
+                return;
+            }
+
+            const hasRetailData = window.ctRetailData && window.ctRetailData.groups;
+            const hasDashboardData = window.ctDashboardData && window.ctDashboardData.items;
+
+            // Build priceBook Cache (Seed defaults first, then overwrite with live API if available)
+            if (!window.priceBookCache) {
+                window.priceBookCache = {
+                    '배추': { type: 'g', per1: 3.5, cur: 3500, label: '배추', predicted: true, futRatio: 1.15 },
+                    '무': { type: 'ea', per1: 2500, cur: 2500, label: '무', predicted: true, futRatio: 0.95 },
+                    '양파': { type: 'g', per1: 3.0, cur: 3000, label: '양파', predicted: true, futRatio: 1.10 },
+                    '대파': { type: 'g', per1: 3.2, cur: 3200, label: '대파', predicted: true, futRatio: 1.12 },
+                    '마늘': { type: 'g', per1: 9.0, cur: 9000, label: '마늘', predicted: true, futRatio: 1.03 },
+                    '당근': { type: 'g', per1: 4.0, cur: 4000, label: '당근', predicted: true, futRatio: 1.05 },
+                    '오이': { type: 'ea', per1: 1500, cur: 1500, label: '오이', predicted: true, futRatio: 1.20 },
+                    '시금치': { type: 'g', per1: 4.5, cur: 4500, label: '시금치', predicted: true, futRatio: 0.92 },
+                    '상추': { type: 'g', per1: 18.0, cur: 1800, label: '상추', predicted: true, futRatio: 1.25 },
+                    '사과': { type: 'ea', per1: 2500, cur: 2500, label: '사과', predicted: true, futRatio: 1.02 },
+                    '배': { type: 'ea', per1: 3000, cur: 3000, label: '배', predicted: true, futRatio: 1.00 }
+                };
+
+                if (hasRetailData) {
+                    Object.values(window.ctRetailData.groups).flat().forEach(r => {
+                        const up = parseUnit(r.unit, r.cur);
+                        if (up) window.priceBookCache[norm(r.name)] = { ...up, cur: r.cur, label: r.name, predicted: false };
+                    });
+                }
+                if (hasDashboardData) {
+                    window.ctDashboardData.items.forEach(i => {
+                        const up = parseUnit(i.unit, i.cur);
+                        if (up) window.priceBookCache[norm(i.name)] = {
+                            ...up, cur: i.cur, label: i.name, predicted: true,
+                            futRatio: i.cur > 0 ? i.p30 / i.cur : 1
+                        };
+                    });
+                }
+            }
+
+            const pb = window.priceBookCache[norm(name)] || (kamis ? window.priceBookCache[norm(kamis)] : null);
+
+            if (pb) {
+                const qBase = unit === 'kg' || unit === 'l' ? qty * 1000 : qty;
+                const typeOk = (pb.type === 'g' && (unit === 'g' || unit === 'kg')) ||
+                               (pb.type === 'ml' && (unit === 'ml' || unit === 'l')) ||
+                               (pb.type === 'ea' && unit === 'ea');
+                
+                if (typeOk) {
+                    const cost = Math.round(pb.per1 * qBase);
+                    
+                    // AI 4주후 예측
+                    let futRatio = 1.0;
+                    let isPredicted = false;
+                    
+                    if (hasDashboardData) {
+                        const dbItem = window.ctDashboardData.items.find(i => norm(i.name) === norm(pb.label));
+                        if (dbItem) {
+                            futRatio = dbItem.p30 / dbItem.cur;
+                            isPredicted = true;
+                        }
+                    }
+
+                    unifiedContainer.classList.remove('hidden');
+
+                    if (isPredicted || pb.futRatio) {
+                        const ratio = futRatio || pb.futRatio;
+                        const futureCost = Math.round(cost * ratio);
+                        const pct = Math.round((ratio - 1) * 100);
+                        
+                        card.dataset.predictedPrice = futureCost; // 데이터 전송용 임시 저장
+                        card.dataset.currentPrice = cost; // 현재가 임시 저장
+
+                        if (pct > 0) {
+                            unifiedText.innerHTML = `💰 시세: ${cost.toLocaleString()}원 → <span class="text-error font-bold">4주 뒤 ${futureCost.toLocaleString()}원 (+${pct}% 🔺)</span>`;
+                            previewPrice.textContent = `4주후 +${pct}% 🔺`;
+                            previewPrice.className = 'text-[10px] font-bold text-error bg-error/10 px-1.5 py-0.5 rounded-full card-price-preview';
+                        } else if (pct < 0) {
+                            unifiedText.innerHTML = `💰 시세: ${cost.toLocaleString()}원 → <span class="text-secondary font-bold">4주 뒤 ${futureCost.toLocaleString()}원 (${pct}% 📉)</span>`;
+                            previewPrice.textContent = `4주후 ${pct}% 📉`;
+                            previewPrice.className = 'text-[10px] font-bold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded-full card-price-preview';
+                        } else {
+                            unifiedText.innerHTML = `💰 시세: ${cost.toLocaleString()}원 (4주 뒤 변동 없음)`;
+                            previewPrice.textContent = 'AI 변동 없음';
+                            previewPrice.className = 'text-[10px] font-semibold text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded-full card-price-preview';
+                        }
+                    } else {
+                        card.dataset.predictedPrice = cost;
+                        card.dataset.currentPrice = cost;
+                        unifiedText.innerHTML = `💰 시세: ${cost.toLocaleString()}원 (예측 미지원)`;
+                        previewPrice.textContent = '예측 미지원';
+                        previewPrice.className = 'text-[10px] font-semibold text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded-full card-price-preview';
+                    }
+                    return;
+                }
+            }
+            
+            // 미연동 공산품/식재료 가상 식자재몰 가격 생성 (100g당 980원 또는 개당 1500원 기준)
+            const baseRate = unit === 'ea' ? 1500 : 9.8; 
+            const cost = Math.round((unit === 'kg' || unit === 'l' ? qty * 1000 : qty) * baseRate);
+            
+            card.dataset.predictedPrice = cost;
+            card.dataset.currentPrice = cost;
+
+            previewPrice.textContent = '식자재몰 시가';
+            previewPrice.className = 'text-[10px] font-bold text-secondary bg-secondary-container/20 px-1.5 py-0.5 rounded-full card-price-preview';
+
+            unifiedContainer.classList.remove('hidden');
+            unifiedText.innerHTML = `🛒 식자재몰 실시간 시가 적용: <span class="font-bold text-secondary">${cost.toLocaleString()}원</span> (예측 미지원)`;
+        }
+
+        window.updateAllEstimates = function() {
+            window.priceBookCache = null;
+            document.querySelectorAll('#ingredient-container > div').forEach(card => {
+                calculateCardEstimate(card);
+            });
+        }
+
+        function createIngredientCard(data = {}) {
+            const name = data.name || '';
+            const qty = data.qty !== undefined && data.qty !== '' ? data.qty : 100;
+            const unit = data.unit || 'g';
+            const kamis = data.kamis || '';
+            
+            const getGuideHtml = (k) => k ? `<span class="kamis-guide text-[10px] bg-on-primary-container text-primary-container px-1.5 py-0.5 rounded ml-1 font-semibold">${k} 시세 모형 적용</span>` : '';
+
+            const card = document.createElement('div');
+            card.className = "glass-panel rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30 accordion-item animate-in fade-in duration-300";
+
+            card.innerHTML = `
+                <div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
+                
+                <!-- 1. Collapsed Header View (Mobile First) -->
+                <div class="flex items-center justify-between p-md cursor-pointer select-none header-row">
+                    <div class="flex items-center gap-sm flex-1">
+                        <span class="material-symbols-outlined text-primary text-[20px] drag-handle">menu</span>
+                        <span class="font-label-md text-label-md text-on-background card-title-text">${name || '새 식재료'}</span>
+                        <span class="text-xs text-on-surface-variant font-medium card-qty-preview">${qty}${unit}</span>
+                    </div>
+                    <div class="flex items-center gap-md">
+                        <div class="text-right flex flex-col justify-center">
+                            <span class="text-[10px] font-bold text-error card-price-preview">--</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant text-[20px] transition-transform duration-200 chevron-icon">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- 2. Expanded Body Content -->
+                <div class="border-t border-outline-variant p-md bg-surface-container-low hidden body-row">
+                    <div class="grid grid-cols-12 gap-md items-end">
+                        <!-- 식재료명 (모바일 full, 데스크탑 5) -->
+                        <div class="col-span-full md:col-span-5">
+                            <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
+                            <input type="text" list="ct-ings" value="${name}" placeholder="식재료명 입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md name-input">
+                            <div class="mt-2 text-xs text-secondary flex items-center gap-1 flex-wrap">
+                                <span class="material-symbols-outlined text-[14px]">link</span>
+                                <select class="bg-transparent border-none p-0 pr-4 py-0 focus:ring-0 cursor-pointer appearance-none kamis-select font-medium text-xs">
+                                    <option value="" ${kamis === '' ? 'selected' : ''}>연동 기준 농산물: 선택 안함</option>
+                                    <option value="배추" ${kamis === '배추' ? 'selected' : ''}>연동: 배추</option>
+                                    <option value="무" ${kamis === '무' ? 'selected' : ''}>연동: 무</option>
+                                    <option value="양파" ${kamis === '양파' ? 'selected' : ''}>연동: 양파</option>
+                                    <option value="대파" ${kamis === '대파' ? 'selected' : ''}>연동: 대파</option>
+                                    <option value="마늘" ${kamis === '마늘' ? 'selected' : ''}>연동: 마늘</option>
+                                    <option value="당근" ${kamis === '당근' ? 'selected' : ''}>연동: 당근</option>
+                                    <option value="오이" ${kamis === '오이' ? 'selected' : ''}>연동: 오이</option>
+                                    <option value="시금치" ${kamis === '시금치' ? 'selected' : ''}>연동: 시금치</option>
+                                    <option value="상추" ${kamis === '상추' ? 'selected' : ''}>연동: 상추</option>
+                                </select>
+                                <span class="guide-container">${getGuideHtml(kamis)}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 수량 (모바일 5, 데스크탑 3) -->
+                        <div class="col-span-5 md:col-span-3">
+                            <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
+                            <input type="number" value="${qty}" placeholder="100" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md qty-input">
+                        </div>
+                        
+                        <!-- 단위 (모바일 5, 데스크탑 3) -->
+                        <div class="col-span-5 md:col-span-3">
+                            <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
+                            <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md unit-select">
+                                <option value="g" ${unit === 'g' ? 'selected' : ''}>g</option>
+                                <option value="kg" ${unit === 'kg' ? 'selected' : ''}>kg</option>
+                                <option value="ml" ${unit === 'ml' ? 'selected' : ''}>ml</option>
+                                <option value="l" ${unit === 'l' ? 'selected' : ''}>l</option>
+                                <option value="ea" ${unit === 'ea' ? 'selected' : ''}>ea</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 삭제 (모바일 2, 데스크탑 1) -->
+                        <div class="col-span-2 md:col-span-1 flex justify-center pb-1">
+                            <button type="button" class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors delete-btn">delete</button>
+                        </div>
+                        
+                        <!-- AI 시세 통합 안내 바 -->
+                        <div class="col-span-full mt-sm unified-estimate-container hidden">
+                            <div class="bg-surface border border-outline-variant/50 rounded-lg p-sm text-xs text-on-surface-variant font-medium estimate-unified-text"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Accordion toggle click handler
+            const headerRow = card.querySelector('.header-row');
+            const bodyRow = card.querySelector('.body-row');
+            const chevronIcon = card.querySelector('.chevron-icon');
+            
+            headerRow.addEventListener('click', () => {
+                const isHidden = bodyRow.classList.contains('hidden');
+                if (isHidden) {
+                    bodyRow.classList.remove('hidden');
+                    chevronIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    bodyRow.classList.add('hidden');
+                    chevronIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            // Event listener for KAMIS select change
+            const selectEl = card.querySelector('.kamis-select');
+            const guideContainer = card.querySelector('.guide-container');
+            selectEl.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val) {
+                    guideContainer.innerHTML = `<span class="kamis-guide text-[10px] bg-on-primary-container text-primary-container px-1.5 py-0.5 rounded ml-1 font-semibold">${val} 시세 모형 적용</span>`;
+                } else {
+                    guideContainer.innerHTML = '';
+                }
+                calculateCardEstimate(card);
+            });
+
+            // Bind live calculation events
+            const qtyInput = card.querySelector('.qty-input');
+            const unitSelect = card.querySelector('.unit-select');
+            const nameInput = card.querySelector('.name-input');
+            
+            const reCalc = () => {
+                calculateCardEstimate(card);
+            };
+            
+            qtyInput.addEventListener('input', reCalc);
+            unitSelect.addEventListener('change', reCalc);
+            nameInput.addEventListener('input', reCalc);
+
+            // Delete button
+            card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                card.remove();
+                itemCount--;
+                countDisplay.innerText = itemCount;
+                footerCountDisplay.innerText = itemCount;
+                if (itemCount === 0) {
+                    showEmptyState();
+                }
+            });
+
+            // Run initial calc
+            setTimeout(reCalc, 100);
+
+            return card;
+        }
+
+        function showEmptyState() {
+            container.classList.add('hidden');
+            container.classList.remove('flex', 'flex-col');
+            container.style.opacity = '0';
+            addButton.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            itemCount = 0;
+            countDisplay.innerText = '0';
+            footerCountDisplay.innerText = '0';
+        }
+
+        function loadPreset(menuName) {
+            container.innerHTML = '';
+            const items = presets[menuName] || [];
+            
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+            container.classList.add('flex', 'flex-col');
+            setTimeout(() => {
+                container.style.opacity = '1';
+            }, 50);
+            addButton.classList.remove('hidden');
+
+            if (items.length > 0) {
+                items.forEach(item => {
+                    container.appendChild(createIngredientCard(item));
+                });
+                itemCount = items.length;
+            } else {
+                itemCount = 0;
+            }
+            countDisplay.innerText = itemCount;
+            footerCountDisplay.innerText = itemCount;
+            
+            // Expand first item automatically
+            setTimeout(() => {
+                const firstCard = container.querySelector('.accordion-item');
+                if (firstCard) {
+                    firstCard.querySelector('.body-row').classList.remove('hidden');
+                    firstCard.querySelector('.chevron-icon').style.transform = 'rotate(180deg)';
+                }
+            }, 100);
+
+            setTimeout(window.updateAllEstimates, 150);
+        }
+
+        menuNameInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (val) {
+                if (presets[val]) {
+                    loadPreset(val);
+                } else if (itemCount === 0) {
+                    loadPreset('');
+                }
+            } else {
+                showEmptyState();
+            }
+        });
+
+        // Tab selection behavior
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.className = 'tab-btn pb-2 px-1 text-on-surface-variant hover:text-primary font-medium shrink-0';
+                });
+                btn.className = 'tab-btn pb-2 px-1 text-primary border-b-2 border-primary font-bold shrink-0';
+                
+                const tab = btn.getAttribute('data-tab');
+                renderTags(tab);
+            });
+        });
+
+        function renderTags(tab) {
+            tabContent.innerHTML = '';
+            (tabTags[tab] || []).forEach(item => {
+                const tagBtn = document.createElement('button');
+                tagBtn.type = 'button';
+                tagBtn.className = 'menu-tag px-sm py-1 bg-surface-container hover:bg-primary-fixed/20 border border-outline-variant rounded-full text-xs text-on-surface-variant transition-colors font-medium';
+                tagBtn.textContent = item.label;
+                tagBtn.setAttribute('data-menu', item.menu);
+                tagBtn.addEventListener('click', () => {
+                    menuNameInput.value = item.menu;
+                    loadPreset(item.menu);
+                });
+                tabContent.appendChild(tagBtn);
+            });
+        }
+
+        // Initialize first tab
+        renderTags('korean');
 
         addButton.addEventListener('click', () => {
             itemCount++;
             countDisplay.innerText = itemCount;
-
-            const newCard = document.createElement('div');
-            newCard.className = "glass-panel p-md rounded-xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all hover:border-secondary/30 animate-in fade-in slide-in-from-bottom-4 duration-300";
-            newCard.innerHTML = `
-                <div class="absolute left-0 top-0 w-1 h-full bg-primary-container"></div>
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
-                    <div class="md:col-span-4">
-                        <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">식재료명</label>
-                        <input type="text" placeholder="식재료명 입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
-                        <input type="number" placeholder="0" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
-                        <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md">
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="l">l</option>
-                            <option value="ea">ea</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(총액)</label>
-                        <input type="number" placeholder="선택입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md manual-price">
-                    </div>
-                    <div class="md:col-span-1 flex justify-end">
-                        <button class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors delete-btn">delete</button>
-                    </div>
-                </div>
-            `;
+            footerCountDisplay.innerText = itemCount;
+            const newCard = createIngredientCard();
             container.appendChild(newCard);
-
-            newCard.querySelector('.delete-btn').addEventListener('click', () => {
-                newCard.remove();
-                itemCount--;
-                countDisplay.innerText = itemCount;
-            });
+            newCard.querySelector('.body-row').classList.remove('hidden');
+            newCard.querySelector('.chevron-icon').style.transform = 'rotate(180deg)';
         });
 
-        // Initialize existing delete buttons
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.target.closest('.glass-panel').remove();
-                itemCount--;
-                countDisplay.innerText = itemCount;
+        // ── 'BOM 등록 완료' 버튼 클릭 전송 및 가공 로직 ──
+        submitBomBtn.addEventListener('click', () => {
+            const menu = menuNameInput.value.trim();
+            if (!menu) { alert('메뉴명을 입력해주세요.'); return; }
+
+            const cards = document.querySelectorAll('#ingredient-container > div');
+            const ings = [];
+
+            cards.forEach(c => {
+                const name = c.querySelector('.name-input')?.value?.trim();
+                const qty = parseFloat(c.querySelector('.qty-input')?.value);
+                const unit = c.querySelector('.unit-select')?.value;
+                const kamis = c.querySelector('.kamis-select')?.value || '없음';
+                
+                const curPrice = parseFloat(c.dataset.currentPrice) || 0;
+                const predictedPrice = parseFloat(c.dataset.predictedPrice) || 0;
+
+                if (name && qty > 0) {
+                    ings.push({
+                        ingredient_name: name,
+                        quantity: qty,
+                        unit: unit,
+                        kamis_matched: kamis,
+                        owner_input_price: curPrice, // 자동 시가 적용
+                        ai_predicted_price_4w: predictedPrice
+                    });
+                }
             });
+
+            if (!ings.length) {
+                alert('식재료를 1개 이상 입력해주세요.');
+                return;
+            }
+
+            // JSON 생성
+            const payload = {
+                menu_name: menu,
+                ingredients: ings,
+                created_at: new Date().toISOString()
+            };
+
+            console.log('🎉 [BOM Submission Success] Sending JSON object to server:', payload);
+
+            // Save to localStorage
+            const localBoms = JSON.parse(localStorage.getItem('ct_bom') || '[]');
+            localBoms.push({ 
+                menu: payload.menu_name, 
+                ings: payload.ingredients.map(i => ({
+                    name: i.ingredient_name,
+                    qty: i.quantity,
+                    unit: i.unit,
+                    kamis: i.kamis_matched === '없음' ? '' : i.kamis_matched,
+                    manualPrice: i.owner_input_price
+                })), 
+                saved: new Date().toISOString().slice(0, 10) 
+            });
+            localStorage.setItem('ct_bom', JSON.stringify(localBoms));
+
+            // Show custom success modal
+            successModal.classList.remove('hidden');
+            successModal.classList.add('flex');
+        });
+
+        // Close Modal and redirect / reset
+        modalViewListBtn.addEventListener('click', () => {
+            successModal.classList.remove('flex');
+            successModal.classList.add('hidden');
+            if (location.protocol === 'file:') {
+                location.href = 'home.html';
+            } else {
+                location.href = '/app';
+            }
+        });
+
+        modalAddMoreBtn.addEventListener('click', () => {
+            successModal.classList.remove('flex');
+            successModal.classList.add('hidden');
+            menuNameInput.value = '';
+            showEmptyState();
         });
     </script>
 </body></html>
