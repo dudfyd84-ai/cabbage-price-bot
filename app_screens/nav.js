@@ -5,7 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
   if (path === '/app' || path === '/app/' || path === '/app/home') {
     if (!localStorage.getItem('ct_store') && !localStorage.getItem('ct_dev')) {
-      location.replace('/app/onboarding');
+      if (window.ctStore) {
+        ctStore.init().then(() => {
+          if (!ctStore.session) {
+            location.replace('/app/onboarding');
+          }
+        });
+      } else {
+        location.replace('/app/onboarding');
+      }
       return;
     }
   }
@@ -49,26 +57,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 2) 온보딩: 시작/가입/로그인 → 매장 등록으로 ──
   if (path.endsWith('/onboarding')) {
-    document.querySelectorAll('a, button').forEach(el => {
-      const t = (el.textContent || '').trim();
-      if (t.includes('시작하기') || t.includes('이메일로 가입') || t === '로그인' ||
-          t.includes('Google') || t.includes('카카오')) {
-        el.addEventListener('click', e => { e.preventDefault(); location.href = '/app/store-register'; });
-      }
-    });
+    // 온보딩 내 소셜 로그인 및 이메일 가입 액션은 onboarding.html 내부 스크립트에서 처리하므로
+    // 기존의 무조건적인 store-register 리다이렉션 등록은 비활성화합니다.
   }
 
   // ── 3) 매장 등록: 입력 저장 → 홈 ──
   if (path.endsWith('/store-register')) {
-    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.includes('다음 단계로'));
-    if (btn) btn.addEventListener('click', e => {
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.includes('다음 단계로') || b.textContent.includes('설정 완료'));
+    if (btn) btn.addEventListener('click', async e => {
       e.preventDefault();
       const inputs = document.querySelectorAll('input[type="text"], input:not([type])');
       const name = inputs[0]?.value?.trim();
       if (!name) { alert('식당 이름을 입력해주세요.'); return; }
       const addr = inputs[1]?.value?.trim() || '';
       const cat = document.querySelector('#cuisine-chips .bg-primary, #cuisine-chips [class*="selected"]')?.textContent?.trim() || '';
-      localStorage.setItem('ct_store', JSON.stringify({ name, addr, cat }));
+      if (window.ctStore) {
+        await ctStore.setStore({ name, addr, cat });
+      } else {
+        localStorage.setItem('ct_store', JSON.stringify({ name, addr, cat }));
+      }
       location.href = '/app';
     });
   }
@@ -76,13 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 4) 알림 설정: 토글 상태 저장·복원 ──
   if (path.endsWith('/alerts')) {
     const boxes = document.querySelectorAll('input[type="checkbox"]');
-    const saved = JSON.parse(localStorage.getItem('ct_alerts') || 'null');
-    boxes.forEach((b, i) => {
-      if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
-      b.addEventListener('change', () => {
-        localStorage.setItem('ct_alerts', JSON.stringify([...boxes].map(x => x.checked)));
+    (async () => {
+      const saved = window.ctStore ? await ctStore.getAlertPrefs() : JSON.parse(localStorage.getItem('ct_alerts') || 'null');
+      boxes.forEach((b, i) => {
+        if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
+        b.addEventListener('change', async () => {
+          const prefs = [...boxes].map(x => x.checked);
+          if (window.ctStore) {
+            await ctStore.setAlertPrefs(prefs);
+          } else {
+            localStorage.setItem('ct_alerts', JSON.stringify(prefs));
+          }
+        });
       });
-    });
+    })();
   }
 
   // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
@@ -106,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── 5.6) 공통 하단 탭바: 화면별 제각각인 네비를 한글 5탭으로 통일 ──
-  const SKIP_NAV = ['/app/onboarding', '/app/store-register', '/app/bom-register'];
+  const SKIP_NAV = ['/app/login', '/app/onboarding', '/app/store-register', '/app/bom-register'];
   if (path.startsWith('/app') && !SKIP_NAV.includes(path)) {
     // 기존 하단 고정 네비 제거 (영문 탭·화면별 변형 정리)
     document.querySelectorAll('nav, footer').forEach(n => {
@@ -146,12 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── 6) 등록된 매장명 반영 (전 화면 헤더의 '나의 레스토랑') ──
-  try {
-    const store = JSON.parse(localStorage.getItem('ct_store') || 'null');
-    if (store && store.name) {
-      document.querySelectorAll('span, div').forEach(el => {
-        if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
-      });
-    }
-  } catch (e) {}
+  (async () => {
+    try {
+      const store = window.ctStore ? await ctStore.getStore() : JSON.parse(localStorage.getItem('ct_store') || 'null');
+      if (store && store.name) {
+        document.querySelectorAll('span, div').forEach(el => {
+          if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
+        });
+      }
+    } catch (e) {}
+  })();
 });

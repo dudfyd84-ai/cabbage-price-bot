@@ -1,4 +1,9 @@
-# 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
+"""
+스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
+
+이 애플리케이션은 기후 변화에 따른 농수산물 가격을 머신러닝 모델을 기반으로 예측하여
+대시보드와 앱 화면을 제공하며, Supabase Auth 및 DB를 이용한 사용자 계정 체계를 동기화합니다.
+"""
 import os
 import re
 import ssl
@@ -7,6 +12,17 @@ import time
 import hmac
 import hashlib
 from datetime import date, timedelta
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_path):
+    with open(env_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ[k.strip()] = v.strip()
 
 import joblib
 import numpy as np
@@ -320,6 +336,14 @@ def api_dashboard():
     return dashboard_data()
 
 
+@app.get("/api/config")
+def api_config():
+    return {
+        "supabaseUrl": os.getenv("SUPABASE_URL", ""),
+        "supabaseAnonKey": os.getenv("SUPABASE_ANON_KEY", "")
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard_page():
     return DASHBOARD_HTML
@@ -370,7 +394,9 @@ def _render_screen(slug):
         html = f.read()
     if name == "home":
         html = _inject_home(html)
-    inject = '<script src="/app/static/nav.js"></script>'
+    inject = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
+    inject += '<script src="/app/static/ct-store.js"></script>'
+    inject += '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
             "item-analysis": "item-live.js", "bom-register": "bom-live.js"}.get(name)
     if live:
@@ -386,7 +412,7 @@ def _render_screen(slug):
 @app.get("/app/static/{fname}")
 def app_static(fname: str):
     # 화면 공통 JS 서빙 (경로 이탈 차단)
-    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js"):
+    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js", "ct-store.js"):
         return HTMLResponse("not found", status_code=404)
     with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
         return HTMLResponse(f.read(), media_type="application/javascript")

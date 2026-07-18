@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
   Promise.all([
     fetch('/api/dashboard').then(r => r.json()),
     fetch('/api/retail').then(r => r.json()).catch(() => ({ groups: {} })),
-  ]).then(([data, retail]) => {
+    window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}')),
+    window.ctStore ? ctStore.getMenus() : Promise.resolve(JSON.parse(localStorage.getItem('ct_bom') || '[]')),
+  ]).then(([data, retail, stock, boms]) => {
     const items = [...data.items].sort((a, b) => b.r30 - a.r30);
     const risers = items.filter(i => i.r30 > 5);
     const top = items[0];
@@ -29,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (top && top.r30 > 5) {
         card.querySelector('p.font-headline-md').textContent =
           `${top.name} 가격 30일 뒤 ${top.r30}% 상승 예상!`;
-        const stock = JSON.parse(localStorage.getItem('ct_stock') || '{}');
         const sd = parseInt(stock[top.name]) || 0;
         let msg;
         if (sd > 0) {
@@ -86,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const h3s = [...document.querySelectorAll('h3')];
       const bomH = h3s.find(h => h.textContent.includes('메뉴별 원가'));
-      const boms = JSON.parse(localStorage.getItem('ct_bom') || '[]');
+      // boms 변수는 상위 Promise.all을 통해 이미 동적 주입됩니다.
 
       if (!boms.length) {
         const tag = document.createElement('span');
