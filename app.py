@@ -58,6 +58,11 @@ VEG = os.path.join(BASE_DIR, "kamis_veg_retail.csv")  # 소매(체감) 기준
 ITEMS = {"배추": "211", "무": "231", "양파": "245", "대파": "246", "마늘": "258",
          "당근": "232", "오이": "223", "시금치": "213", "상추": "214",
          "사과": "411", "배": "412"}
+# 고변동 확장 품목 — 가격은 kamis_all_retail.csv에서 조달
+EXTRA_ITEMS = {"물오징어": "619", "호박": "224", "토마토": "225", "열무": "233",
+               "파프리카": "256", "피망": "255", "얼갈이배추": "215", "브로콜리": "280"}
+ITEMS.update(EXTRA_ITEMS)
+ALL_RETAIL = os.path.join(BASE_DIR, "kamis_all_retail.csv")
 # 반입량(공급) 보유 품목만
 INTAKE_FILE = {"배추": os.path.join(BASE_DIR, "garak_cabbage_intake.csv")}
 # 비쌀 때 대체재 추천 (품목별)
@@ -98,10 +103,29 @@ def _weather_with_lags():
     return w
 
 
+_veg_cache = {}
+
+
+def veg_prices():
+    # 기본 품목(VEG) + 확장 품목(전 품목 시세)을 합친 가격 프레임 (프로세스 캐시)
+    if "df" in _veg_cache:
+        return _veg_cache["df"]
+    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    if os.path.exists(ALL_RETAIL):
+        a = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
+        a = a[a["품목명"].isin(EXTRA_ITEMS.keys())].copy()
+        if len(a):
+            a["날짜"] = pd.to_datetime(a["날짜"])
+            a = a.drop_duplicates(subset=["날짜", "품목명"], keep="last")
+            veg = pd.concat([veg, a[["날짜", "품목명", "가격", "단위"]]], ignore_index=True)
+    _veg_cache["df"] = veg
+    return veg
+
+
 def build_feature_frame(item):
     # 학습(train_veg_models)과 동일한 피처 시계열을 로컬 CSV에서 구성
     w = _weather_with_lags()
-    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    veg = veg_prices()
     p = veg[veg["품목명"] == item][["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
     df = pd.merge(w, p, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
     df["price"] = df["price"].ffill().bfill()
@@ -278,7 +302,7 @@ def dashboard_data():
     key = date.today().isoformat()
     if key in _dash_cache:
         return _dash_cache[key]
-    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    veg = veg_prices()
     items = []
     for name in ITEMS:
         if not MODELS.get(ITEMS[name]):
