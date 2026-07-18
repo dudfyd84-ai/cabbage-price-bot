@@ -44,6 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
           note.className = 'font-body-sm text-body-sm text-on-surface-variant';
           note.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid #e0e4e0;';
           note.textContent = `검증: 최근 ${a30.n.toLocaleString()}건 out-of-sample 백테스트에서 30일 평균오차 ${a30.wape}%(WAPE), 방향 적중률 ${a30.dir_acc}% (${a30.period[0]}~${a30.period[1]}).`;
+
+          // 실전(live) 적중률: 성숙분이 쌓이면 노출, 아니면 집계중 표기
+          const live = data.accuracy && data.accuracy.live;
+          const lv = live && live.items && live.items[it.name] && live.items[it.name].h30;
+          const sub = document.createElement('span');
+          sub.style.cssText = 'display:block;margin-top:6px;color:#3755c3;font-weight:600;';
+          if (lv) {
+            sub.textContent = `실전 적중률(최근 ${live.window_days}일 ${lv.n}건): 방향 ${lv.dir_acc}% · 오차 ${lv.wape}%`;
+          } else {
+            sub.textContent = '실전 적중률: 집계 중 (예측 성숙 후 표시)';
+          }
+          note.appendChild(sub);
           box.appendChild(note);
         }
       }

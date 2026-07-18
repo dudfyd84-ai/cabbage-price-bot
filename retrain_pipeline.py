@@ -235,7 +235,7 @@ def retrain_all():
             n = f"{col}_ma{win}"; w[n] = w[col].shift(1).rolling(win).mean(); wf.append(n)
 
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
-    summary, acc_items = {}, {}
+    summary, acc_items, pred_rows = {}, {}, []
     for code, name in ITEMS.items():
         sub = veg[veg["품목명"] == name]
         p = sub[["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
@@ -281,14 +281,82 @@ def retrain_all():
             joblib.dump({"model": final, "features": fcols, "horizon": H, "log_target": True,
                          "item": name, "code": code, "unit": unit, "updated": str(date.today())},
                         os.path.join(DIR, f"model_{code}_h{H}.pkl"))
+
+            # 오늘자 예측 기록: 최신 피처 행으로 D+H 예측 (target 불필요, predict_item과 동일 방식)
+            dp = df.copy()
+            dp["target_month"] = (dp["날짜"] + pd.Timedelta(days=H)).dt.month
+            dp = dp.dropna(subset=fcols)
+            if len(dp):
+                yhat = float(np.expm1(final.predict(dp[fcols].iloc[[-1]])[0]))
+                pdate = dp["날짜"].iloc[-1]
+                pred_rows.append({
+                    "예측일": str(pdate.date()), "품목": name, "호라이즌": H,
+                    "목표일": str((pdate + pd.Timedelta(days=H)).date()),
+                    "현재가": round(float(dp["price"].iloc[-1])), "예측가": round(yhat)})
         summary[name] = mapes
     latest = str(veg["날짜"].max().date())
-    _write_accuracy(acc_items, latest)
+    _log_predictions(pred_rows)
+    _write_accuracy(acc_items, latest, _live_accuracy(veg))
     return summary, latest
 
 
-def _write_accuracy(acc_items, latest):
-    # 품목별 out-of-sample 백테스트 성능을 accuracy.json으로 저장 (전체 가중집계 포함)
+def _log_predictions(rows):
+    # 매일 낸 D+7/D+30 예측을 predict_log.csv에 누적 (예측일·품목·호라이즌 유일)
+    if not rows:
+        return 0
+    path = os.path.join(DIR, "predict_log.csv")
+    new = pd.DataFrame(rows)
+    if os.path.exists(path):
+        old = pd.read_csv(path)
+        new = pd.concat([old, new], ignore_index=True)
+    new = new.drop_duplicates(subset=["예측일", "품목", "호라이즌"], keep="last")
+    new.to_csv(path, index=False, encoding="utf-8-sig")
+    log(f"예측 로그 적재: 누적 {len(new)}행")
+    return len(new)
+
+
+def _live_accuracy(veg, window=90):
+    # 만기(목표일 도래) 예측을 실측과 대조해 실전 WAPE·방향적중률 산출
+    path = os.path.join(DIR, "predict_log.csv")
+    if not os.path.exists(path):
+        return None
+    lg = pd.read_csv(path)
+    if lg.empty:
+        return None
+    latest = veg["날짜"].max()
+    lg["목표일_dt"] = pd.to_datetime(lg["목표일"])
+    matured = lg[lg["목표일_dt"] <= latest]
+    matured = matured[matured["목표일_dt"] >= latest - pd.Timedelta(days=window)]
+    if matured.empty:
+        first = pd.to_datetime(lg["목표일"]).min()
+        days = max(0, (first - latest).days)
+        return {"status": "집계중", "n": 0, "next_days": days}
+    look = veg.rename(columns={"품목명": "품목", "날짜": "목표일_dt", "가격": "실측가"})
+    m = matured.merge(look[["품목", "목표일_dt", "실측가"]], on=["품목", "목표일_dt"], how="left").dropna(subset=["실측가"])
+    if m.empty:
+        return {"status": "집계중", "n": 0}
+    items = {}
+    for (item, H), g in m.groupby(["품목", "호라이즌"]):
+        act, pred, now = g["실측가"].values, g["예측가"].values, g["현재가"].values
+        items.setdefault(item, {})[f"h{int(H)}"] = {
+            "n": len(g),
+            "wape": round(np.abs(act - pred).sum() / np.abs(act).sum() * 100, 1),
+            "dir_acc": round((np.sign(pred - now) == np.sign(act - now)).mean() * 100)}
+    overall = {}
+    for H in ("h7", "h30"):
+        rs = [v[H] for v in items.values() if H in v]
+        if not rs:
+            continue
+        tot = sum(r["n"] for r in rs)
+        overall[H] = {"n": tot,
+                      "wape": round(sum(r["wape"] * r["n"] for r in rs) / tot, 1),
+                      "dir_acc": round(sum(r["dir_acc"] * r["n"] for r in rs) / tot)}
+    return {"status": "집계됨", "overall": overall, "items": items,
+            "window_days": window, "as_of": str(latest.date())}
+
+
+def _write_accuracy(acc_items, latest, live=None):
+    # 품목별 out-of-sample 백테스트 성능 + 실전(live) 성능을 accuracy.json으로 저장
     overall = {}
     for H in ("h7", "h30"):
         rows = [v[H] for v in acc_items.values() if H in v]
@@ -302,7 +370,8 @@ def _write_accuracy(acc_items, latest):
             "dir_acc": round(sum(r["dir_acc"] * r["n"] for r in rows) / tot_n)}
     with open(os.path.join(DIR, "accuracy.json"), "w", encoding="utf-8") as f:
         json.dump({"generated": str(date.today()), "data_latest": latest,
-                   "overall": overall, "items": acc_items}, f, ensure_ascii=False, indent=1)
+                   "overall": overall, "items": acc_items, "live": live},
+                  f, ensure_ascii=False, indent=1)
 
 
 def main():
