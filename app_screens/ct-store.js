@@ -191,6 +191,16 @@
     },
 
     // 4. 추상화된 데이터 호출 인터페이스
+    // 4-0) 인증 토큰이 포함된 fetch 래퍼
+    async authFetch(url, options = {}) {
+      await this.init();
+      if (this.session && this.session.access_token) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = `Bearer ${this.session.access_token}`;
+      }
+      return fetch(url, options);
+    },
+
     // 4-1) 매장 정보
     async getStore() {
       await this.init();

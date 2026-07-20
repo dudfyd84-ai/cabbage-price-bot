@@ -3,13 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
 
   Promise.all([
-    fetch('/api/dashboard').then(r => r.json()),
+    (window.ctStore ? ctStore.authFetch('/api/dashboard') : fetch('/api/dashboard')).then(r => r.json()),
     fetch('/api/retail').then(r => r.json()).catch(() => ({ groups: {} })),
     window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}')),
     window.ctStore ? ctStore.getMenus() : Promise.resolve(JSON.parse(localStorage.getItem('ct_bom') || '[]')),
   ]).then(([data, retail, stock, boms]) => {
-    const items = [...data.items].sort((a, b) => b.r30 - a.r30);
-    const risers = items.filter(i => i.r30 > 5);
+    const isFree = data.items.some(i => i.p30 === null);
+    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
+    const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
     const top = items[0];
 
     // 1) 상단 경보: 다음 달 예상 비용 분석
@@ -28,12 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2) 재고 확보 알림 카드: 최대 상승 품목 + 입력된 재고 일수 기반 실계산
     try {
       const card = document.querySelector('.bg-secondary');
-      if (top && top.r30 > 5) {
+      if (top && (top.r30 ?? top.r7) > 5) {
         card.querySelector('p.font-headline-md').textContent =
-          `${top.name} 가격 30일 뒤 ${top.r30}% 상승 예상!`;
+          isFree ? `🔒 유료 전용 분석 (D+30일 예측)` : `${top.name} 가격 30일 뒤 ${top.r30}% 상승 예상!`;
         const sd = parseInt(stock[top.name]) || 0;
         let msg;
-        if (sd > 0) {
+        if (isFree) {
+           msg = '프로 플랜으로 업그레이드 시 D+30일 예측 데이터와 재고 소진 시점에 맞춘 최적 선매입 가이드를 제공합니다.';
+           card.style.cursor = 'pointer';
+           card.addEventListener('click', () => location.href='/app/plan');
+        } else if (sd > 0) {
           const dep = sd <= 7 ? top.cur + (top.p7 - top.cur) * sd / 7
             : sd <= 30 ? top.p7 + (top.p30 - top.p7) * (sd - 7) / 23 : top.p30;
           const save = Math.round(dep - top.cur);
@@ -118,8 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       items.forEach(i => {   // 예측 11품목은 미래 비율 덮어쓰기
         const up = parseUnit(i.unit, i.cur);
+        const fut = isFree ? i.p7 : i.p30;
         if (up) priceBook[norm(i.name)] = {
-          ...up, futRatio: i.cur > 0 ? i.p30 / i.cur : 1, label: i.name, predicted: true,
+          ...up, futRatio: i.cur > 0 ? fut / i.cur : 1, label: i.name, predicted: true,
         };
       });
 
