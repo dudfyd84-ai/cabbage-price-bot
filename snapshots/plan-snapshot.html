@@ -1,0 +1,381 @@
+<!-- 오프라인 데모 번들: plan. /api/dashboard, /api/retail 데이터를 캡처 시점 기준으로 파일 안에 인라인했고, 필터·정렬·화면 간 이동이 서버 없이도 실제로 동작합니다. 데이터는 캡처 시점(위 값)에 고정되며, 실제 소스는 app_screens/plan.html 참고. -->
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .premium-gradient {
+            background: linear-gradient(135deg, #064E3B 0%, #003527 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed": "#001453",
+                    "surface-bright": "#f8f9ff",
+                    "outline": "#707974",
+                    "surface": "#f8f9ff",
+                    "inverse-primary": "#95d3ba",
+                    "background": "#f8f9ff",
+                    "on-primary-container": "#80bea6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "on-tertiary-fixed": "#00201d",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "surface-container": "#e5eeff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "on-surface-variant": "#404944",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#708cfd",
+                    "secondary": "#3755c3",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#dde1ff",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#213145",
+                    "on-secondary-container": "#00217a",
+                    "surface-variant": "#d3e4fe",
+                    "primary-fixed": "#b0f0d6",
+                    "tertiary": "#00342f",
+                    "surface-dim": "#cbdbf5",
+                    "surface-container-high": "#dce9ff",
+                    "tertiary-container": "#004d46",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#53c2b5",
+                    "primary-fixed-dim": "#95d3ba",
+                    "outline-variant": "#bfc9c3",
+                    "on-surface": "#0b1c30",
+                    "on-primary-fixed": "#002117",
+                    "tertiary-fixed": "#89f5e7",
+                    "on-background": "#0b1c30",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#064e3b",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "primary": "#003527",
+                    "surface-tint": "#2b6954"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "2xl": "48px",
+                    "gutter": "12px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "container-margin": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "data-mono": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface pb-24">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-md h-16 fixed top-0 z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">analytics</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">CartTiming</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-xs hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors rounded-full active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant">notifications</span>
+</button>
+</div>
+</header>
+<main class="mt-20 px-container-margin max-w-screen-xl mx-auto space-y-xl">
+<!-- Header Section -->
+<section class="text-center py-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-xs">프리미엄 구독 플랜</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">정확한 가격 예측으로 스마트한 자재 수급 전략을 수립하세요.</p>
+</section>
+<!-- Tier Selection Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Free Plan -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col hover:shadow-md transition-shadow">
+<div class="mb-lg">
+<span class="font-label-md text-label-md text-outline px-sm py-xs bg-surface-container rounded-full">Basic</span>
+<h2 class="font-headline-md text-headline-md mt-sm">Free</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">개인 사용자를 위한 기초 데이터</p>
+</div>
+<div class="space-y-sm flex-grow">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<span class="font-body-md text-body-md">일일 가격 현황 (5개 품목)</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<span class="font-body-md text-body-md">기본 주간 리포트</span>
+</div>
+</div>
+<button class="mt-xl w-full py-md border border-outline text-outline font-label-md text-label-md rounded-lg hover:bg-surface-container-low transition-colors">현재 이용 중</button>
+</div>
+<!-- Standard Plan (Highlight) -->
+<div class="premium-gradient text-white rounded-xl p-lg flex flex-col shadow-xl relative overflow-hidden transform md:scale-105 z-10">
+<div class="absolute top-4 right-4 bg-secondary-container text-on-secondary-container font-label-sm text-label-sm px-md py-1 rounded-full">가장 인기있는</div>
+<div class="mb-lg">
+<span class="font-label-md text-label-md text-primary-fixed-dim px-sm py-xs bg-primary-container rounded-full">Standard</span>
+<h2 class="font-headline-md text-headline-md mt-sm">￦10,000 ~ 30,000 /월</h2>
+<p class="font-body-sm text-body-sm opacity-80 mt-xs">비즈니스 효율을 극대화하는 분석 도구</p>
+</div>
+<div class="space-y-sm flex-grow">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-[20px]">verified</span>
+<span class="font-body-md text-body-md">무제한 대시보드 접근</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-[20px]">notifications_active</span>
+<span class="font-body-md text-body-md font-bold text-secondary-fixed">안전 재고 알림 (Safe Stock)</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-[20px]">trending_up</span>
+<span class="font-body-md text-body-md">30일 가격 예측 시뮬레이션</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-[20px]">description</span>
+<span class="font-body-md text-body-md">심층 카테고리 분석 리포트</span>
+</div>
+</div>
+<button class="mt-xl w-full py-md bg-white text-primary font-label-md text-label-md rounded-lg hover:bg-secondary-fixed transition-colors">업그레이드 하기</button>
+</div>
+<!-- Enterprise Section -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col hover:shadow-md transition-shadow">
+<div class="mb-lg">
+<span class="font-label-md text-label-md text-outline px-sm py-xs bg-surface-container rounded-full">Enterprise</span>
+<h2 class="font-headline-md text-headline-md mt-sm">문의하기</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">대규모 인프라 및 시스템 통합</p>
+</div>
+<div class="space-y-sm flex-grow">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">settings_input_component</span>
+<span class="font-body-md text-body-md font-bold">ERP 시스템 API 연동 (이카운트 등)</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">support_agent</span>
+<span class="font-body-md text-body-md">전담 데이터 컨설턴트 배정</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">security</span>
+<span class="font-body-md text-body-md">SLA 기반 기술 지원 서비스</span>
+</div>
+</div>
+<button class="mt-xl w-full py-md border-2 border-primary text-primary font-label-md text-label-md rounded-lg hover:bg-primary hover:text-white transition-all">B2B 상담 신청</button>
+</div>
+</div>
+<!-- Premium Report Sample -->
+<section class="mt-2xl">
+<div class="flex justify-between items-end mb-md">
+<div>
+<h3 class="font-headline-md text-headline-md">심층 분석 리포트 샘플</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">프리미엄 회원을 위해 매주 발행되는 전문 리포트</p>
+</div>
+<button class="flex items-center gap-xs text-primary font-label-md text-label-md hover:underline">
+                    전체 보기 <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="glass-card rounded-xl overflow-hidden flex flex-col md:flex-row shadow-sm">
+<div class="md:w-1/3 h-48 md:h-auto overflow-hidden relative">
+<div class="w-full h-full bg-cover bg-center" data-alt="A macro cinematic photograph of vibrant fresh green lettuce leaves with water droplets, organized in a modern pattern. Soft studio lighting highlights textures and colors against a clean white background, reflecting a professional agricultural data analysis theme with emerald and slate tones." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAmC72qhh4fLVnTHQy9ZQjVbhCxQJX_fplWLNoXYQuGcIXOGYClU-MKXHb9pG6uMUWQ5vwx2hTN9YkfVL12WY5LcpQwH-SDNXL-5oUk4PlPgKkKNdyfqFa5I-4subf2oWkPhQCO7eSEHlGWdS9n3hJimvSKuM6wSlR16XjLEUk5u8S8zg3MfDg1tnPImw2JT504BgBOow9y_2_wjwPlb6i3FLr9VkT5LrGwOxM2wlwFjLAFcdZdTXGy')"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface-container-lowest/20"></div>
+</div>
+<div class="p-lg md:w-2/3 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="px-sm py-1 bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm rounded">NEW</span>
+<span class="font-label-sm text-label-sm text-outline">2024.05.20 발행</span>
+</div>
+<h4 class="font-headline-md text-headline-md mb-xs text-primary">엽채류(상추, 배추) 가격 변동성 분석 리포트</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">하절기 기온 상승에 따른 산지 수급 불균형 예측과 향후 4주간의 가격 추이 분석 데이터를 포함하고 있습니다. 선제적 구매 전략 수립에 활용하십시오.</p>
+</div>
+<div class="mt-lg flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-label-sm text-label-sm">KB</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-slate-300 flex items-center justify-center font-label-sm text-label-sm">JS</div>
+</div>
+<button class="flex items-center gap-sm px-lg py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">download</span>
+                            다운로드 (PDF)
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Badges -->
+<section class="py-xl border-t border-outline-variant flex flex-wrap justify-center gap-xl opacity-60 grayscale hover:grayscale-0 transition-all">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="font-label-md text-label-md">데이터 신뢰도 98%</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined">encrypted</span>
+<span class="font-label-md text-label-md">금융권 수준 보안</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined">public</span>
+<span class="font-label-md text-label-md">공공 데이터 연동</span>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-sm bg-surface dark:bg-inverse-surface border-t border-outline-variant dark:border-outline shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-sm text-label-sm">Predictions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-sm text-label-sm">Smart Deal</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-sm text-label-sm">My Page</span>
+</a>
+</nav>
+<script>const CT_PAGE = "plan";</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const TABS = [
+    ['홈', 'home', 'home-snapshot.html', 'home'],
+    ['인벤토리', 'inventory_2', 'inventory-snapshot.html', 'inventory'],
+    ['예측 분석', 'trending_up', 'item-analysis-snapshot.html', 'item-analysis'],
+    ['스마트 딜', 'shopping_bag', 'deals-snapshot.html', 'deals'],
+    ['내 정보', 'person', 'plan-snapshot.html', 'plan'],
+  ];
+
+  // 기존 화면별 하단 고정 네비 제거 → 통일된 5탭 바로 교체
+  document.querySelectorAll('nav, footer').forEach(n => {
+    const c = n.className || '';
+    if (typeof c === 'string' && c.includes('fixed') && c.includes('bottom-0') && !n.querySelector('input')) n.remove();
+  });
+  document.querySelectorAll('header div').forEach(d => {
+    const txts = [...d.querySelectorAll('button, a')].map(b => b.textContent.trim());
+    if (txts.includes('예측 분석') && txts.includes('스마트 딜')) d.style.display = 'none';
+  });
+
+  const bar = document.createElement('nav');
+  bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+  TABS.forEach(([label, icon, href, id]) => {
+    const active = id === CT_PAGE;
+    const a = document.createElement('a');
+    a.href = href;
+    a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+      + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
+    a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
+      + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+    inner.appendChild(a);
+  });
+  bar.appendChild(inner);
+  document.body.appendChild(bar);
+  document.body.style.paddingBottom = '88px';
+
+  // 텍스트 매칭 라우팅: 대체재/선매입 링크 → 스마트 딜 (필터 패널 내부 버튼은 제외 — "선매입 권장" 칩과 텍스트가 겹침)
+  document.querySelectorAll('a, button').forEach(el => {
+    if (el.closest('#filter-panel')) return;
+    const t = (el.textContent || '').trim();
+    if (t.includes('선매입') || t.includes('대체재') || t.includes('특가')) {
+      el.addEventListener('click', e => { e.preventDefault(); location.href = 'deals-snapshot.html'; });
+    }
+    if (t.startsWith('arrow_back')) {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        history.length > 1 ? history.back() : (location.href = 'home-snapshot.html');
+      });
+    }
+  });
+
+  // 알림 설정: 토글 상태 저장·복원
+  if (CT_PAGE === 'alerts') {
+    const boxes = document.querySelectorAll('input[type="checkbox"]');
+    const saved = JSON.parse(localStorage.getItem('ct_alerts_demo') || 'null');
+    boxes.forEach((b, i) => {
+      if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
+      b.addEventListener('change', () => {
+        localStorage.setItem('ct_alerts_demo', JSON.stringify([...boxes].map(x => x.checked)));
+      });
+    });
+  }
+
+  // 데모 화면 배지
+  if (['deals', 'plan'].includes(CT_PAGE)) {
+    const h = document.querySelector('header h1, main h1, main h2');
+    if (h) {
+      const tag = document.createElement('span');
+      tag.textContent = '데모';
+      tag.style.cssText = 'font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:8px;';
+      h.appendChild(tag);
+    }
+  }
+
+  // 로고 클릭 → 홈
+  document.querySelectorAll('header h1').forEach(h => {
+    if (h.textContent.includes('CartTiming')) {
+      h.style.cursor = 'pointer';
+      h.addEventListener('click', () => { location.href = 'home-snapshot.html'; });
+    }
+  });
+});
+</script>
+</body></html>

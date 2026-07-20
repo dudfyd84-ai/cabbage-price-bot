@@ -1,0 +1,568 @@
+<!-- 오프라인 데모 번들: item-analysis. /api/dashboard, /api/retail 데이터를 캡처 시점 기준으로 파일 안에 인라인했고, 필터·정렬·화면 간 이동이 서버 없이도 실제로 동작합니다. 데이터는 캡처 시점(위 값)에 고정되며, 실제 소스는 app_screens/item-analysis.html 참고. -->
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartTiming | 마늘 원가 분석</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#002117",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "primary": "#003527",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dde1ff",
+                    "outline-variant": "#bfc9c3",
+                    "outline": "#707974",
+                    "surface-dim": "#cbdbf5",
+                    "tertiary": "#00342f",
+                    "on-tertiary-fixed": "#00201d",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "primary-fixed": "#b0f0d6",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "tertiary-container": "#004d46",
+                    "on-secondary-fixed": "#001453",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#2b6954",
+                    "on-tertiary-container": "#53c2b5",
+                    "surface-bright": "#f8f9ff",
+                    "on-background": "#0b1c30",
+                    "inverse-primary": "#95d3ba",
+                    "inverse-surface": "#213145",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-container": "#708cfd",
+                    "tertiary-fixed": "#89f5e7",
+                    "on-secondary-container": "#00217a",
+                    "surface-container-low": "#eff4ff",
+                    "surface": "#f8f9ff",
+                    "secondary": "#3755c3",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#404944",
+                    "surface-variant": "#d3e4fe",
+                    "primary-container": "#064e3b",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "on-primary-container": "#80bea6",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "surface-container-high": "#dce9ff",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#95d3ba"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "12px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "container-margin": "16px",
+                    "2xl": "48px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "data-mono": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"]
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chart-gradient-bg {
+            background: linear-gradient(to bottom, rgba(112, 140, 253, 0.05), transparent);
+        }
+        .confidence-area {
+            fill: rgba(30, 64, 175, 0.08);
+        }
+        .historical-line {
+            stroke-dasharray: 0;
+            transition: all 0.5s ease;
+        }
+        .prediction-line {
+            stroke-dasharray: 4 4;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-container-margin py-sm sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-headline-md" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">CartTiming</h1>
+</div>
+<div class="hidden md:flex gap-6">
+<button class="text-primary font-bold transition-colors duration-200">인벤토리</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">예측 분석</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">스마트 딜</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low px-3 py-1 rounded transition-colors duration-200">내 정보</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-label-sm">JD</div>
+</div>
+</header>
+<main class="max-w-[1280px] mx-auto px-container-margin py-md space-y-6">
+<!-- Header & Breadcrumbs -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="text-label-sm font-label-sm">예측 분석</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-label-sm font-label-sm text-primary font-bold">식재료 분석</span>
+</nav>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">마늘 원가 분석</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">글로벌 공급망 및 지역 기상 패턴 기반 실시간 예측</p>
+</div>
+<div class="flex items-center bg-white border border-outline-variant p-1 rounded-lg self-start">
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">1주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">2주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all bg-secondary text-white shadow-sm">4주</button>
+<button class="px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low">8주</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Main Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Main Chart Container (Lg: 8 cols) -->
+<div class="lg:col-span-8 bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
+<div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">과거 시세</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 border-2 border-dashed border-secondary rounded-full"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">예측 시세</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-secondary/10 rounded-sm"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">95% 신뢰 구간</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-secondary text-label-md font-label-md hover:underline">
+<span class="material-symbols-outlined text-[18px]">download</span> 데이터 내보내기
+                    </button>
+</div>
+<div class="relative w-full h-[320px] md:h-[400px] p-md chart-gradient-bg">
+<!-- Simple SVG Chart Mockup for Layout -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 300">
+<!-- Grid Lines -->
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="50" y2="50"></line>
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="150" y2="150"></line>
+<line stroke="#E2E8F0" stroke-width="1" x1="0" x2="800" y1="250" y2="250"></line>
+<!-- Confidence Area -->
+<path class="confidence-area" d="M 400 150 L 500 130 L 600 145 L 700 120 L 800 100 L 800 220 L 700 200 L 600 210 L 500 190 L 400 150 Z"></path>
+<!-- Historical Line -->
+<path class="historical-line" d="M 0 250 L 100 230 L 200 240 L 300 200 L 400 150" fill="none" stroke="#1E40AF" stroke-width="3"></path>
+<!-- Prediction Line -->
+<path class="prediction-line" d="M 400 150 L 500 160 L 600 180 L 700 160 L 800 160" fill="none" stroke="#1E40AF" stroke-width="3"></path>
+<!-- Current Position Marker -->
+<circle cx="400" cy="150" fill="#1E40AF" r="6" stroke="#FFFFFF" stroke-width="2"></circle>
+</svg>
+<!-- Axis Labels -->
+<div class="absolute bottom-0 left-0 right-0 flex justify-between px-md py-xs text-label-sm font-label-sm text-outline">
+<span>9월 12일</span>
+<span>9월 26일</span>
+<span class="text-secondary font-bold">오늘</span>
+<span>10월 14일</span>
+<span>10월 28일</span>
+</div>
+</div>
+</div>
+<!-- Summary Section (Lg: 4 cols) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- AI Summary Card -->
+<div class="bg-primary-container p-lg rounded-xl text-on-primary-container space-y-4 shadow-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined animate-pulse-subtle">auto_awesome</span>
+<h3 class="font-headline-md text-headline-md">AI 인사이트</h3>
+</div>
+<div class="space-y-4">
+<div class="pb-4 border-b border-on-primary-container/20">
+<p class="text-label-sm opacity-80 mb-1">예상 평균 가격</p>
+<p class="text-display-lg font-display-lg">$4.12<span class="text-label-md font-label-md opacity-60 ml-1">/ lb</span></p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-label-sm opacity-80 mb-1">예측 변동폭</p>
+<div class="flex items-center gap-1 text-headline-md text-error-container">
+<span class="material-symbols-outlined">trending_up</span>
+<span>+6.4%</span>
+</div>
+</div>
+<div>
+<p class="text-label-sm opacity-80 mb-1">신뢰도</p>
+<div class="flex items-center gap-1 text-headline-md text-primary-fixed">
+<span>94%</span>
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary-fixed text-on-primary-fixed font-bold rounded-lg text-label-md hover:opacity-90 transition-opacity">
+                        전략 수정하기
+                    </button>
+</div>
+<!-- Driver of Change List -->
+<div class="bg-white border border-outline-variant p-lg rounded-xl shadow-sm space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">변동 주요 원인</h3>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-error-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[18px]">rainy</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">기상 악화 (중국)</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">산둥성 폭우로 인해 마늘 수확이 약 10일 지연될 것으로 예상됩니다.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">calendar_month</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">계절적 수요 급증</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">4분기 과거 데이터 분석 결과, 식자재 도매 구매량이 15% 증가하는 경향을 보입니다.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-[18px]">local_shipping</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-bold text-on-surface">해상 운임 지수</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">표준 컨테이너 운임이 안정화 추세에 접어들어, 공급 측면의 가격 상승 압박이 완화되고 있습니다.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Secondary Prediction Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container rounded-lg text-secondary">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-bold text-on-surface-variant uppercase">재고 상태</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">권장 재고량</h4>
+<p class="text-headline-md font-headline-md text-on-surface">2,400 lbs</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-secondary transition-colors">지금 주문 시 약 600,000원 절감 가능 →</p>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-error transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container rounded-lg text-error">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<span class="px-2 py-1 bg-error-container rounded text-[10px] font-bold text-on-error-container uppercase">위험 알림</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">변동성 점수</h4>
+<p class="text-headline-md font-headline-md text-error">높음 (7.2)</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-error transition-colors">공급망 차질 내역 보기 →</p>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-sm hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<span class="px-2 py-1 bg-primary-fixed rounded text-[10px] font-bold text-on-primary-fixed-variant uppercase">스마트 딜</span>
+</div>
+<h4 class="text-label-md font-label-md text-on-surface mb-1">대체 공급처</h4>
+<p class="text-headline-md font-headline-md text-primary">Ventura Farms</p>
+<p class="text-body-sm text-on-surface-variant mt-2 group-hover:text-primary transition-colors">현재 거래처보다 8% 저렴 →</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center px-gutter py-xs bg-surface border-t border-outline-variant shadow-sm z-50 md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">inventory_2</span>
+<span class="font-label-sm text-label-sm">인벤토리</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-label-sm text-label-sm">예측분석</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">local_offer</span>
+<span class="font-label-sm text-label-sm">스마트 딜</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="font-label-sm text-label-sm">내 정보</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for prediction toggles
+        const buttons = document.querySelectorAll('.flex.items-center.bg-white.border button');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => {
+                    b.classList.remove('bg-secondary', 'text-white', 'shadow-sm');
+                    b.classList.add('text-on-surface-variant', 'hover:bg-surface-container-low');
+                });
+                btn.classList.add('bg-secondary', 'text-white', 'shadow-sm');
+                btn.classList.remove('text-on-surface-variant', 'hover:bg-surface-container-low');
+                
+                // Simulate chart updating (minor visual shift)
+                const histLine = document.querySelector('.historical-line');
+                const predLine = document.querySelector('.prediction-line');
+                if (histLine && predLine) {
+                    histLine.style.opacity = '0.7';
+                    predLine.style.opacity = '0.7';
+                    setTimeout(() => {
+                        histLine.style.opacity = '1';
+                        predLine.style.opacity = '1';
+                    }, 300);
+                }
+            });
+        });
+    </script>
+<script>const CT_PAGE = "item-analysis";</script>
+<script>const CT_DASHBOARD_DATA = {"date": "2026-07-13", "items": [{"name": "배추", "unit": "1포기", "per100g": null, "cur": 3467, "p7": 4784, "p30": 5639, "r7": 38, "r30": 63, "level": "위험", "trend": [{"d": "03/04", "p": 4983}, {"d": "03/05", "p": 4858}, {"d": "03/06", "p": 4879}, {"d": "03/09", "p": 4879}, {"d": "03/10", "p": 4720}, {"d": "03/11", "p": 4713}, {"d": "03/12", "p": 4650}, {"d": "03/13", "p": 4629}, {"d": "03/16", "p": 4705}, {"d": "03/17", "p": 4691}, {"d": "03/18", "p": 4713}, {"d": "03/19", "p": 4595}, {"d": "03/20", "p": 4636}, {"d": "03/23", "p": 4636}, {"d": "03/24", "p": 4588}, {"d": "03/25", "p": 4574}, {"d": "03/26", "p": 4403}, {"d": "03/27", "p": 4423}, {"d": "03/30", "p": 4464}, {"d": "03/31", "p": 4453}, {"d": "04/01", "p": 4570}, {"d": "04/02", "p": 4584}, {"d": "04/03", "p": 4631}, {"d": "04/06", "p": 4549}, {"d": "04/07", "p": 4441}, {"d": "04/08", "p": 4313}, {"d": "04/09", "p": 4209}, {"d": "04/10", "p": 4313}, {"d": "04/13", "p": 4438}, {"d": "04/14", "p": 4416}, {"d": "04/15", "p": 4366}, {"d": "04/16", "p": 4050}, {"d": "04/17", "p": 4091}, {"d": "04/20", "p": 4076}, {"d": "04/21", "p": 4078}, {"d": "04/22", "p": 3878}, {"d": "04/23", "p": 4040}, {"d": "04/24", "p": 4081}, {"d": "04/27", "p": 4024}, {"d": "04/28", "p": 3951}, {"d": "04/29", "p": 3951}, {"d": "04/30", "p": 3508}, {"d": "05/04", "p": 3320}, {"d": "05/06", "p": 3360}, {"d": "05/07", "p": 3306}, {"d": "05/08", "p": 2378}, {"d": "05/11", "p": 2456}, {"d": "05/12", "p": 2456}, {"d": "05/13", "p": 2456}, {"d": "05/14", "p": 2396}, {"d": "05/15", "p": 2396}, {"d": "05/18", "p": 2396}, {"d": "05/19", "p": 2828}, {"d": "05/20", "p": 3091}, {"d": "05/21", "p": 3289}, {"d": "05/22", "p": 3254}, {"d": "05/26", "p": 3289}, {"d": "05/27", "p": 3226}, {"d": "05/28", "p": 3306}, {"d": "05/29", "p": 3306}, {"d": "06/01", "p": 3369}, {"d": "06/02", "p": 3448}, {"d": "06/04", "p": 3444}, {"d": "06/05", "p": 3444}, {"d": "06/08", "p": 3501}, {"d": "06/09", "p": 3584}, {"d": "06/10", "p": 3610}, {"d": "06/11", "p": 3635}, {"d": "06/12", "p": 3613}, {"d": "06/15", "p": 3676}, {"d": "06/16", "p": 3655}, {"d": "06/17", "p": 3593}, {"d": "06/18", "p": 3845}, {"d": "06/19", "p": 3824}, {"d": "06/22", "p": 3838}, {"d": "06/23", "p": 3838}, {"d": "06/24", "p": 3838}, {"d": "06/25", "p": 3861}, {"d": "06/26", "p": 3848}, {"d": "06/29", "p": 3848}, {"d": "06/30", "p": 3883}, {"d": "07/01", "p": 3834}, {"d": "07/02", "p": 3449}, {"d": "07/03", "p": 3463}, {"d": "07/06", "p": 3463}, {"d": "07/07", "p": 3588}, {"d": "07/08", "p": 3563}, {"d": "07/09", "p": 3359}, {"d": "07/10", "p": 3454}, {"d": "07/13", "p": 3467}], "ci7": [4095, 5473], "ci30": [4618, 6660]}, {"name": "무", "unit": "1개", "per100g": null, "cur": 2066, "p7": 2006, "p30": 2320, "r7": -3, "r30": 12, "level": "안정", "trend": [{"d": "03/04", "p": 2286}, {"d": "03/05", "p": 2106}, {"d": "03/06", "p": 2174}, {"d": "03/09", "p": 2280}, {"d": "03/10", "p": 2246}, {"d": "03/11", "p": 2246}, {"d": "03/12", "p": 2155}, {"d": "03/13", "p": 2122}, {"d": "03/16", "p": 2123}, {"d": "03/17", "p": 2123}, {"d": "03/18", "p": 2123}, {"d": "03/19", "p": 1810}, {"d": "03/20", "p": 1802}, {"d": "03/23", "p": 1802}, {"d": "03/24", "p": 1770}, {"d": "03/25", "p": 1770}, {"d": "03/26", "p": 1785}, {"d": "03/27", "p": 1839}, {"d": "03/30", "p": 1779}, {"d": "03/31", "p": 1812}, {"d": "04/01", "p": 1730}, {"d": "04/02", "p": 1795}, {"d": "04/03", "p": 1813}, {"d": "04/06", "p": 1813}, {"d": "04/07", "p": 1813}, {"d": "04/08", "p": 1813}, {"d": "04/09", "p": 1682}, {"d": "04/10", "p": 1847}, {"d": "04/13", "p": 1912}, {"d": "04/14", "p": 1933}, {"d": "04/15", "p": 1940}, {"d": "04/16", "p": 1973}, {"d": "04/17", "p": 1973}, {"d": "04/20", "p": 1923}, {"d": "04/21", "p": 2007}, {"d": "04/22", "p": 2057}, {"d": "04/23", "p": 2061}, {"d": "04/24", "p": 1989}, {"d": "04/27", "p": 1900}, {"d": "04/28", "p": 1989}, {"d": "04/29", "p": 1989}, {"d": "04/30", "p": 1914}, {"d": "05/04", "p": 1853}, {"d": "05/06", "p": 1994}, {"d": "05/07", "p": 2083}, {"d": "05/08", "p": 2107}, {"d": "05/11", "p": 2217}, {"d": "05/12", "p": 2183}, {"d": "05/13", "p": 2027}, {"d": "05/14", "p": 2266}, {"d": "05/15", "p": 2202}, {"d": "05/18", "p": 2480}, {"d": "05/19", "p": 2480}, {"d": "05/20", "p": 1980}, {"d": "05/21", "p": 1480}, {"d": "05/22", "p": 1730}, {"d": "05/26", "p": 1733}, {"d": "05/27", "p": 1844}, {"d": "05/28", "p": 1864}, {"d": "05/29", "p": 1750}, {"d": "06/01", "p": 1750}, {"d": "06/02", "p": 1685}, {"d": "06/04", "p": 1602}, {"d": "06/05", "p": 1624}, {"d": "06/08", "p": 1724}, {"d": "06/09", "p": 1724}, {"d": "06/10", "p": 1770}, {"d": "06/11", "p": 1803}, {"d": "06/12", "p": 1686}, {"d": "06/15", "p": 1760}, {"d": "06/16", "p": 1711}, {"d": "06/17", "p": 1760}, {"d": "06/18", "p": 1888}, {"d": "06/19", "p": 1888}, {"d": "06/22", "p": 1888}, {"d": "06/23", "p": 1903}, {"d": "06/24", "p": 1903}, {"d": "06/25", "p": 1946}, {"d": "06/26", "p": 1969}, {"d": "06/29", "p": 1969}, {"d": "06/30", "p": 1969}, {"d": "07/01", "p": 1969}, {"d": "07/02", "p": 1779}, {"d": "07/03", "p": 1779}, {"d": "07/06", "p": 1827}, {"d": "07/07", "p": 1874}, {"d": "07/08", "p": 1920}, {"d": "07/09", "p": 2154}, {"d": "07/10", "p": 2025}, {"d": "07/13", "p": 2066}], "ci7": [1761, 2251], "ci30": [1956, 2684]}, {"name": "양파", "unit": "1kg", "per100g": 152, "cur": 1517, "p7": 1897, "p30": 1991, "r7": 25, "r30": 31, "level": "위험", "trend": [{"d": "03/04", "p": 2346}, {"d": "03/05", "p": 2253}, {"d": "03/06", "p": 2264}, {"d": "03/09", "p": 2357}, {"d": "03/10", "p": 2338}, {"d": "03/11", "p": 2238}, {"d": "03/12", "p": 2171}, {"d": "03/13", "p": 2171}, {"d": "03/16", "p": 2097}, {"d": "03/17", "p": 2097}, {"d": "03/18", "p": 2097}, {"d": "03/19", "p": 1941}, {"d": "03/20", "p": 1930}, {"d": "03/23", "p": 1905}, {"d": "03/24", "p": 1859}, {"d": "03/25", "p": 1859}, {"d": "03/26", "p": 1797}, {"d": "03/27", "p": 1789}, {"d": "03/30", "p": 1789}, {"d": "03/31", "p": 1789}, {"d": "04/01", "p": 1870}, {"d": "04/02", "p": 1940}, {"d": "04/03", "p": 1890}, {"d": "04/06", "p": 1894}, {"d": "04/07", "p": 1865}, {"d": "04/08", "p": 1895}, {"d": "04/09", "p": 2134}, {"d": "04/10", "p": 2350}, {"d": "04/13", "p": 2065}, {"d": "04/14", "p": 2065}, {"d": "04/15", "p": 2065}, {"d": "04/16", "p": 1640}, {"d": "04/17", "p": 2012}, {"d": "04/20", "p": 2043}, {"d": "04/21", "p": 2043}, {"d": "04/22", "p": 2011}, {"d": "04/23", "p": 1909}, {"d": "04/24", "p": 1909}, {"d": "04/27", "p": 1909}, {"d": "04/28", "p": 1909}, {"d": "04/29", "p": 1894}, {"d": "04/30", "p": 1782}, {"d": "05/04", "p": 1780}, {"d": "05/06", "p": 1864}, {"d": "05/07", "p": 1808}, {"d": "05/08", "p": 1808}, {"d": "05/11", "p": 1808}, {"d": "05/12", "p": 1808}, {"d": "05/13", "p": 1786}, {"d": "05/14", "p": 1833}, {"d": "05/15", "p": 1774}, {"d": "05/18", "p": 1796}, {"d": "05/19", "p": 1796}, {"d": "05/20", "p": 1773}, {"d": "05/21", "p": 1799}, {"d": "05/22", "p": 1799}, {"d": "05/26", "p": 1799}, {"d": "05/27", "p": 1804}, {"d": "05/28", "p": 1682}, {"d": "05/29", "p": 1771}, {"d": "06/01", "p": 1831}, {"d": "06/02", "p": 1831}, {"d": "06/04", "p": 1739}, {"d": "06/05", "p": 1798}, {"d": "06/08", "p": 1853}, {"d": "06/09", "p": 1964}, {"d": "06/10", "p": 1950}, {"d": "06/11", "p": 1908}, {"d": "06/12", "p": 1971}, {"d": "06/15", "p": 1971}, {"d": "06/16", "p": 1927}, {"d": "06/17", "p": 1909}, {"d": "06/18", "p": 2010}, {"d": "06/19", "p": 1921}, {"d": "06/22", "p": 1913}, {"d": "06/23", "p": 1913}, {"d": "06/24", "p": 1907}, {"d": "06/25", "p": 1687}, {"d": "06/26", "p": 1687}, {"d": "06/29", "p": 1752}, {"d": "06/30", "p": 1765}, {"d": "07/01", "p": 1810}, {"d": "07/02", "p": 1766}, {"d": "07/03", "p": 1852}, {"d": "07/06", "p": 1852}, {"d": "07/07", "p": 1852}, {"d": "07/08", "p": 1795}, {"d": "07/09", "p": 1607}, {"d": "07/10", "p": 1511}, {"d": "07/13", "p": 1517}], "ci7": [1700, 2094], "ci30": [1754, 2228]}, {"name": "대파", "unit": "1kg", "per100g": 316, "cur": 3161, "p7": 3040, "p30": 3211, "r7": -4, "r30": 2, "level": "안정", "trend": [{"d": "03/04", "p": 3170}, {"d": "03/05", "p": 3213}, {"d": "03/06", "p": 3292}, {"d": "03/09", "p": 3292}, {"d": "03/10", "p": 3226}, {"d": "03/11", "p": 3210}, {"d": "03/12", "p": 3309}, {"d": "03/13", "p": 3159}, {"d": "03/16", "p": 3289}, {"d": "03/17", "p": 3218}, {"d": "03/18", "p": 3133}, {"d": "03/19", "p": 3058}, {"d": "03/20", "p": 3013}, {"d": "03/23", "p": 3013}, {"d": "03/24", "p": 2976}, {"d": "03/25", "p": 2976}, {"d": "03/26", "p": 2668}, {"d": "03/27", "p": 2540}, {"d": "03/30", "p": 2540}, {"d": "03/31", "p": 2499}, {"d": "04/01", "p": 2383}, {"d": "04/02", "p": 2541}, {"d": "04/03", "p": 2644}, {"d": "04/06", "p": 2644}, {"d": "04/07", "p": 2626}, {"d": "04/08", "p": 2694}, {"d": "04/09", "p": 2621}, {"d": "04/10", "p": 2401}, {"d": "04/13", "p": 2536}, {"d": "04/14", "p": 2536}, {"d": "04/15", "p": 2509}, {"d": "04/16", "p": 2377}, {"d": "04/17", "p": 2254}, {"d": "04/20", "p": 2439}, {"d": "04/21", "p": 2439}, {"d": "04/22", "p": 2357}, {"d": "04/23", "p": 2219}, {"d": "04/24", "p": 2106}, {"d": "04/27", "p": 2171}, {"d": "04/28", "p": 2171}, {"d": "04/29", "p": 2282}, {"d": "04/30", "p": 2454}, {"d": "05/04", "p": 2389}, {"d": "05/06", "p": 2316}, {"d": "05/07", "p": 2547}, {"d": "05/08", "p": 2564}, {"d": "05/11", "p": 2553}, {"d": "05/12", "p": 2553}, {"d": "05/13", "p": 2609}, {"d": "05/14", "p": 2618}, {"d": "05/15", "p": 2666}, {"d": "05/18", "p": 2666}, {"d": "05/19", "p": 2666}, {"d": "05/20", "p": 2648}, {"d": "05/21", "p": 2712}, {"d": "05/22", "p": 2791}, {"d": "05/26", "p": 3089}, {"d": "05/27", "p": 3126}, {"d": "05/28", "p": 3241}, {"d": "05/29", "p": 3313}, {"d": "06/01", "p": 3438}, {"d": "06/02", "p": 3418}, {"d": "06/04", "p": 3036}, {"d": "06/05", "p": 3309}, {"d": "06/08", "p": 3457}, {"d": "06/09", "p": 3438}, {"d": "06/10", "p": 3233}, {"d": "06/11", "p": 2755}, {"d": "06/12", "p": 2708}, {"d": "06/15", "p": 2708}, {"d": "06/16", "p": 2708}, {"d": "06/17", "p": 2708}, {"d": "06/18", "p": 2729}, {"d": "06/19", "p": 2735}, {"d": "06/22", "p": 2785}, {"d": "06/23", "p": 2785}, {"d": "06/24", "p": 2829}, {"d": "06/25", "p": 2973}, {"d": "06/26", "p": 3026}, {"d": "06/29", "p": 3026}, {"d": "06/30", "p": 3089}, {"d": "07/01", "p": 3090}, {"d": "07/02", "p": 3090}, {"d": "07/03", "p": 3069}, {"d": "07/06", "p": 3035}, {"d": "07/07", "p": 3056}, {"d": "07/08", "p": 3084}, {"d": "07/09", "p": 3140}, {"d": "07/10", "p": 2819}, {"d": "07/13", "p": 3161}], "ci7": [2724, 3356], "ci30": [2887, 3535]}, {"name": "마늘", "unit": "1kg", "per100g": 980, "cur": 9798, "p7": 11023, "p30": 11495, "r7": 13, "r30": 17, "level": "위험", "trend": [{"d": "03/04", "p": 11529}, {"d": "03/05", "p": 11293}, {"d": "03/06", "p": 11527}, {"d": "03/09", "p": 12178}, {"d": "03/10", "p": 12178}, {"d": "03/11", "p": 12178}, {"d": "03/12", "p": 11238}, {"d": "03/13", "p": 11702}, {"d": "03/16", "p": 11089}, {"d": "03/17", "p": 11702}, {"d": "03/18", "p": 11702}, {"d": "03/19", "p": 11969}, {"d": "03/20", "p": 11844}, {"d": "03/23", "p": 12062}, {"d": "03/24", "p": 12173}, {"d": "03/25", "p": 12173}, {"d": "03/26", "p": 12080}, {"d": "03/27", "p": 12080}, {"d": "03/30", "p": 12080}, {"d": "03/31", "p": 12080}, {"d": "04/01", "p": 12558}, {"d": "04/02", "p": 12484}, {"d": "04/03", "p": 12484}, {"d": "04/06", "p": 12484}, {"d": "04/07", "p": 12484}, {"d": "04/08", "p": 11879}, {"d": "04/09", "p": 11260}, {"d": "04/10", "p": 11260}, {"d": "04/13", "p": 11260}, {"d": "04/14", "p": 11260}, {"d": "04/15", "p": 11821}, {"d": "04/16", "p": 11433}, {"d": "04/17", "p": 11868}, {"d": "04/20", "p": 11868}, {"d": "04/21", "p": 11534}, {"d": "04/22", "p": 11547}, {"d": "04/23", "p": 10828}, {"d": "04/24", "p": 11082}, {"d": "04/27", "p": 11629}, {"d": "04/28", "p": 11909}, {"d": "04/29", "p": 11909}, {"d": "04/30", "p": 11050}, {"d": "05/04", "p": 11436}, {"d": "05/06", "p": 11426}, {"d": "05/07", "p": 10974}, {"d": "05/08", "p": 10974}, {"d": "05/11", "p": 10974}, {"d": "05/12", "p": 11177}, {"d": "05/13", "p": 11389}, {"d": "05/14", "p": 11716}, {"d": "05/15", "p": 11716}, {"d": "05/18", "p": 11384}, {"d": "05/19", "p": 11718}, {"d": "05/20", "p": 12096}, {"d": "05/21", "p": 12124}, {"d": "05/22", "p": 12213}, {"d": "05/26", "p": 12873}, {"d": "05/27", "p": 12873}, {"d": "05/28", "p": 12796}, {"d": "05/29", "p": 12707}, {"d": "06/01", "p": 13029}, {"d": "06/02", "p": 13029}, {"d": "06/04", "p": 12818}, {"d": "06/05", "p": 12818}, {"d": "06/08", "p": 12896}, {"d": "06/09", "p": 13262}, {"d": "06/10", "p": 12740}, {"d": "06/11", "p": 12740}, {"d": "06/12", "p": 12740}, {"d": "06/15", "p": 12571}, {"d": "06/16", "p": 12460}, {"d": "06/17", "p": 12260}, {"d": "06/18", "p": 12473}, {"d": "06/19", "p": 12473}, {"d": "06/22", "p": 12507}, {"d": "06/23", "p": 12507}, {"d": "06/24", "p": 12362}, {"d": "06/25", "p": 12362}, {"d": "06/26", "p": 12362}, {"d": "06/29", "p": 12362}, {"d": "06/30", "p": 12362}, {"d": "07/01", "p": 12049}, {"d": "07/02", "p": 11742}, {"d": "07/03", "p": 11409}, {"d": "07/06", "p": 11409}, {"d": "07/07", "p": 11409}, {"d": "07/08", "p": 11533}, {"d": "07/09", "p": 10090}, {"d": "07/10", "p": 9798}, {"d": "07/13", "p": 9798}], "ci7": [10086, 11960], "ci30": [10414, 12576]}, {"name": "당근", "unit": "1kg", "per100g": 309, "cur": 3086, "p7": 3235, "p30": 3086, "r7": 5, "r30": 0, "level": "안정", "trend": [{"d": "03/04", "p": 3326}, {"d": "03/05", "p": 3233}, {"d": "03/06", "p": 3243}, {"d": "03/09", "p": 3243}, {"d": "03/10", "p": 3261}, {"d": "03/11", "p": 3261}, {"d": "03/12", "p": 3336}, {"d": "03/13", "p": 3336}, {"d": "03/16", "p": 3191}, {"d": "03/17", "p": 3317}, {"d": "03/18", "p": 3253}, {"d": "03/19", "p": 3157}, {"d": "03/20", "p": 3157}, {"d": "03/23", "p": 3268}, {"d": "03/24", "p": 3262}, {"d": "03/25", "p": 3331}, {"d": "03/26", "p": 3424}, {"d": "03/27", "p": 3244}, {"d": "03/30", "p": 3349}, {"d": "03/31", "p": 3368}, {"d": "04/01", "p": 3199}, {"d": "04/02", "p": 2966}, {"d": "04/03", "p": 3148}, {"d": "04/06", "p": 3314}, {"d": "04/07", "p": 3324}, {"d": "04/08", "p": 3186}, {"d": "04/09", "p": 3121}, {"d": "04/10", "p": 3060}, {"d": "04/13", "p": 2977}, {"d": "04/14", "p": 2822}, {"d": "04/15", "p": 2960}, {"d": "04/16", "p": 3128}, {"d": "04/17", "p": 3156}, {"d": "04/20", "p": 3137}, {"d": "04/21", "p": 3137}, {"d": "04/22", "p": 2908}, {"d": "04/23", "p": 3049}, {"d": "04/24", "p": 3049}, {"d": "04/27", "p": 3074}, {"d": "04/28", "p": 3074}, {"d": "04/29", "p": 3344}, {"d": "04/30", "p": 3740}, {"d": "05/04", "p": 3814}, {"d": "05/06", "p": 3779}, {"d": "05/07", "p": 3686}, {"d": "05/08", "p": 3661}, {"d": "05/11", "p": 3737}, {"d": "05/12", "p": 3693}, {"d": "05/13", "p": 3787}, {"d": "05/14", "p": 3780}, {"d": "05/15", "p": 3853}, {"d": "05/18", "p": 3853}, {"d": "05/19", "p": 3853}, {"d": "05/20", "p": 3752}, {"d": "05/21", "p": 3767}, {"d": "05/22", "p": 3700}, {"d": "05/26", "p": 3693}, {"d": "05/27", "p": 3410}, {"d": "05/28", "p": 3503}, {"d": "05/29", "p": 3518}, {"d": "06/01", "p": 3429}, {"d": "06/02", "p": 3429}, {"d": "06/04", "p": 3462}, {"d": "06/05", "p": 3453}, {"d": "06/08", "p": 3647}, {"d": "06/09", "p": 3510}, {"d": "06/10", "p": 3371}, {"d": "06/11", "p": 3502}, {"d": "06/12", "p": 3502}, {"d": "06/15", "p": 3502}, {"d": "06/16", "p": 3502}, {"d": "06/17", "p": 3502}, {"d": "06/18", "p": 3378}, {"d": "06/19", "p": 3378}, {"d": "06/22", "p": 3422}, {"d": "06/23", "p": 3357}, {"d": "06/24", "p": 3496}, {"d": "06/25", "p": 3653}, {"d": "06/26", "p": 3653}, {"d": "06/29", "p": 3653}, {"d": "06/30", "p": 3653}, {"d": "07/01", "p": 3514}, {"d": "07/02", "p": 3398}, {"d": "07/03", "p": 3435}, {"d": "07/06", "p": 3345}, {"d": "07/07", "p": 3145}, {"d": "07/08", "p": 3098}, {"d": "07/09", "p": 3297}, {"d": "07/10", "p": 3086}, {"d": "07/13", "p": 3086}], "ci7": [2924, 3546], "ci30": [2716, 3456]}, {"name": "오이", "unit": "10개", "per100g": null, "cur": 10810, "p7": 11444, "p30": 13943, "r7": 6, "r30": 29, "level": "위험", "trend": [{"d": "03/04", "p": 19900}, {"d": "03/05", "p": 19900}, {"d": "03/06", "p": 19900}, {"d": "03/09", "p": 19900}, {"d": "03/10", "p": 19900}, {"d": "03/11", "p": 19900}, {"d": "03/12", "p": 19900}, {"d": "03/13", "p": 19900}, {"d": "03/16", "p": 19900}, {"d": "03/17", "p": 19900}, {"d": "03/18", "p": 19900}, {"d": "03/19", "p": 19900}, {"d": "03/20", "p": 19900}, {"d": "03/23", "p": 19900}, {"d": "03/24", "p": 19900}, {"d": "03/25", "p": 19900}, {"d": "03/26", "p": 19900}, {"d": "03/27", "p": 19900}, {"d": "03/30", "p": 19900}, {"d": "03/31", "p": 19900}, {"d": "04/01", "p": 19900}, {"d": "04/02", "p": 16600}, {"d": "04/03", "p": 16600}, {"d": "04/06", "p": 16600}, {"d": "04/07", "p": 16600}, {"d": "04/08", "p": 16600}, {"d": "04/09", "p": 7949}, {"d": "04/10", "p": 7669}, {"d": "04/13", "p": 7901}, {"d": "04/14", "p": 8171}, {"d": "04/15", "p": 7960}, {"d": "04/16", "p": 7960}, {"d": "04/17", "p": 7960}, {"d": "04/20", "p": 7960}, {"d": "04/21", "p": 7960}, {"d": "04/22", "p": 17400}, {"d": "04/23", "p": 17400}, {"d": "04/24", "p": 17400}, {"d": "04/27", "p": 17400}, {"d": "04/28", "p": 17400}, {"d": "04/29", "p": 7960}, {"d": "04/30", "p": 7960}, {"d": "05/04", "p": 7960}, {"d": "05/06", "p": 7960}, {"d": "05/07", "p": 7960}, {"d": "05/08", "p": 7960}, {"d": "05/11", "p": 7960}, {"d": "05/12", "p": 7960}, {"d": "05/13", "p": 14900}, {"d": "05/14", "p": 14900}, {"d": "05/15", "p": 14900}, {"d": "05/18", "p": 13050}, {"d": "05/19", "p": 11430}, {"d": "05/20", "p": 11430}, {"d": "05/21", "p": 14900}, {"d": "05/22", "p": 14900}, {"d": "05/26", "p": 14900}, {"d": "05/27", "p": 14900}, {"d": "05/28", "p": 14900}, {"d": "05/29", "p": 14900}, {"d": "06/01", "p": 14900}, {"d": "06/02", "p": 14900}, {"d": "06/04", "p": 5950}, {"d": "06/05", "p": 5950}, {"d": "06/08", "p": 5950}, {"d": "06/09", "p": 5950}, {"d": "06/10", "p": 9960}, {"d": "06/11", "p": 14900}, {"d": "06/12", "p": 14900}, {"d": "06/15", "p": 14900}, {"d": "06/16", "p": 14900}, {"d": "06/17", "p": 9900}, {"d": "06/18", "p": 9900}, {"d": "06/19", "p": 9900}, {"d": "06/22", "p": 14900}, {"d": "06/23", "p": 14900}, {"d": "06/24", "p": 14900}, {"d": "06/25", "p": 14900}, {"d": "06/26", "p": 14900}, {"d": "06/29", "p": 11030}, {"d": "06/30", "p": 11030}, {"d": "07/01", "p": 11030}, {"d": "07/02", "p": 14900}, {"d": "07/03", "p": 14900}, {"d": "07/06", "p": 11030}, {"d": "07/07", "p": 11030}, {"d": "07/08", "p": 11030}, {"d": "07/09", "p": 10810}, {"d": "07/10", "p": 10810}, {"d": "07/13", "p": 10810}], "ci7": [9567, 13321], "ci30": [10931, 16955]}, {"name": "시금치", "unit": "100g", "per100g": 11245, "cur": 11245, "p7": 13715, "p30": 23109, "r7": 22, "r30": 106, "level": "위험", "trend": [{"d": "03/04", "p": 10466}, {"d": "03/05", "p": 10219}, {"d": "03/06", "p": 9619}, {"d": "03/09", "p": 9987}, {"d": "03/10", "p": 9987}, {"d": "03/11", "p": 9227}, {"d": "03/12", "p": 7797}, {"d": "03/13", "p": 7893}, {"d": "03/16", "p": 8072}, {"d": "03/17", "p": 7914}, {"d": "03/18", "p": 7914}, {"d": "03/19", "p": 8422}, {"d": "03/20", "p": 8333}, {"d": "03/23", "p": 8260}, {"d": "03/24", "p": 7549}, {"d": "03/25", "p": 7322}, {"d": "03/26", "p": 6852}, {"d": "03/27", "p": 6458}, {"d": "03/30", "p": 6783}, {"d": "03/31", "p": 6772}, {"d": "04/01", "p": 6821}, {"d": "04/02", "p": 6679}, {"d": "04/03", "p": 7073}, {"d": "04/06", "p": 6956}, {"d": "04/07", "p": 7397}, {"d": "04/08", "p": 7881}, {"d": "04/09", "p": 7986}, {"d": "04/10", "p": 7903}, {"d": "04/13", "p": 7903}, {"d": "04/14", "p": 7870}, {"d": "04/15", "p": 7948}, {"d": "04/16", "p": 6462}, {"d": "04/17", "p": 6038}, {"d": "04/20", "p": 6169}, {"d": "04/21", "p": 6258}, {"d": "04/22", "p": 6462}, {"d": "04/23", "p": 6372}, {"d": "04/24", "p": 6428}, {"d": "04/27", "p": 6998}, {"d": "04/28", "p": 6650}, {"d": "04/29", "p": 6498}, {"d": "04/30", "p": 6698}, {"d": "05/04", "p": 6714}, {"d": "05/06", "p": 6722}, {"d": "05/07", "p": 7122}, {"d": "05/08", "p": 7497}, {"d": "05/11", "p": 7497}, {"d": "05/12", "p": 7452}, {"d": "05/13", "p": 7391}, {"d": "05/14", "p": 6902}, {"d": "05/15", "p": 6630}, {"d": "05/18", "p": 7102}, {"d": "05/19", "p": 7016}, {"d": "05/20", "p": 7283}, {"d": "05/21", "p": 7726}, {"d": "05/22", "p": 7983}, {"d": "05/26", "p": 7689}, {"d": "05/27", "p": 7849}, {"d": "05/28", "p": 7987}, {"d": "05/29", "p": 7759}, {"d": "06/01", "p": 7803}, {"d": "06/02", "p": 7859}, {"d": "06/04", "p": 7728}, {"d": "06/05", "p": 7761}, {"d": "06/08", "p": 7761}, {"d": "06/09", "p": 7720}, {"d": "06/10", "p": 7622}, {"d": "06/11", "p": 8770}, {"d": "06/12", "p": 9339}, {"d": "06/15", "p": 9163}, {"d": "06/16", "p": 9166}, {"d": "06/17", "p": 8671}, {"d": "06/18", "p": 7904}, {"d": "06/19", "p": 7982}, {"d": "06/22", "p": 8522}, {"d": "06/23", "p": 8567}, {"d": "06/24", "p": 8873}, {"d": "06/25", "p": 8998}, {"d": "06/26", "p": 8862}, {"d": "06/29", "p": 11046}, {"d": "06/30", "p": 11034}, {"d": "07/01", "p": 9732}, {"d": "07/02", "p": 9042}, {"d": "07/03", "p": 9187}, {"d": "07/06", "p": 9141}, {"d": "07/07", "p": 8283}, {"d": "07/08", "p": 9209}, {"d": "07/09", "p": 10845}, {"d": "07/10", "p": 11333}, {"d": "07/13", "p": 11245}], "ci7": [12014, 15416], "ci30": [19319, 26899]}, {"name": "상추", "unit": "100g", "per100g": 12900, "cur": 12900, "p7": 15786, "p30": 20377, "r7": 22, "r30": 58, "level": "위험", "trend": [{"d": "03/04", "p": 10798}, {"d": "03/05", "p": 11078}, {"d": "03/06", "p": 11144}, {"d": "03/09", "p": 11189}, {"d": "03/10", "p": 11189}, {"d": "03/11", "p": 11189}, {"d": "03/12", "p": 10433}, {"d": "03/13", "p": 10156}, {"d": "03/16", "p": 10156}, {"d": "03/17", "p": 10156}, {"d": "03/18", "p": 10156}, {"d": "03/19", "p": 9622}, {"d": "03/20", "p": 9767}, {"d": "03/23", "p": 9767}, {"d": "03/24", "p": 9767}, {"d": "03/25", "p": 9767}, {"d": "03/26", "p": 9554}, {"d": "03/27", "p": 9554}, {"d": "03/30", "p": 9667}, {"d": "03/31", "p": 9666}, {"d": "04/01", "p": 9721}, {"d": "04/02", "p": 10018}, {"d": "04/03", "p": 10122}, {"d": "04/06", "p": 10251}, {"d": "04/07", "p": 10251}, {"d": "04/08", "p": 10251}, {"d": "04/09", "p": 9992}, {"d": "04/10", "p": 9992}, {"d": "04/13", "p": 10314}, {"d": "04/14", "p": 10481}, {"d": "04/15", "p": 10537}, {"d": "04/16", "p": 10274}, {"d": "04/17", "p": 10429}, {"d": "04/20", "p": 10618}, {"d": "04/21", "p": 10729}, {"d": "04/22", "p": 10451}, {"d": "04/23", "p": 10684}, {"d": "04/24", "p": 10684}, {"d": "04/27", "p": 10684}, {"d": "04/28", "p": 10684}, {"d": "04/29", "p": 10329}, {"d": "04/30", "p": 10329}, {"d": "05/04", "p": 9858}, {"d": "05/06", "p": 10313}, {"d": "05/07", "p": 9973}, {"d": "05/08", "p": 10056}, {"d": "05/11", "p": 9990}, {"d": "05/12", "p": 9990}, {"d": "05/13", "p": 9578}, {"d": "05/14", "p": 9614}, {"d": "05/15", "p": 9301}, {"d": "05/18", "p": 9301}, {"d": "05/19", "p": 9301}, {"d": "05/20", "p": 9301}, {"d": "05/21", "p": 9451}, {"d": "05/22", "p": 9451}, {"d": "05/26", "p": 9351}, {"d": "05/27", "p": 10064}, {"d": "05/28", "p": 9823}, {"d": "05/29", "p": 9815}, {"d": "06/01", "p": 9814}, {"d": "06/02", "p": 9814}, {"d": "06/04", "p": 10604}, {"d": "06/05", "p": 10503}, {"d": "06/08", "p": 10503}, {"d": "06/09", "p": 10603}, {"d": "06/10", "p": 11228}, {"d": "06/11", "p": 11228}, {"d": "06/12", "p": 11295}, {"d": "06/15", "p": 11295}, {"d": "06/16", "p": 11220}, {"d": "06/17", "p": 11051}, {"d": "06/18", "p": 10909}, {"d": "06/19", "p": 11190}, {"d": "06/22", "p": 11190}, {"d": "06/23", "p": 11461}, {"d": "06/24", "p": 11461}, {"d": "06/25", "p": 11747}, {"d": "06/26", "p": 11747}, {"d": "06/29", "p": 11747}, {"d": "06/30", "p": 11690}, {"d": "07/01", "p": 11690}, {"d": "07/02", "p": 12654}, {"d": "07/03", "p": 12654}, {"d": "07/06", "p": 11548}, {"d": "07/07", "p": 11548}, {"d": "07/08", "p": 12019}, {"d": "07/09", "p": 12900}, {"d": "07/10", "p": 12843}, {"d": "07/13", "p": 12900}], "ci7": [14160, 17412], "ci30": [17320, 23434]}, {"name": "사과", "unit": "10개", "per100g": null, "cur": 21588, "p7": 23977, "p30": 29094, "r7": 11, "r30": 35, "level": "위험", "trend": [{"d": "03/04", "p": 24878}, {"d": "03/05", "p": 25767}, {"d": "03/06", "p": 25956}, {"d": "03/09", "p": 26533}, {"d": "03/10", "p": 26422}, {"d": "03/11", "p": 26589}, {"d": "03/12", "p": 26222}, {"d": "03/13", "p": 26222}, {"d": "03/16", "p": 26222}, {"d": "03/17", "p": 25989}, {"d": "03/18", "p": 24344}, {"d": "03/19", "p": 24344}, {"d": "03/20", "p": 24222}, {"d": "03/23", "p": 24989}, {"d": "03/24", "p": 24989}, {"d": "03/25", "p": 26033}, {"d": "03/26", "p": 26222}, {"d": "03/27", "p": 26067}, {"d": "03/30", "p": 26289}, {"d": "03/31", "p": 26100}, {"d": "04/01", "p": 24178}, {"d": "04/02", "p": 25978}, {"d": "04/03", "p": 26733}, {"d": "04/06", "p": 26733}, {"d": "04/07", "p": 28067}, {"d": "04/08", "p": 28067}, {"d": "04/09", "p": 27400}, {"d": "04/10", "p": 26256}, {"d": "04/13", "p": 26567}, {"d": "04/14", "p": 26756}, {"d": "04/15", "p": 26567}, {"d": "04/16", "p": 24511}, {"d": "04/17", "p": 24578}, {"d": "04/20", "p": 24689}, {"d": "04/21", "p": 24089}, {"d": "04/22", "p": 23756}, {"d": "04/23", "p": 23138}, {"d": "04/24", "p": 23138}, {"d": "04/27", "p": 22850}, {"d": "04/28", "p": 22850}, {"d": "04/29", "p": 23600}, {"d": "04/30", "p": 22438}, {"d": "05/04", "p": 25389}, {"d": "05/06", "p": 25489}, {"d": "05/07", "p": 25278}, {"d": "05/08", "p": 25511}, {"d": "05/11", "p": 26289}, {"d": "05/12", "p": 27544}, {"d": "05/13", "p": 25767}, {"d": "05/14", "p": 24611}, {"d": "05/15", "p": 23611}, {"d": "05/18", "p": 23867}, {"d": "05/19", "p": 23867}, {"d": "05/20", "p": 23667}, {"d": "05/21", "p": 23244}, {"d": "05/22", "p": 23244}, {"d": "05/26", "p": 23567}, {"d": "05/27", "p": 23667}, {"d": "05/28", "p": 25289}, {"d": "05/29", "p": 25289}, {"d": "06/01", "p": 25211}, {"d": "06/02", "p": 25211}, {"d": "06/04", "p": 25356}, {"d": "06/05", "p": 24644}, {"d": "06/08", "p": 24822}, {"d": "06/09", "p": 25156}, {"d": "06/10", "p": 25156}, {"d": "06/11", "p": 24088}, {"d": "06/12", "p": 24213}, {"d": "06/15", "p": 23713}, {"d": "06/16", "p": 24363}, {"d": "06/17", "p": 23588}, {"d": "06/18", "p": 22775}, {"d": "06/19", "p": 22775}, {"d": "06/22", "p": 22775}, {"d": "06/23", "p": 22438}, {"d": "06/24", "p": 21938}, {"d": "06/25", "p": 22488}, {"d": "06/26", "p": 22850}, {"d": "06/29", "p": 22225}, {"d": "06/30", "p": 22038}, {"d": "07/01", "p": 22325}, {"d": "07/02", "p": 22775}, {"d": "07/03", "p": 22413}, {"d": "07/06", "p": 22363}, {"d": "07/07", "p": 21938}, {"d": "07/08", "p": 21938}, {"d": "07/09", "p": 22838}, {"d": "07/10", "p": 22838}, {"d": "07/13", "p": 21588}], "ci7": [21819, 26135], "ci30": [26359, 31829]}, {"name": "배", "unit": "10개", "per100g": null, "cur": 44800, "p7": 37108, "p30": 39457, "r7": -17, "r30": -12, "level": "하락", "trend": [{"d": "03/04", "p": 38475}, {"d": "03/05", "p": 38475}, {"d": "03/06", "p": 38200}, {"d": "03/09", "p": 39688}, {"d": "03/10", "p": 39688}, {"d": "03/11", "p": 39688}, {"d": "03/12", "p": 37688}, {"d": "03/13", "p": 37688}, {"d": "03/16", "p": 38188}, {"d": "03/17", "p": 38463}, {"d": "03/18", "p": 38888}, {"d": "03/19", "p": 39300}, {"d": "03/20", "p": 39438}, {"d": "03/23", "p": 39438}, {"d": "03/24", "p": 39713}, {"d": "03/25", "p": 37829}, {"d": "03/26", "p": 37257}, {"d": "03/27", "p": 37257}, {"d": "03/30", "p": 37257}, {"d": "03/31", "p": 37257}, {"d": "04/01", "p": 37614}, {"d": "04/02", "p": 37614}, {"d": "04/03", "p": 37614}, {"d": "04/06", "p": 37371}, {"d": "04/07", "p": 36900}, {"d": "04/08", "p": 36900}, {"d": "04/09", "p": 36343}, {"d": "04/10", "p": 34557}, {"d": "04/13", "p": 35114}, {"d": "04/14", "p": 35114}, {"d": "04/15", "p": 35114}, {"d": "04/16", "p": 35371}, {"d": "04/17", "p": 35371}, {"d": "04/20", "p": 34800}, {"d": "04/21", "p": 34800}, {"d": "04/22", "p": 34800}, {"d": "04/23", "p": 34800}, {"d": "04/24", "p": 33257}, {"d": "04/27", "p": 33257}, {"d": "04/28", "p": 33257}, {"d": "04/29", "p": 33257}, {"d": "04/30", "p": 33257}, {"d": "05/04", "p": 35943}, {"d": "05/06", "p": 35957}, {"d": "05/07", "p": 33871}, {"d": "05/08", "p": 33871}, {"d": "05/11", "p": 30500}, {"d": "05/12", "p": 31500}, {"d": "05/13", "p": 30767}, {"d": "05/14", "p": 33583}, {"d": "05/15", "p": 33583}, {"d": "05/18", "p": 33583}, {"d": "05/19", "p": 33583}, {"d": "05/20", "p": 34283}, {"d": "05/21", "p": 35383}, {"d": "05/22", "p": 37383}, {"d": "05/26", "p": 37383}, {"d": "05/27", "p": 37100}, {"d": "05/28", "p": 35767}, {"d": "05/29", "p": 35767}, {"d": "06/01", "p": 35767}, {"d": "06/02", "p": 36433}, {"d": "06/04", "p": 35350}, {"d": "06/05", "p": 35017}, {"d": "06/08", "p": 36683}, {"d": "06/09", "p": 36683}, {"d": "06/10", "p": 36683}, {"d": "06/11", "p": 35683}, {"d": "06/12", "p": 35683}, {"d": "06/15", "p": 35683}, {"d": "06/16", "p": 35683}, {"d": "06/17", "p": 35683}, {"d": "06/18", "p": 37240}, {"d": "06/19", "p": 37240}, {"d": "06/22", "p": 37240}, {"d": "06/23", "p": 36800}, {"d": "06/24", "p": 39750}, {"d": "06/25", "p": 37780}, {"d": "06/26", "p": 37780}, {"d": "06/29", "p": 37780}, {"d": "06/30", "p": 37780}, {"d": "07/01", "p": 37780}, {"d": "07/02", "p": 38980}, {"d": "07/03", "p": 39750}, {"d": "07/06", "p": 41780}, {"d": "07/07", "p": 44800}, {"d": "07/08", "p": 44800}, {"d": "07/09", "p": 44800}, {"d": "07/10", "p": 44800}, {"d": "07/13", "p": 44800}], "ci7": [32507, 41709], "ci30": [32986, 45928]}], "accuracy": {"generated": "2026-07-15", "data_latest": "2026-07-13", "overall": {"h7": {"n": 4301, "wape": 11.3, "mape": 11.7, "dir_acc": 54}, "h30": {"n": 4257, "wape": 14.0, "mape": 14.4, "dir_acc": 67}}, "items": {"배추": {"h7": {"n": 391, "wape": 14.5, "mape": 14.6, "dir_acc": 44, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 18.1, "mape": 18.3, "dir_acc": 63, "period": ["2025-05-24", "2026-06-14"]}}, "무": {"h7": {"n": 391, "wape": 12.9, "mape": 12.8, "dir_acc": 56, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 15.7, "mape": 15.8, "dir_acc": 64, "period": ["2025-05-24", "2026-06-14"]}}, "양파": {"h7": {"n": 391, "wape": 10.2, "mape": 10.6, "dir_acc": 52, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 11.3, "mape": 11.9, "dir_acc": 64, "period": ["2025-05-24", "2026-06-14"]}}, "대파": {"h7": {"n": 391, "wape": 10.1, "mape": 10.2, "dir_acc": 55, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 10.3, "mape": 10.4, "dir_acc": 78, "period": ["2025-05-24", "2026-06-14"]}}, "마늘": {"h7": {"n": 391, "wape": 8.8, "mape": 8.9, "dir_acc": 47, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 10.0, "mape": 10.1, "dir_acc": 62, "period": ["2025-05-24", "2026-06-14"]}}, "당근": {"h7": {"n": 391, "wape": 8.9, "mape": 9.4, "dir_acc": 50, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 10.8, "mape": 11.3, "dir_acc": 63, "period": ["2025-05-24", "2026-06-14"]}}, "오이": {"h7": {"n": 391, "wape": 12.7, "mape": 16.7, "dir_acc": 35, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 18.1, "mape": 21.6, "dir_acc": 51, "period": ["2025-05-24", "2026-06-14"]}}, "시금치": {"h7": {"n": 391, "wape": 13.7, "mape": 13.1, "dir_acc": 69, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 18.1, "mape": 16.7, "dir_acc": 81, "period": ["2025-05-24", "2026-06-14"]}}, "상추": {"h7": {"n": 391, "wape": 11.5, "mape": 10.9, "dir_acc": 68, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 17.0, "mape": 16.1, "dir_acc": 90, "period": ["2025-05-24", "2026-06-14"]}}, "사과": {"h7": {"n": 391, "wape": 9.2, "mape": 9.3, "dir_acc": 59, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 9.5, "mape": 9.7, "dir_acc": 62, "period": ["2025-05-24", "2026-06-14"]}}, "배": {"h7": {"n": 391, "wape": 11.5, "mape": 12.6, "dir_acc": 55, "period": ["2025-06-12", "2026-07-07"]}, "h30": {"n": 387, "wape": 15.4, "mape": 16.3, "dir_acc": 63, "period": ["2025-05-24", "2026-06-14"]}}}}};</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const TABS = [
+    ['홈', 'home', 'home-snapshot.html', 'home'],
+    ['인벤토리', 'inventory_2', 'inventory-snapshot.html', 'inventory'],
+    ['예측 분석', 'trending_up', 'item-analysis-snapshot.html', 'item-analysis'],
+    ['스마트 딜', 'shopping_bag', 'deals-snapshot.html', 'deals'],
+    ['내 정보', 'person', 'plan-snapshot.html', 'plan'],
+  ];
+
+  // 기존 화면별 하단 고정 네비 제거 → 통일된 5탭 바로 교체
+  document.querySelectorAll('nav, footer').forEach(n => {
+    const c = n.className || '';
+    if (typeof c === 'string' && c.includes('fixed') && c.includes('bottom-0') && !n.querySelector('input')) n.remove();
+  });
+  document.querySelectorAll('header div').forEach(d => {
+    const txts = [...d.querySelectorAll('button, a')].map(b => b.textContent.trim());
+    if (txts.includes('예측 분석') && txts.includes('스마트 딜')) d.style.display = 'none';
+  });
+
+  const bar = document.createElement('nav');
+  bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+  TABS.forEach(([label, icon, href, id]) => {
+    const active = id === CT_PAGE;
+    const a = document.createElement('a');
+    a.href = href;
+    a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+      + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
+    a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
+      + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+    inner.appendChild(a);
+  });
+  bar.appendChild(inner);
+  document.body.appendChild(bar);
+  document.body.style.paddingBottom = '88px';
+
+  // 텍스트 매칭 라우팅: 대체재/선매입 링크 → 스마트 딜 (필터 패널 내부 버튼은 제외 — "선매입 권장" 칩과 텍스트가 겹침)
+  document.querySelectorAll('a, button').forEach(el => {
+    if (el.closest('#filter-panel')) return;
+    const t = (el.textContent || '').trim();
+    if (t.includes('선매입') || t.includes('대체재') || t.includes('특가')) {
+      el.addEventListener('click', e => { e.preventDefault(); location.href = 'deals-snapshot.html'; });
+    }
+    if (t.startsWith('arrow_back')) {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        history.length > 1 ? history.back() : (location.href = 'home-snapshot.html');
+      });
+    }
+  });
+
+  // 알림 설정: 토글 상태 저장·복원
+  if (CT_PAGE === 'alerts') {
+    const boxes = document.querySelectorAll('input[type="checkbox"]');
+    const saved = JSON.parse(localStorage.getItem('ct_alerts_demo') || 'null');
+    boxes.forEach((b, i) => {
+      if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
+      b.addEventListener('change', () => {
+        localStorage.setItem('ct_alerts_demo', JSON.stringify([...boxes].map(x => x.checked)));
+      });
+    });
+  }
+
+  // 데모 화면 배지
+  if (['deals', 'plan'].includes(CT_PAGE)) {
+    const h = document.querySelector('header h1, main h1, main h2');
+    if (h) {
+      const tag = document.createElement('span');
+      tag.textContent = '데모';
+      tag.style.cssText = 'font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:8px;';
+      h.appendChild(tag);
+    }
+  }
+
+  // 로고 클릭 → 홈
+  document.querySelectorAll('header h1').forEach(h => {
+    if (h.textContent.includes('CartTiming')) {
+      h.style.cursor = 'pointer';
+      h.addEventListener('click', () => { location.href = 'home-snapshot.html'; });
+    }
+  });
+});
+</script>
+<script>
+// 품목 원가 상세 분석: ?item= 파라미터 + 1주/2주/4주 호라이즌 전환 (8주는 예측 범위 밖이라 숨김)
+document.addEventListener('DOMContentLoaded', () => {
+  const fmt = n => Math.round(n).toLocaleString();
+
+  Promise.resolve(CT_DASHBOARD_DATA).then(data => {
+    const items = [...data.items].sort((a, b) => b.r30 - a.r30);
+    const want = new URLSearchParams(location.search).get('item');
+    const it = items.find(i => i.name === want) || items[0];
+
+    // 예측·신뢰구간 보간: D+7, D+30 사이 선형 (모델 산출 지점 기준)
+    const at = d => d <= 0 ? it.cur
+      : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
+      : it.p7 + (it.p30 - it.p7) * (d - 7) / 23;
+    const ciAt = (d, k) => d <= 0 ? it.cur
+      : d <= 7 ? it.cur + (it.ci7[k] - it.cur) * d / 7
+      : it.ci7[k] + (it.ci30[k] - it.ci7[k]) * (d - 7) / 23;
+
+    // 1) 제목·부제 + 과장 문구 정정 (통계적 신뢰구간이 아니므로 정직하게 표기)
+    try {
+      document.querySelector('h2').textContent = `${it.name} 원가 분석`;
+      document.title = `CartTiming | ${it.name} 원가 분석`;
+      const sub = document.querySelector('h2 + p');
+      if (sub) sub.textContent = `KAMIS 소매가 · 기상 시차효과 기반 AI 예측 (${data.date} 기준)`;
+
+      // 범례 "95% 신뢰 구간" → "예상 범위(백테스트 오차 기반)"
+      document.querySelectorAll('span').forEach(s => {
+        if (s.textContent.trim() === '95% 신뢰 구간') s.textContent = '예상 범위 (백테스트 오차 기반)';
+      });
+      // 하드코딩 "신뢰도 94%" → 실제 백테스트 성능(accuracy.json)으로 교체
+      const acc = (data.accuracy && data.accuracy.items[it.name]) || null;
+      const a30 = acc && acc.h30;
+      document.querySelectorAll('p, span, div').forEach(el => {
+        if (el.children.length === 0 && el.textContent.trim() === '신뢰도') el.textContent = '방향 적중률(30일)';
+        if (el.children.length <= 1 && /^94%/.test(el.textContent.trim()))
+          el.innerHTML = a30 ? `${a30.dir_acc}%` : '—';
+      });
+      // 변동 주요 원인 리스트 하단에 검증 성능 한 줄 추가
+      if (a30 && !document.getElementById('ct-backtest')) {
+        const causeCard = [...document.querySelectorAll('h3, h4, p, span')].find(e => e.textContent.trim() === '변동 주요 원인');
+        const box = causeCard && causeCard.parentElement;
+        if (box) {
+          const note = document.createElement('p');
+          note.id = 'ct-backtest';
+          note.className = 'font-body-sm text-body-sm text-on-surface-variant';
+          note.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid #e0e4e0;';
+          note.textContent = `검증: 최근 ${a30.n.toLocaleString()}건 out-of-sample 백테스트에서 30일 평균오차 ${a30.wape}%(WAPE), 방향 적중률 ${a30.dir_acc}% (${a30.period[0]}~${a30.period[1]}).`;
+          box.appendChild(note);
+        }
+      }
+    } catch (e) {}
+
+    // 2) 호라이즌별 차트 렌더 (과거 30일 실측 x0~400 + 예측 x400~800)
+    const render = H => {
+      try {
+        const hist = it.trend.slice(-30).map(t => t.p);
+        const mids = Math.round(H / 2);
+        const all = [...hist, at(mids), at(H), ciAt(mids, 0), ciAt(mids, 1), ciAt(H, 0), ciAt(H, 1)];
+        const mn = Math.min(...all), mx = Math.max(...all);
+        const Y = v => mx === mn ? 150 : Math.round(280 - (v - mn) / (mx - mn) * 260);
+
+        const histPts = hist.map((v, i) => [Math.round(i * 400 / (hist.length - 1)), Y(v)]);
+        const xm = 600, cy = Y(hist[hist.length - 1]);
+        const seg = pts => pts.map((p, i) => (i ? 'L ' : 'M ') + p[0] + ' ' + p[1]).join(' ');
+
+        document.querySelector('.historical-line').setAttribute('d', seg(histPts));
+        document.querySelector('.prediction-line').setAttribute('d',
+          `M 400 ${cy} L ${xm} ${Y(at(mids))} L 800 ${Y(at(H))}`);
+        document.querySelector('.confidence-area').setAttribute('d',
+          `M 400 ${cy} L ${xm} ${Y(ciAt(mids, 1))} L 800 ${Y(ciAt(H, 1))}` +
+          ` L 800 ${Y(ciAt(H, 0))} L ${xm} ${Y(ciAt(mids, 0))} Z`);
+        const marker = document.querySelector('circle');
+        if (marker) { marker.setAttribute('cx', 400); marker.setAttribute('cy', cy); }
+
+        const d0 = new Date(data.date);
+        const lab = off => { const t = new Date(d0); t.setDate(t.getDate() + off); return (t.getMonth() + 1) + '월 ' + t.getDate() + '일'; };
+        const chartWrap = document.querySelector('.historical-line').closest('div');
+        const xl = chartWrap ? chartWrap.querySelectorAll('.absolute.bottom-0 span') : [];
+        const L = [lab(-30), lab(-15), '오늘', `+${mids}일`, `+${H}일 (${lab(H)})`];
+        xl.forEach((s, i) => { if (i < L.length) s.textContent = L[i]; });
+
+        // AI 인사이트: 호라이즌 기준 예상가·변동폭
+        const pH = at(H), pct = Math.round((pH - it.cur) / it.cur * 100);
+        const priceEl = document.querySelector('.text-display-lg');
+        if (priceEl) priceEl.innerHTML =
+          `₩${fmt(pH)}<span class="text-label-md font-label-md opacity-60 ml-1">/ ${it.unit} (${H}일 뒤)</span>`;
+        const chg = document.querySelector('.grid .flex.items-center.gap-1');
+        if (chg) chg.innerHTML =
+          `<span class="material-symbols-outlined">${pct >= 0 ? 'trending_up' : 'trending_down'}</span><span>${pct >= 0 ? '+' : ''}${pct}%</span>`;
+      } catch (e) {}
+    };
+
+    // 3) 기간 버튼 연결: 1주=7일, 2주=14일(보간), 4주=30일 / 8주는 예측 범위 밖 → 숨김
+    try {
+      const H_MAP = { '1주': 7, '2주': 14, '4주': 30 };
+      const btns = [...document.querySelectorAll('button')].filter(b => ['1주', '2주', '4주', '8주'].includes(b.textContent.trim()));
+      btns.forEach(b => {
+        const t = b.textContent.trim();
+        if (t === '8주') { b.style.display = 'none'; return; }
+        b.addEventListener('click', () => {
+          btns.forEach(x => { x.className = 'px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all text-on-surface-variant hover:bg-surface-container-low'; });
+          b.className = 'px-4 py-1.5 text-label-sm font-label-sm rounded-md transition-all bg-secondary text-white shadow-sm';
+          render(H_MAP[t]);
+        });
+      });
+    } catch (e) {}
+
+    render(30);   // 기본 4주
+  }).catch(() => {});
+});
+
+</script>
+</body></html>

@@ -1,0 +1,468 @@
+<!-- 오프라인 데모 번들: deals. /api/dashboard, /api/retail 데이터를 캡처 시점 기준으로 파일 안에 인라인했고, 필터·정렬·화면 간 이동이 서버 없이도 실제로 동작합니다. 데이터는 캡처 시점(위 값)에 고정되며, 실제 소스는 app_screens/deals.html 참고. -->
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<title>Smart Procurement Deals</title>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        @media (min-width: 768px) {
+            .bento-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .trend-up { color: #064E3B; }
+        .trend-down { color: #ba1a1a; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#001453",
+                        "surface-bright": "#f8f9ff",
+                        "outline": "#707974",
+                        "surface": "#f8f9ff",
+                        "inverse-primary": "#95d3ba",
+                        "background": "#f8f9ff",
+                        "on-primary-container": "#80bea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed-dim": "#6bd8cb",
+                        "on-tertiary-fixed": "#00201d",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-secondary-fixed-variant": "#173bab",
+                        "on-surface-variant": "#404944",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#708cfd",
+                        "secondary": "#3755c3",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#dde1ff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#213145",
+                        "on-secondary-container": "#00217a",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#b0f0d6",
+                        "tertiary": "#00342f",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#004d46",
+                        "on-tertiary-fixed-variant": "#005049",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#53c2b5",
+                        "primary-fixed-dim": "#95d3ba",
+                        "outline-variant": "#bfc9c3",
+                        "on-surface": "#0b1c30",
+                        "on-primary-fixed": "#002117",
+                        "tertiary-fixed": "#89f5e7",
+                        "on-background": "#0b1c30",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#064e3b",
+                        "on-primary-fixed-variant": "#0b513d",
+                        "primary": "#003527",
+                        "surface-tint": "#2b6954"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "gutter": "12px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container-margin": "16px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "data-mono": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "data-mono": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface pb-24">
+<!-- Top AppBar -->
+<header class="flex justify-between items-center w-full px-md h-16 fixed top-0 z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">analytics</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">CartTiming</h1>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full cursor-pointer">search</span>
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full cursor-pointer">notifications</span>
+</div>
+</header>
+<main class="pt-20 px-container-margin max-w-7xl mx-auto">
+<!-- Section Header -->
+<div class="mb-lg">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Smart Procurement Deals</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">데이터 기반의 인공지능이 제안하는 최적의 구매 시점</p>
+</div>
+<!-- Featured Deal Hero -->
+<section class="relative overflow-hidden rounded-xl bg-primary-container text-on-primary mb-xl p-lg shadow-lg">
+
+<div class="relative z-10 flex flex-col md:flex-row gap-lg items-center">
+<div class="w-full md:w-1/2">
+<div class="flex items-center gap-xs mb-sm">
+<span class="bg-error text-on-error px-2 py-0.5 rounded-full text-label-sm font-label-sm">PRICE ALERT</span>
+<span class="text-on-primary-container font-label-sm text-label-sm">긴급 특가</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-sm">마늘 가격 상승 경보! 30% 폭등 예상.</h3>
+<p class="font-body-md text-body-md text-on-primary-container mb-lg">가격 인상 전, 산지 직송가로 미리 확보하세요. 현재 100 유닛 남음.</p>
+<div class="space-y-sm mb-lg">
+<div class="flex justify-between text-label-sm font-label-sm text-on-primary-container">
+<span>남은 수량: 100 / 1000 유닛</span>
+<span>90% 판매 완료</span>
+</div>
+<div class="w-full bg-surface-container-highest/20 rounded-full h-2">
+<div class="bg-secondary-container h-2 rounded-full transition-all duration-1000" style="width: 90%"></div>
+</div>
+</div>
+<button class="w-full md:w-auto bg-on-secondary text-primary font-label-md text-label-md px-xl py-md rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all">
+                        지금 즉시 구매하기
+                    </button>
+</div>
+<div class="w-full md:w-1/2 flex justify-center">
+<div class="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-on-primary-container shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="Close-up macro photography of fresh white garlic bulbs on a rustic wooden surface with soft professional studio lighting. The aesthetic is clean, organic, and high-end, utilizing a palette of natural creams and earthy tones to convey freshness and quality in a modern corporate SaaS context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt5P16rDGfBRHSbENGIbAKRKblncuvhln9bs0xmEI9WkkyAzqfq33iI78Bba6_2kVq6PzxuIi4HgWmaVv_XDdia9gIDLOicj6nr6ExK2WSoXbzUXDOQTS0ZiXFiiZ-kkDeZpzFeVUFnD8-Ar6TYgoe-me3c8PaOQHcQrcGCDVGc7GLVx9PXQB-Y8zqS6nNo73Mua5kZxZkS-ak17sjTEgFgHHGwFH4SdfeU0oG16EPIsq90Hamy4g9"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Predictive Insights Grid -->
+<div class="mb-lg flex justify-between items-end">
+<h3 class="font-headline-md text-headline-md">예측 기반 절감 품목</h3>
+<div class="flex gap-sm">
+<button class="font-label-sm text-label-sm border border-outline px-4 py-2 rounded-full hover:bg-surface-container-low transition-colors">카테고리</button>
+<button class="font-label-sm text-label-sm border border-outline px-4 py-2 rounded-full hover:bg-surface-container-low transition-colors">필터</button>
+</div>
+</div>
+<div class="bento-grid mb-xl">
+<!-- Deal Card 1 -->
+<div class="glass-card p-md rounded-xl flex flex-col hover:shadow-lg transition-all group">
+<div class="h-32 rounded-lg overflow-hidden mb-sm bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="High-quality professional food photography of fresh yellow onions in a minimalist white ceramic bowl. The lighting is bright and airy, following a modern corporate aesthetic with soft shadows and a clean composition that highlights product quality and precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtz77ReFFcIxJpFV7XgBAGUZSKDae_iJSyE0Pfo7W24uIMQwEivC7Jo0sQyH4gRVUEH9wTUaxwsJKe2I4Q2WlZztNSMZdEY398tQ2TIV8s3aIDmZ4DOtMz4Sjx51dU5lPSG1OxqWO8cH2pLEolhsgkyz_OLI13BcZs5ePNz-2pkQDz9Cq5Hk5F2RaOhDr09_d28eIpOkKLMmZEVb8dytCBQEnk7PrwwcCowC17LBfMcX1wiN-WQLqn"/>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-label-md text-label-md text-on-surface">국산 양파 (20kg)</h4>
+<span class="text-error font-label-sm text-label-sm">+15% 예상</span>
+</div>
+<div class="flex items-center gap-xs mb-md">
+<span class="bg-secondary-container/20 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">Predictive Savings 20%</span>
+</div>
+<div class="mt-auto">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="text-on-surface-variant line-through text-label-sm">45,000원</p>
+<p class="font-headline-md text-headline-md text-primary">36,000원</p>
+</div>
+</div>
+<button class="w-full py-2 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:opacity-80 active:scale-95 transition-all">구매하기</button>
+</div>
+</div>
+<!-- Deal Card 2 -->
+<div class="glass-card p-md rounded-xl flex flex-col hover:shadow-lg transition-all group">
+<div class="h-32 rounded-lg overflow-hidden mb-sm bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Macro photography of premium dry red chili peppers arranged artistically on a slate background. Sharp focus, deep saturated reds, and dramatic professional lighting that creates a high-end gourmet feel suitable for a B2B SaaS procurement platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCSOol1-2oOLj8ZAit54-RBns0Ge4-bJNQR74UxQREReHq0LzgifTB71B-Tqj2FxTpOPc1OWHWFShXtWCqtlTi37tMJuFrQ89vTe_PV4uYV8-fWk9PXP6PNegHADJUIsHOPy0V56-_SuEv4dQJjsfH2_AD7GLy2uZaKB_rb7_THaU6C-vQC5aG9NXe2AItajkq3SLjL9sdlm9m1bKN0BMFmV7HJXl50m2PI-uA3Z6_BjDSC0KYASFl"/>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-label-md text-label-md text-on-surface">태양초 고춧가루 (5kg)</h4>
+<span class="text-error font-label-sm text-label-sm">+12% 예상</span>
+</div>
+<div class="flex items-center gap-xs mb-md">
+<span class="bg-secondary-container/20 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">Predictive Savings 15%</span>
+</div>
+<div class="mt-auto">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="text-on-surface-variant line-through text-label-sm">120,000원</p>
+<p class="font-headline-md text-headline-md text-primary">102,000원</p>
+</div>
+</div>
+<button class="w-full py-2 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:opacity-80 active:scale-95 transition-all">구매하기</button>
+</div>
+</div>
+<!-- Deal Card 3 -->
+<div class="glass-card p-md rounded-xl flex flex-col hover:shadow-lg transition-all group">
+<div class="h-32 rounded-lg overflow-hidden mb-sm bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A large sack of high-quality white rice grains, with some grains spilling out onto a clean light grey surface. Bright studio lighting, clean light-mode aesthetic, emphasizing purity and volume. Minimalist corporate visual style for food supply chain." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9bR071NARcXAfy8kJAA_2xlFQ1k9fJi6Vt7xRcYTF56ukIGz9SYhXqBeoKb9M_lZIwassPecJZ-NLvwwdv7ubs2H7ej3OgrdP0Y-LSOTCANiTKWJS0LCrbaykWoBQCAQ4nawquYkrzT4DxmO-9iJyht1tLOPlVvdJbQ5eFz1O5Z3aF8LRyj_dsMIePnSKTpSZXJkYBWP3-u6uZN-DL_fWVIDyMrOlPBiwrcWpeyXn0bkfinE2wnLL"/>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-label-md text-label-md text-on-surface">프리미엄 쌀 (40kg)</h4>
+<span class="text-error font-label-sm text-label-sm">+8% 예상</span>
+</div>
+<div class="flex items-center gap-xs mb-md">
+<span class="bg-secondary-container/20 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">Predictive Savings 10%</span>
+</div>
+<div class="mt-auto">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="text-on-surface-variant line-through text-label-sm">98,000원</p>
+<p class="font-headline-md text-headline-md text-primary">88,200원</p>
+</div>
+</div>
+<button class="w-full py-2 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:opacity-80 active:scale-95 transition-all">구매하기</button>
+</div>
+</div>
+<!-- Deal Card 4 -->
+<div class="glass-card p-md rounded-xl flex flex-col hover:shadow-lg transition-all group">
+<div class="h-32 rounded-lg overflow-hidden mb-sm bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Professional studio shot of fresh green scallions bundled with a simple string on a marble countertop. High-key lighting, soft shadows, vibrant natural greens, and a clean modern look that suggests high quality and logistical efficiency in a SaaS environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPpmp_jaArieWFbGammzhBielNygAt9FBasoHCHPRs2zHx_z7lbCSzt63ywtXePaihn1YUZRRPwAS1H1AfDPgFZ3xLuXvAaZQ8eeJCKNq9UkiaaG3VGaCYJuSEGj6hJGGIS6Xs4eT4mKXPEp3rJjMl0IuFHvKsTe3e0vHrjXgcrdWdJa15N7zHRnQ91aNQaHxNvbYrh1ePiOhutaoG6IWx6mcSv3GKm8NGUVWe1JT--zP7c29cxanK"/>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-label-md text-label-md text-on-surface">신선 대파 (10kg)</h4>
+<span class="text-error font-label-sm text-label-sm">+25% 예상</span>
+</div>
+<div class="flex items-center gap-xs mb-md">
+<span class="bg-secondary-container/20 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">Predictive Savings 22%</span>
+</div>
+<div class="mt-auto">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="text-on-surface-variant line-through text-label-sm">32,000원</p>
+<p class="font-headline-md text-headline-md text-primary">24,900원</p>
+</div>
+</div>
+<button class="w-full py-2 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:opacity-80 active:scale-95 transition-all">구매하기</button>
+</div>
+</div>
+</div>
+<!-- Secondary Analytics Section -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
+<div class="md:col-span-2 glass-card p-lg rounded-xl">
+<div class="flex justify-between items-center mb-lg">
+<h4 class="font-headline-md text-headline-md">구매 시점 시뮬레이션</h4>
+<span class="material-symbols-outlined text-outline">info</span>
+</div>
+<div class="h-48 w-full bg-surface-container-low rounded-lg relative flex items-end px-md gap-sm">
+<!-- Simple bar chart visualization -->
+<div class="flex-1 bg-outline-variant h-[40%] rounded-t-sm relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Last Month</div>
+</div>
+<div class="flex-1 bg-outline-variant h-[55%] rounded-t-sm relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Now</div>
+</div>
+<div class="flex-1 bg-primary h-[85%] rounded-t-sm relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Prediction (Hot)</div>
+</div>
+<div class="flex-1 bg-outline-variant h-[70%] rounded-t-sm relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">+2 Months</div>
+</div>
+<div class="flex-1 bg-outline-variant h-[60%] rounded-t-sm relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">+3 Months</div>
+</div>
+</div>
+<p class="mt-md font-body-sm text-body-sm text-on-surface-variant">현재 시점에서 구매 시 향후 3개월 대비 평균 <span class="text-primary font-bold">18.5%</span> 예산을 절감할 수 있습니다.</p>
+</div>
+<div class="glass-card p-lg rounded-xl bg-secondary-container/10 border-secondary/20">
+<h4 class="font-label-md text-label-md mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary">trending_up</span>
+                    시장 동향 요약
+                </h4>
+<ul class="space-y-md">
+<li class="flex items-start gap-sm">
+<div class="w-2 h-2 rounded-full bg-error mt-2"></div>
+<div>
+<p class="font-label-sm text-label-sm font-bold">기상 악화 경보</p>
+<p class="text-body-sm text-on-surface-variant">전남 지역 폭우로 배추 출하량 20% 감소 예상</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<div class="w-2 h-2 rounded-full bg-tertiary-container mt-2"></div>
+<div>
+<p class="font-label-sm text-label-sm font-bold">유류비 하락</p>
+<p class="text-body-sm text-on-surface-variant">물류 비용 5% 절감, 수입 과일가 안정세</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<div class="w-2 h-2 rounded-full bg-secondary mt-2"></div>
+<div>
+<p class="font-label-sm text-label-sm font-bold">수요 급증</p>
+<p class="text-body-sm text-on-surface-variant">추석 연휴 대비 육류 비축 권장</p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-sm bg-surface dark:bg-inverse-surface border-t border-outline-variant dark:border-outline shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-sm text-label-sm">Predictions</span>
+</a>
+<!-- ACTIVE TAB -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+<span class="font-label-sm text-label-sm font-bold">Smart Deal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">My Page</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for purchase buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('scale-95');
+            });
+            button.addEventListener('mouseup', () => {
+                button.classList.remove('scale-95');
+            });
+            button.addEventListener('mouseleave', () => {
+                button.classList.remove('scale-95');
+            });
+        });
+    </script>
+<script>const CT_PAGE = "deals";</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const TABS = [
+    ['홈', 'home', 'home-snapshot.html', 'home'],
+    ['인벤토리', 'inventory_2', 'inventory-snapshot.html', 'inventory'],
+    ['예측 분석', 'trending_up', 'item-analysis-snapshot.html', 'item-analysis'],
+    ['스마트 딜', 'shopping_bag', 'deals-snapshot.html', 'deals'],
+    ['내 정보', 'person', 'plan-snapshot.html', 'plan'],
+  ];
+
+  // 기존 화면별 하단 고정 네비 제거 → 통일된 5탭 바로 교체
+  document.querySelectorAll('nav, footer').forEach(n => {
+    const c = n.className || '';
+    if (typeof c === 'string' && c.includes('fixed') && c.includes('bottom-0') && !n.querySelector('input')) n.remove();
+  });
+  document.querySelectorAll('header div').forEach(d => {
+    const txts = [...d.querySelectorAll('button, a')].map(b => b.textContent.trim());
+    if (txts.includes('예측 분석') && txts.includes('스마트 딜')) d.style.display = 'none';
+  });
+
+  const bar = document.createElement('nav');
+  bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+  TABS.forEach(([label, icon, href, id]) => {
+    const active = id === CT_PAGE;
+    const a = document.createElement('a');
+    a.href = href;
+    a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+      + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
+    a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
+      + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+    inner.appendChild(a);
+  });
+  bar.appendChild(inner);
+  document.body.appendChild(bar);
+  document.body.style.paddingBottom = '88px';
+
+  // 텍스트 매칭 라우팅: 대체재/선매입 링크 → 스마트 딜 (필터 패널 내부 버튼은 제외 — "선매입 권장" 칩과 텍스트가 겹침)
+  document.querySelectorAll('a, button').forEach(el => {
+    if (el.closest('#filter-panel')) return;
+    const t = (el.textContent || '').trim();
+    if (t.includes('선매입') || t.includes('대체재') || t.includes('특가')) {
+      el.addEventListener('click', e => { e.preventDefault(); location.href = 'deals-snapshot.html'; });
+    }
+    if (t.startsWith('arrow_back')) {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        history.length > 1 ? history.back() : (location.href = 'home-snapshot.html');
+      });
+    }
+  });
+
+  // 알림 설정: 토글 상태 저장·복원
+  if (CT_PAGE === 'alerts') {
+    const boxes = document.querySelectorAll('input[type="checkbox"]');
+    const saved = JSON.parse(localStorage.getItem('ct_alerts_demo') || 'null');
+    boxes.forEach((b, i) => {
+      if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
+      b.addEventListener('change', () => {
+        localStorage.setItem('ct_alerts_demo', JSON.stringify([...boxes].map(x => x.checked)));
+      });
+    });
+  }
+
+  // 데모 화면 배지
+  if (['deals', 'plan'].includes(CT_PAGE)) {
+    const h = document.querySelector('header h1, main h1, main h2');
+    if (h) {
+      const tag = document.createElement('span');
+      tag.textContent = '데모';
+      tag.style.cssText = 'font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:8px;';
+      h.appendChild(tag);
+    }
+  }
+
+  // 로고 클릭 → 홈
+  document.querySelectorAll('header h1').forEach(h => {
+    if (h.textContent.includes('CartTiming')) {
+      h.style.cursor = 'pointer';
+      h.addEventListener('click', () => { location.href = 'home-snapshot.html'; });
+    }
+  });
+});
+</script>
+</body></html>
