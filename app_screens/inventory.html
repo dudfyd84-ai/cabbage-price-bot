@@ -125,6 +125,16 @@
             backdrop-filter: blur(8px);
             border: 1px solid rgba(226, 232, 240, 1);
         }
+        .filter-chip {
+            border-color: #bfc9c3;
+            color: #404944;
+            background: #ffffff;
+        }
+        .filter-chip.chip-active {
+            border-color: #003527;
+            background: #064e3b;
+            color: #ffffff;
+        }
     </style>
 <style>
     body {
@@ -162,10 +172,35 @@
 <section>
 <div class="flex items-center justify-between mb-md">
 <h2 class="font-headline-md text-headline-md text-on-surface">품목별 제안</h2>
-<button class="flex items-center gap-xs text-secondary font-label-md text-label-md">
+<button class="flex items-center gap-xs text-secondary font-label-md text-label-md" id="filter-toggle-btn">
                     필터링
                     <span class="material-symbols-outlined text-[18px]">tune</span>
 </button>
+</div>
+<!-- Filter Panel -->
+<div class="hidden mb-md p-md bg-surface-container-low rounded-xl space-y-sm" id="filter-panel">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">추천 유형</p>
+<div class="flex flex-wrap gap-xs" id="filter-type-chips">
+<button class="filter-chip px-3 py-1 rounded-full border font-label-sm text-label-sm transition-colors" data-type="all">전체</button>
+<button class="filter-chip px-3 py-1 rounded-full border font-label-sm text-label-sm transition-colors" data-type="rise">선매입 권장</button>
+<button class="filter-chip px-3 py-1 rounded-full border font-label-sm text-label-sm transition-colors" data-type="drop">구매 대기</button>
+<button class="filter-chip px-3 py-1 rounded-full border font-label-sm text-label-sm transition-colors" data-type="flat">평시 구매</button>
+</div>
+</div>
+<div class="flex items-center justify-between gap-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="filter-sort">정렬</label>
+<select class="border border-outline-variant rounded-lg font-body-sm text-body-sm px-2 py-1 bg-surface-container-lowest" id="filter-sort">
+<option value="r30_desc">상승률 높은순</option>
+<option value="r7_asc">하락률 큰순</option>
+<option value="save_desc">절감액 큰순</option>
+<option value="name">품목명순</option>
+</select>
+</div>
+<label class="flex items-center gap-xs font-label-sm text-label-sm text-on-surface-variant">
+<input id="filter-stock-only" type="checkbox"/>
+                    보유 재고 입력한 품목만 보기
+                </label>
 </div>
 <!-- Recommendation List -->
 <div class="space-y-md">

@@ -1,5 +1,6 @@
 // 재고 최적화 제안 화면을 /api/dashboard 실데이터로 재구성 (템플릿 카드 복제 방식)
 // + 보유 재고 일수 입력 → 소진 시점 예상가·선매입 절감액 실계산 (기획 원칙 ④)
+// + 추천 유형/정렬/보유재고 필터 (필터링 버튼 클릭 시 패널 토글)
 document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
   const stock = JSON.parse(localStorage.getItem('ct_stock') || '{}');
@@ -8,12 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
     : d <= 30 ? it.p7 + (it.p30 - it.p7) * (d - 7) / 23
     : it.p30;
+  // 카드 배지 기준과 동일한 추천 유형 분류 (필터와 배지가 항상 일치하도록 단일 함수로 통일)
+  const classify = it => it.r30 > 5 ? 'rise' : (it.r7 < -5 ? 'drop' : 'flat');
+
+  const filterState = { type: 'all', sort: 'r30_desc', stockOnly: false };
 
   fetch('/api/dashboard').then(r => r.json()).then(data => {
-    const items = [...data.items].sort((a, b) => b.r30 - a.r30);
+    const items = data.items;
     const risers = items.filter(i => i.r30 > 5);
 
-    // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액)
+    // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액) — 필터와 무관하게 전체 기준
     try {
       const save = risers.reduce((s, i) => s + (i.p30 - i.cur), 0);
       const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
@@ -22,15 +27,39 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sub) sub.textContent = `상승 예상 ${risers.length}개 품목 기준단위당 합계 (${data.date} 기준) · 사용량 입력(BOM) 시 매장별 실제 절감액이 산출됩니다.`;
     } catch (e) {}
 
-    // 2) 품목 카드: 첫 카드를 템플릿으로 전체 품목 재생성
-    try {
-      const list = document.querySelector('article').parentElement;
-      const tpl = document.querySelector('article').cloneNode(true);
-      list.innerHTML = '';
+    // 2) 품목 카드: 첫 카드를 템플릿으로 필터링된 품목만 재생성
+    const list = document.querySelector('article').parentElement;
+    const tpl = document.querySelector('article').cloneNode(true);
 
-      items.forEach(it => {
+    function getFiltered() {
+      let arr = items.filter(it => {
+        if (filterState.type !== 'all' && classify(it) !== filterState.type) return false;
+        if (filterState.stockOnly && !(parseInt(stock[it.name]) > 0)) return false;
+        return true;
+      });
+      arr = arr.slice();
+      if (filterState.sort === 'r7_asc') arr.sort((a, b) => a.r7 - b.r7);
+      else if (filterState.sort === 'save_desc') arr.sort((a, b) => (b.p30 - b.cur) - (a.p30 - a.cur));
+      else if (filterState.sort === 'name') arr.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      else arr.sort((a, b) => b.r30 - a.r30);
+      return arr;
+    }
+
+    function render() {
+      list.innerHTML = '';
+      const filtered = getFiltered();
+      if (filtered.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-center text-on-surface-variant font-body-sm py-lg';
+        empty.textContent = '조건에 맞는 품목이 없습니다.';
+        list.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(it => {
         const card = tpl.cloneNode(true);
-        const rise = it.r30 > 5, drop = it.r7 < -5;
+        const cls = classify(it);
+        const rise = cls === 'rise', drop = cls === 'drop';
 
         // 이미지 → 품목 이니셜 블록 (템플릿 사진 오매칭 방지)
         const img = card.querySelector('[style*="background-image"]');
@@ -103,11 +132,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cta = card.querySelector('button.w-full');
         if (cta) {
-          cta.innerHTML = (rise ? '상세 분석 보기' : '상세 분석 보기') + ' <span class="material-symbols-outlined text-[20px]">query_stats</span>';
+          cta.innerHTML = '상세 분석 보기 <span class="material-symbols-outlined text-[20px]">query_stats</span>';
           cta.addEventListener('click', () => { location.href = '/app/item-analysis?item=' + encodeURIComponent(it.name); });
         }
         list.appendChild(card);
       });
-    } catch (e) {}
+    }
+
+    render();
+
+    // 3) 필터 패널 토글 및 조작
+    const toggleBtn = document.getElementById('filter-toggle-btn');
+    const panel = document.getElementById('filter-panel');
+    if (toggleBtn && panel) {
+      toggleBtn.addEventListener('click', () => panel.classList.toggle('hidden'));
+    }
+    const chips = document.querySelectorAll('#filter-type-chips .filter-chip');
+    chips.forEach(chip => {
+      if (chip.dataset.type === filterState.type) chip.classList.add('chip-active');
+      chip.addEventListener('click', () => {
+        filterState.type = chip.dataset.type;
+        chips.forEach(c => c.classList.remove('chip-active'));
+        chip.classList.add('chip-active');
+        render();
+      });
+    });
+    const sortSel = document.getElementById('filter-sort');
+    if (sortSel) sortSel.addEventListener('change', () => { filterState.sort = sortSel.value; render(); });
+    const stockOnlyEl = document.getElementById('filter-stock-only');
+    if (stockOnlyEl) stockOnlyEl.addEventListener('change', () => { filterState.stockOnly = stockOnlyEl.checked; render(); });
   }).catch(() => {});
 });
