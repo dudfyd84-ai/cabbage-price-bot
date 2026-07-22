@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .find(b => b.textContent.includes('BOM 등록 완료'));
   if (!saveBtn) return;
 
-  saveBtn.addEventListener('click', () => {
+  saveBtn.addEventListener('click', async () => {
     const menu = (document.getElementById('menu-name') || {}).value?.trim();
     if (!menu) { alert('메뉴명을 입력해주세요.'); return; }
 
@@ -35,9 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (!ings.length) { alert('식재료를 1개 이상 입력해주세요.'); return; }
 
-    const boms = JSON.parse(localStorage.getItem('ct_bom') || '[]');
+    const boms = window.ctStore ? await ctStore.getMenus() : JSON.parse(localStorage.getItem('ct_bom') || '[]');
     boms.push({ menu, ings, saved: new Date().toISOString().slice(0, 10) });
-    localStorage.setItem('ct_bom', JSON.stringify(boms));
+    if (window.ctStore) {
+      await ctStore.setMenus(boms);
+    } else {
+      localStorage.setItem('ct_bom', JSON.stringify(boms));
+    }
     alert(`'${menu}' BOM이 등록되었습니다.\n홈 화면에서 AI 원가 변동 예측을 확인하세요.`);
     location.href = '/app';
   });
