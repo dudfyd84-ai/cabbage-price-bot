@@ -1,3 +1,7 @@
+"""
+스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI 애플리케이션
+이 파일은 가격 예측 봇의 핵심 백엔드 서버로, 화면 렌더링, 스크립트 서빙 및 API 요청을 처리합니다.
+"""
 # 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
 import os
 import re
@@ -372,7 +376,8 @@ def _render_screen(slug):
         html = _inject_home(html)
     inject = '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
-            "item-analysis": "item-live.js", "bom-register": "bom-live.js"}.get(name)
+            "item-analysis": "item-live.js", "bom-register": "bom-live.js",
+            "deals": "deals-live.js", "orders": "orders-live.js"}.get(name)
     if live:
         inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
@@ -386,7 +391,7 @@ def _render_screen(slug):
 @app.get("/app/static/{fname}")
 def app_static(fname: str):
     # 화면 공통 JS 서빙 (경로 이탈 차단)
-    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js"):
+    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js", "deals-live.js", "orders-live.js"):
         return HTMLResponse("not found", status_code=404)
     with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
         return HTMLResponse(f.read(), media_type="application/javascript")
