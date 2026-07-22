@@ -17,15 +17,24 @@ python app.py     # http://localhost:8000  (앱 /app, 대시보드 /)
 ## 협업 규칙 (필수)
 - **`main` 직접 push 금지.** 반드시 `feature/*` 브랜치 → PR → 리뷰 → 병합. 자세한 흐름은 `CONTRIBUTING.md`.
 - 브랜치명은 `feature/트랙-기능` (예: `feature/C-bom-manual-price`).
+- **작업이 끝나면 push에서 멈추지 말고 PR까지 올린다.** 브랜치에만 있으면 리뷰가 가지 않는다.
 - PR 본문에 `Closes #이슈번호`를 넣어 이슈와 연결한다.
+- **한 PR엔 한 이슈만.** 여러 기능이 섞였으면 나눠서 올린다.
+- 리뷰 지적을 반영할 땐 **새 PR을 열지 말고 같은 브랜치에 커밋·push**한다(PR이 자동 갱신됨).
 - 커밋은 논리 단위 1개당 1개, 한국어 메시지로 무엇을 왜 바꿨는지 적는다.
 
-## 트랙별 파일 소유 (충돌 방지 — 본인 트랙 파일 위주로 수정)
-- **A 데이터/ML**: `retrain_pipeline.py`, `kamis_all_collect.py`, `model_*.pkl`, `accuracy.json`
-- **B 백엔드**: `app.py`(API·인증), `supabase_schema.sql`
-- **C 프론트**: `app_screens/*.html`, `*-live.js`, `nav.js`, `dashboard.html`
-- **D 그로스**: 신규 모듈(알림·리포트), BigQuery 쿼리
-> 트랙 배정은 `ROADMAP.md` 참고. 다른 트랙 파일을 바꿔야 하면 그 담당자와 PR에서 합의한다.
+## 트랙별 담당 (기능 담당제 — 맡은 기능은 화면까지 끝까지 책임)
+- **A 데이터/ML**: 예측 엔진·데이터 수집 (`retrain_pipeline.py`, `kamis_all_collect.py`, 모델·데이터)
+- **B 계정/결제**: 로그인·구독·결제 — `app.py` 인증·과금, `supabase_schema.sql`, `onboarding.html`, `plan.html`
+- **C 핵심 화면/공용**: 홈·재고·BOM·품목상세·딜·주문 화면 + 공용 모듈 관리
+- **D 알림/리포트**: `notify_kakao.py`, 리포트 모듈, `alerts.html`, BigQuery 쿼리
+
+### ⚠️ 공용 파일 — 수정 시 절차 필수
+`nav.js` · `ct-store.js` · `home-live.js` · `dashboard.html` · `app.py`
+1. PR 본문에 **"공용 파일 수정: 파일명 — 이유"** 명시.
+2. **@kjw0106을 리뷰어로 지정**.
+3. **최소 범위**로만 수정(리팩터링은 별도 PR).
+> 트랙 배정은 `ROADMAP.md` 참고.
 
 ## 손대지 말 것
 - **데이터·모델 파일**(`*.csv`, `model_*.pkl`, `accuracy.json`)은 재학습 봇이 자동 관리한다. 수동 편집·커밋 금지.
