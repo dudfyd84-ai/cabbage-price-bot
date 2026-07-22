@@ -632,6 +632,19 @@
                 return;
             }
 
+            const manualPriceEl = card.querySelector('.price-input');
+            const manualPrice = manualPriceEl ? parseFloat(manualPriceEl.value) : NaN;
+
+            if (!isNaN(manualPrice) && manualPrice >= 0) {
+                card.dataset.predictedPrice = manualPrice;
+                card.dataset.currentPrice = manualPrice;
+                previewPrice.textContent = '직접 입력가';
+                previewPrice.className = 'text-[10px] font-bold text-primary bg-primary-fixed/30 px-1.5 py-0.5 rounded-full card-price-preview';
+                unifiedContainer.classList.remove('hidden');
+                unifiedText.innerHTML = `✍️ 사장님 수동 입력가 적용: <span class="font-bold text-primary">${manualPrice.toLocaleString()}원</span> (예측 미지원)`;
+                return;
+            }
+
             const hasRetailData = window.ctRetailData && window.ctRetailData.groups;
             const hasDashboardData = window.ctDashboardData && window.ctDashboardData.items;
 
@@ -751,6 +764,7 @@
             const qty = data.qty !== undefined && data.qty !== '' ? data.qty : 100;
             const unit = data.unit || 'g';
             const kamis = data.kamis || '';
+            const manualPriceVal = data.manualPrice !== undefined ? data.manualPrice : '';
             
             const getGuideHtml = (k) => k ? `<span class="kamis-guide text-[10px] bg-on-primary-container text-primary-container px-1.5 py-0.5 rounded ml-1 font-semibold">${k} 시세 모형 적용</span>` : '';
 
@@ -800,14 +814,14 @@
                             </div>
                         </div>
                         
-                        <!-- 수량 (모바일 5, 데스크탑 3) -->
-                        <div class="col-span-5 md:col-span-3">
+                        <!-- 수량 (모바일 4, 데스크탑 2) -->
+                        <div class="col-span-4 md:col-span-2">
                             <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">수량</label>
                             <input type="number" value="${qty}" placeholder="100" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md qty-input">
                         </div>
                         
-                        <!-- 단위 (모바일 5, 데스크탑 3) -->
-                        <div class="col-span-5 md:col-span-3">
+                        <!-- 단위 (모바일 4, 데스크탑 2) -->
+                        <div class="col-span-4 md:col-span-2">
                             <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단위</label>
                             <select class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md unit-select">
                                 <option value="g" ${unit === 'g' ? 'selected' : ''}>g</option>
@@ -817,8 +831,14 @@
                                 <option value="ea" ${unit === 'ea' ? 'selected' : ''}>ea</option>
                             </select>
                         </div>
+
+                        <!-- 직접 입력 단가 (원) (모바일 4, 데스크탑 2) -->
+                        <div class="col-span-4 md:col-span-2">
+                            <label class="font-label-md text-label-md text-on-surface-variant block mb-xs">단가(선택)</label>
+                            <input type="number" value="${manualPriceVal}" placeholder="금액 입력" class="w-full bg-surface border-outline-variant rounded-lg py-sm px-md text-body-md price-input">
+                        </div>
                         
-                        <!-- 삭제 (모바일 2, 데스크탑 1) -->
+                        <!-- 삭제 (모바일 1, 데스크탑 1) -->
                         <div class="col-span-2 md:col-span-1 flex justify-center pb-1">
                             <button type="button" class="material-symbols-outlined text-error p-2 hover:bg-error-container/20 rounded-full transition-colors delete-btn">delete</button>
                         </div>
@@ -860,10 +880,7 @@
                 calculateCardEstimate(card);
             });
 
-            // Bind live calculation events
-            const qtyInput = card.querySelector('.qty-input');
-            const unitSelect = card.querySelector('.unit-select');
-            const nameInput = card.querySelector('.name-input');
+            const priceInput = card.querySelector('.price-input');
             
             const reCalc = () => {
                 calculateCardEstimate(card);
@@ -872,6 +889,7 @@
             qtyInput.addEventListener('input', reCalc);
             unitSelect.addEventListener('change', reCalc);
             nameInput.addEventListener('input', reCalc);
+            if (priceInput) priceInput.addEventListener('input', reCalc);
 
             // Delete button
             card.querySelector('.delete-btn').addEventListener('click', (e) => {
@@ -1005,9 +1023,10 @@
                 const qty = parseFloat(c.querySelector('.qty-input')?.value);
                 const unit = c.querySelector('.unit-select')?.value;
                 const kamis = c.querySelector('.kamis-select')?.value || '없음';
+                const inputPrice = parseFloat(c.querySelector('.price-input')?.value);
                 
-                const curPrice = parseFloat(c.dataset.currentPrice) || 0;
-                const predictedPrice = parseFloat(c.dataset.predictedPrice) || 0;
+                const curPrice = !isNaN(inputPrice) && inputPrice >= 0 ? inputPrice : (parseFloat(c.dataset.currentPrice) || 0);
+                const predictedPrice = !isNaN(inputPrice) && inputPrice >= 0 ? inputPrice : (parseFloat(c.dataset.predictedPrice) || 0);
 
                 if (name && qty > 0) {
                     ings.push({
@@ -1015,7 +1034,7 @@
                         quantity: qty,
                         unit: unit,
                         kamis_matched: kamis,
-                        owner_input_price: curPrice, // 자동 시가 적용
+                        owner_input_price: curPrice, // 수동 단가 우선 적용 후 없으면 자동 시가
                         ai_predicted_price_4w: predictedPrice
                     });
                 }

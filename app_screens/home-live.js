@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!topRise || d > topRise.d) topRise = { name: pb.label, d };
           } else if (g.manualPrice && g.manualPrice > 0) {
             now += g.manualPrice; fut += g.manualPrice;
+            // 수동 입력 가격(manualPrice)이 있는 경우 미연동(unmatched) 목록에서 제외
           } else {
             unmatched.push(g.name);
           }
