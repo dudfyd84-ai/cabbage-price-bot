@@ -8,57 +8,68 @@
     '배추': {
       merchant: '강원 고랭지 배추 영농조합',
       icon: 'spa',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=배추+20kg'
     },
     '무': {
       merchant: '제주 구좌 무 생산협동조합',
       icon: 'spa',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=무+박스'
     },
     '양파': {
       merchant: '무안 양파 도매 유통',
       icon: 'skillet',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtz77ReFFcIxJpFV7XgBAGUZSKDae_iJSyE0Pfo7W24uIMQwEivC7Jo0sQyH4gRVUEH9wTUaxwsJKe2I4Q2WlZztNSMZdEY398tQ2TIV8s3aIDmZ4DOtMz4Sjx51dU5lPSG1OxqWO8cH2pLEolhsgkyz_OLI13BcZs5ePNz-2pkQDz9Cq5Hk5F2RaOhDr09_d28eIpOkKLMmZEVb8dytCBQEnk7PrwwcCowC17LBfMcX1wiN-WQLqn'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtz77ReFFcIxJpFV7XgBAGUZSKDae_iJSyE0Pfo7W24uIMQwEivC7Jo0sQyH4gRVUEH9wTUaxwsJKe2I4Q2WlZztNSMZdEY398tQ2TIV8s3aIDmZ4DOtMz4Sjx51dU5lPSG1OxqWO8cH2pLEolhsgkyz_OLI13BcZs5ePNz-2pkQDz9Cq5Hk5F2RaOhDr09_d28eIpOkKLMmZEVb8dytCBQEnk7PrwwcCowC17LBfMcX1wiN-WQLqn',
+      url: 'https://search.shopping.naver.com/search/all?query=양파+20kg'
     },
     '대파': {
       merchant: '진도 대파 영농조합',
       icon: 'skillet',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPpmp_jaArieWFbGammzhBielNygAt9FBasoHCHPRs2zHx_z7lbCSzt63ywtXePaihn1YUZRRPwAS1H1AfDPgFZ3xLuXvAaZQ8eeJCKNq9UkiaaG3VGaCYJuSEGj6hJGGIS6Xs4eT4mKXPEp3rJjMl0IuFHvKsTe3e0vHrjXgcrdWdJa15N7zHRnQ91aNQaHxNvbYrh1ePiOhutaoG6IWx6mcSv3GKm8NGUVWe1JT--zP7c29cxanK'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPpmp_jaArieWFbGammzhBielNygAt9FBasoHCHPRs2zHx_z7lbCSzt63ywtXePaihn1YUZRRPwAS1H1AfDPgFZ3xLuXvAaZQ8eeJCKNq9UkiaaG3VGaCYJuSEGj6hJGGIS6Xs4eT4mKXPEp3rJjMl0IuFHvKsTe3e0vHrjXgcrdWdJa15N7zHRnQ91aNQaHxNvbYrh1ePiOhutaoG6IWx6mcSv3GKm8NGUVWe1JT--zP7c29cxanK',
+      url: 'https://search.shopping.naver.com/search/all?query=대파+10단'
     },
     '마늘': {
       merchant: '의성 마늘 생산협동조합',
       icon: 'storefront',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt5P16rDGfBRHSbENGIbAKRKblncuvhln9bs0xmEI9WkkyAzqfq33iI78Bba6_2kVq6PzxuIi4HgWmaVv_XDdia9gIDLOicj6nr6ExK2WSoXbzUXDOQTS0ZiXFiiZ-kkDeZpzFeVUFnD8-Ar6TYgoe-me3c8PaOQHcQrcGCDVGc7GLVx9PXQB-Y8zqS6nNo73Mua5kZxZkS-ak17sjTEgFgHHGwFH4SdfeU0oG16EPIsq90Hamy4g9'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt5P16rDGfBRHSbENGIbAKRKblncuvhln9bs0xmEI9WkkyAzqfq33iI78Bba6_2kVq6PzxuIi4HgWmaVv_XDdia9gIDLOicj6nr6ExK2WSoXbzUXDOQTS0ZiXFiiZ-kkDeZpzFeVUFnD8-Ar6TYgoe-me3c8PaOQHcQrcGCDVGc7GLVx9PXQB-Y8zqS6nNo73Mua5kZxZkS-ak17sjTEgFgHHGwFH4SdfeU0oG16EPIsq90Hamy4g9',
+      url: 'https://search.shopping.naver.com/search/all?query=의성+깐마늘+20kg'
     },
     '당근': {
       merchant: '평창 당근 유통조합',
       icon: 'skillet',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=당근+박스'
     },
     '오이': {
       merchant: '천안 아우내 오이 농가',
       icon: 'skillet',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=오이+박스'
     },
     '시금치': {
       merchant: '남해 시금치 유통본부',
       icon: 'spa',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=시금치+4kg'
     },
     '상추': {
       merchant: '논산 상추 영농조합',
       icon: 'spa',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT-w6q7N67i_2-Mspm4_Hn-H9c4uS15n36B-P91lJ2aWv9i25XN5y6uW3p=w600',
+      url: 'https://search.shopping.naver.com/search/all?query=상추+4kg'
     },
     '사과': {
       merchant: '충주 사과 농협',
       icon: 'egg',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD9bR071NARcXAfy8kJAA_2xlFQ1k9fJi6Vt7xRcYTF56ukIGz9SYhXqBeoKb9M_lZIwassPecJZ-NLvwwdv7ubs2H7ej3OgrdP0Y-LSOTCANiTKWJS0LCrbaykWoBQCAQ4nawquYkrzT4DxmO-9iJyht1tLOPlVvdJbQ5eFz1O5Z3aF8LRyj_dsMIePnSKTpSZXJkYBWP3-u6uZN-DL_fWVIDyMrOlPBiwrcWpeyXn0bkfinE2wnLL'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD9bR071NARcXAfy8kJAA_2xlFQ1k9fJi6Vt7xRcYTF56ukIGz9SYhXqBeoKb9M_lZIwassPecJZ-NLvwwdv7ubs2H7ej3OgrdP0Y-LSOTCANiTKWJS0LCrbaykWoBQCAQ4nawquYkrzT4DxmO-9iJyht1tLOPlVvdJbQ5eFz1O5Z3aF8LRyj_dsMIePnSKTpSZXJkYBWP3-u6uZN-DL_fWVIDyMrOlPBiwrcWpeyXn0bkfinE2wnLL',
+      url: 'https://search.shopping.naver.com/search/all?query=부사사과+박스'
     },
     '배': {
       merchant: '나주 배 원예농협',
       icon: 'egg',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD9bR071NARcXAfy8kJAA_2xlFQ1k9fJi6Vt7xRcYTF56ukIGz9SYhXqBeoKb9M_lZIwassPecJZ-NLvwwdv7ubs2H7ej3OgrdP0Y-LSOTCANiTKWJS0LCrbaykWoBQCAQ4nawquYkrzT4DxmO-9iJyht1tLOPlVvdJbQ5eFz1O5Z3aF8LRyj_dsMIePnSKTpSZXJkYBWP3-u6uZN-DL_fWVIDyMrOlPBiwrcWpeyXn0bkfinE2wnLL'
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD9bR071NARcXAfy8kJAA_2xlFQ1k9fJi6Vt7xRcYTF56ukIGz9SYhXqBeoKb9M_lZIwassPecJZ-NLvwwdv7ubs2H7ej3OgrdP0Y-LSOTCANiTKWJS0LCrbaykWoBQCAQ4nawquYkrzT4DxmO-9iJyht1tLOPlVvdJbQ5eFz1O5Z3aF8LRyj_dsMIePnSKTpSZXJkYBWP3-u6uZN-DL_fWVIDyMrOlPBiwrcWpeyXn0bkfinE2wnLL',
+      url: 'https://search.shopping.naver.com/search/all?query=나주배+박스'
     }
   };
 
@@ -67,6 +78,19 @@
   let currentCategory = 'all'; // all, veg, fruit
   let currentSort = 'rise_desc'; // rise_desc, savings_desc, price_asc
   let currentLevel = 'all'; // all, 위험, 주의, 안정
+
+  // 제휴 링크 클릭 로그 축적 함수 (Track D 협의용 클릭 로그 축적)
+  const logAffiliateClick = (itemName, merchant, price) => {
+    const clicks = JSON.parse(localStorage.getItem('ct_deal_clicks') || '[]');
+    clicks.push({
+      item: itemName,
+      merchant: merchant,
+      price: price,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('ct_deal_clicks', JSON.stringify(clicks));
+    console.log(`[Affiliate Click Logged] ${itemName} from ${merchant} - ₩${price}`);
+  };
 
   // 카테고리 정의
   const getCategoryOf = (name) => {
@@ -197,9 +221,10 @@
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopImmediatePropagation();
-          if (typeof window.placeDealOrder === 'function') {
-            window.placeDealOrder(meta.merchant, `${item.name} ${item.unit}`, dealPrice, meta.icon, meta.img);
-          }
+          // 제휴 아웃링크 데이터 로깅 및 링크아웃 이동
+          logAffiliateClick(item.name, meta.merchant, dealPrice);
+          alert(`제휴 파트너 식자재몰로 이동합니다. (예상 절감가: ${fmt(dealPrice)}원)`);
+          window.open(meta.url || 'https://search.shopping.naver.com', '_blank');
         }, true); // 캡처링 단계에서 먼저 처리
       }
       grid.appendChild(card);
@@ -240,9 +265,10 @@
           heroBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (typeof window.placeDealOrder === 'function') {
-              window.placeDealOrder(meta.merchant, `${top.name} ${top.unit} (긴급 특가)`, dealPrice, meta.icon, meta.img);
-            }
+            // 제휴 아웃링크 데이터 로깅 및 링크아웃 이동
+            logAffiliateClick(`${top.name} (긴급 특가)`, meta.merchant, dealPrice);
+            alert(`제휴 파트너 식자재몰로 이동합니다. (예상 특가: ${fmt(dealPrice)}원)`);
+            window.open(meta.url || 'https://search.shopping.naver.com', '_blank');
           }, true); // 캡처링 단계에서 먼저 처리
         }
       }
