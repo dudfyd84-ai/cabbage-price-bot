@@ -30,5 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
       window.updateAllEstimates();
     }
   }).catch(() => {});
-
 });
