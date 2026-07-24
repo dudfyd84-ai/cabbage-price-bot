@@ -1058,7 +1058,7 @@
             console.log('🎉 [BOM Submission Success] Sending JSON object to server:', payload);
 
             // Save to localStorage or Supabase
-            const localBoms = window.ctStore ? await window.ctStore.getBoms() : JSON.parse(localStorage.getItem('ct_bom') || '[]');
+            const localBoms = window.ctStore ? await window.ctStore.getMenus() : JSON.parse(localStorage.getItem('ct_bom') || '[]');
             localBoms.push({ 
                 menu: payload.menu_name, 
                 ings: payload.ingredients.map(i => ({
@@ -1071,7 +1071,7 @@
                 saved: new Date().toISOString().slice(0, 10) 
             });
             if (window.ctStore) {
-                await window.ctStore.setBoms(localBoms);
+                await window.ctStore.setMenus(localBoms);
             } else {
                 localStorage.setItem('ct_bom', JSON.stringify(localBoms));
             }

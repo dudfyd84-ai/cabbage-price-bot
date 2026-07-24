@@ -97,13 +97,13 @@
   // ── 4) 알림 설정: 토글 상태 저장·복원 ──
   if (path.endsWith('/alerts')) {
     const boxes = document.querySelectorAll('input[type="checkbox"]');
-    const saved = window.ctStore ? await window.ctStore.getAlerts() : JSON.parse(localStorage.getItem('ct_alerts') || 'null');
+    const saved = window.ctStore ? await window.ctStore.getAlertPrefs() : JSON.parse(localStorage.getItem('ct_alerts') || 'null');
     boxes.forEach((b, i) => {
       if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
       b.addEventListener('change', async () => {
         const arr = [...boxes].map(x => x.checked);
         if (window.ctStore) {
-          await window.ctStore.setAlerts(arr);
+          await window.ctStore.setAlertPrefs(arr);
         } else {
           localStorage.setItem('ct_alerts', JSON.stringify(arr));
         }

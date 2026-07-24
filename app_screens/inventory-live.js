@@ -2,7 +2,7 @@
 // + 보유 재고 일수 입력 → 소진 시점 예상가·선매입 절감액 실계산 (기획 원칙 ④)
 document.addEventListener('DOMContentLoaded', async () => {
   const fmt = n => Math.round(n).toLocaleString();
-  const stock = window.ctStore ? await window.ctStore.getStock() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
+  const stock = window.ctStore ? await window.ctStore.getStockLevels() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
   // 소진 시점 예상가: 오늘~7일(cur→p7), 7~30일(p7→p30) 선형보간, 30일 초과는 p30
   const priceAt = (it, d) => d <= 0 ? it.cur
     : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
@@ -70,10 +70,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           ' style="width:88px;text-align:right;border:1px solid #bfc9c3;border-radius:8px;padding:4px 8px;font-size:14px;background:#fff;">';
         stockRow.querySelector('input').addEventListener('change', async e => {
           const v = parseInt(e.target.value);
-          const s = window.ctStore ? await window.ctStore.getStock() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
+          const s = window.ctStore ? await window.ctStore.getStockLevels() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
           if (v > 0) s[it.name] = v; else delete s[it.name];
           if (window.ctStore) {
-            await window.ctStore.setStock(s);
+            await window.ctStore.setStockLevels(s);
           } else {
             localStorage.setItem('ct_stock', JSON.stringify(s));
           }

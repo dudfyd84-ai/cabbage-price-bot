@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   Promise.all([
     fetch('/api/dashboard').then(r => r.json()),
     fetch('/api/retail').then(r => r.json()).catch(() => ({ groups: {} })),
-    window.ctStore ? window.ctStore.getStock() : JSON.parse(localStorage.getItem('ct_stock') || '{}'),
-    window.ctStore ? window.ctStore.getBoms() : JSON.parse(localStorage.getItem('ct_bom') || '[]')
+    window.ctStore ? window.ctStore.getStockLevels() : JSON.parse(localStorage.getItem('ct_stock') || '{}'),
+    window.ctStore ? window.ctStore.getMenus() : JSON.parse(localStorage.getItem('ct_bom') || '[]')
   ]).then(([data, retail, stock, boms]) => {
     const items = [...data.items].sort((a, b) => b.r30 - a.r30);
     const risers = items.filter(i => i.r30 > 5);

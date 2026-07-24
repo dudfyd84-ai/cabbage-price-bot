@@ -78,7 +78,7 @@ const SUPABASE_ANON_KEY = "";
     // ── 2) 메뉴 BOM (menus) ──
     // Local format: Array of { menu, ings: [...], saved }
     // DB format: id, name (menu), ings (jsonb array)
-    async getBoms() {
+    async getMenus() {
       if (await this.isLoggedIn()) {
         try {
           const { data, error } = await supabase.from("menus").select("name, ings, created_at");
@@ -97,7 +97,7 @@ const SUPABASE_ANON_KEY = "";
       return JSON.parse(localStorage.getItem("ct_bom") || "[]");
     },
 
-    async setBoms(bomsArray) {
+    async setMenus(bomsArray) {
       localStorage.setItem("ct_bom", JSON.stringify(bomsArray));
       if (await this.isLoggedIn()) {
         try {
@@ -123,7 +123,7 @@ const SUPABASE_ANON_KEY = "";
     // ── 3) 품목별 보유 재고 일수 (stock_levels) ──
     // Local format: { "배추": 10, "무": 5 }
     // DB format: item_name, days_left
-    async getStock() {
+    async getStockLevels() {
       if (await this.isLoggedIn()) {
         try {
           const { data, error } = await supabase.from("stock_levels").select("item_name, days_left");
@@ -142,7 +142,7 @@ const SUPABASE_ANON_KEY = "";
       return JSON.parse(localStorage.getItem("ct_stock") || "{}");
     },
 
-    async setStock(stockObj) {
+    async setStockLevels(stockObj) {
       localStorage.setItem("ct_stock", JSON.stringify(stockObj));
       if (await this.isLoggedIn()) {
         try {
@@ -168,7 +168,7 @@ const SUPABASE_ANON_KEY = "";
     // ── 4) 알림 설정 (alert_prefs) ──
     // Local format: Array of booleans [true, false, true]
     // DB format: prefs (jsonb array)
-    async getAlerts() {
+    async getAlertPrefs() {
       if (await this.isLoggedIn()) {
         try {
           const { data, error } = await supabase
@@ -187,7 +187,7 @@ const SUPABASE_ANON_KEY = "";
       return JSON.parse(localStorage.getItem("ct_alerts") || "null");
     },
 
-    async setAlerts(alertsArray) {
+    async setAlertPrefs(alertsArray) {
       localStorage.setItem("ct_alerts", JSON.stringify(alertsArray));
       if (await this.isLoggedIn()) {
         try {
@@ -234,19 +234,19 @@ const SUPABASE_ANON_KEY = "";
         // BOM 마이그레이션
         const boms = JSON.parse(localStorage.getItem("ct_bom") || "[]");
         if (boms.length > 0) {
-          await this.setBoms(boms);
+          await this.setMenus(boms);
         }
 
         // 재고 마이그레이션
         const stock = JSON.parse(localStorage.getItem("ct_stock") || "{}");
         if (Object.keys(stock).length > 0) {
-          await this.setStock(stock);
+          await this.setStockLevels(stock);
         }
 
         // 알림 설정 마이그레이션
         const alerts = JSON.parse(localStorage.getItem("ct_alerts") || "null");
         if (alerts) {
-          await this.setAlerts(alerts);
+          await this.setAlertPrefs(alerts);
         }
 
         localStorage.setItem("ct_migrated_to_supabase", "true");
