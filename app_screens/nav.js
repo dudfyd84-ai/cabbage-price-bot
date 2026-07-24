@@ -1,5 +1,6 @@
 // Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장 + 데모 배지
-document.addEventListener('DOMContentLoaded', () => {
+// app.py에서 </body> 직전에 <script src>로 주입됨 → DOM이 이미 준비된 상태이므로 DOMContentLoaded 불필
+(function () {
   const path = location.pathname;
 
   // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
@@ -24,14 +25,24 @@ document.addEventListener('DOMContentLoaded', () => {
     '인사이트': '/app/item-analysis',
   };
   document.querySelectorAll('a, button').forEach(el => {
+    // data-ct-deal 속성이 있는 버튼은 deals-live.js가 전담 처리하므로 건너뜀
+    if (el.hasAttribute('data-ct-deal')) return;
     const t = (el.textContent || '').trim();
+    // '구매하기' 관련 버튼은 deals-live.js에 위임
+    if (t.includes('구매하기')) return;
+
     for (const k in ROUTES) {
       if (t === k || t.endsWith(k)) {
         el.addEventListener('click', e => { e.preventDefault(); location.href = ROUTES[k]; });
         return;
       }
     }
-    if (t.includes('선매입') || t.includes('대체재') || t.includes('특가')) {
+    // deals 화면에서 '특가' 조건은 deals-live.js의 onclick이 담당하므로 건너뜀
+    // '구매하기' 텍스트 버튼도 deals-live.js가 처리하므로 nav.js에서 제외
+    if (t.includes('구매하기') || t.includes('지금 즉시 구매하기')) {
+      return; // deals-live.js의 onclick에 위임
+    }
+    if ((t.includes('선매입') || t.includes('대체재') || t.includes('특가')) && !path.endsWith('/deals')) {
       el.addEventListener('click', e => { e.preventDefault(); location.href = '/app/deals'; });
       return;
     }
@@ -154,4 +165,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   } catch (e) {}
-});
+})();

@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const calc = bom => {
         let now = 0, fut = 0, unmatched = [], unpredicted = 0, topRise = null;
         bom.ings.forEach(g => {
-          const pb = priceBook[norm(g.name)];
+          const pb = priceBook[norm(g.name)] || (g.kamis ? priceBook[norm(g.kamis)] : null);
           const qBase = g.unit === 'kg' || g.unit === 'l' ? g.qty * 1000 : g.qty;
           const typeOk = pb && ((pb.type === 'g' && (g.unit === 'g' || g.unit === 'kg')) ||
                                 (pb.type === 'ml' && (g.unit === 'ml' || g.unit === 'l')) ||
@@ -136,7 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pb.predicted) unpredicted += 1;
             const d = c * (pb.futRatio - 1);
             if (!topRise || d > topRise.d) topRise = { name: pb.label, d };
-          } else unmatched.push(g.name);
+          } else if (g.manualPrice && g.manualPrice > 0) {
+            now += g.manualPrice; fut += g.manualPrice;
+            // 수동 입력 가격(manualPrice)이 있는 경우 미연동(unmatched) 목록에서 제외
+          } else {
+            unmatched.push(g.name);
+          }
         });
         return { now, fut, unmatched, unpredicted, topRise };
       };

@@ -157,120 +157,54 @@
 <!-- Filtering Section -->
 <section class="space-y-4">
 <div class="flex items-center gap-3">
-<div class="flex-grow flex items-center justify-between glass-panel px-4 py-3 rounded-xl">
+<div class="flex-grow flex items-center justify-between glass-panel px-4 py-3.5 rounded-xl min-h-[48px]">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-on-surface-variant text-[20px]">calendar_today</span>
-<span class="font-label-md text-label-md text-on-surface">2024.05.01 ~ 2024.05.31</span>
+<span class="font-label-md text-label-md text-on-surface" id="date-range-text">2026.07.01 ~ 2026.07.31</span>
 </div>
 <span class="material-symbols-outlined text-outline">expand_more</span>
 </div>
-<button class="bg-secondary-container text-on-secondary-container px-4 py-3 rounded-xl flex items-center gap-2 font-label-md text-label-md shadow-sm active:scale-95 transition-transform">
+<button class="bg-secondary-container text-on-secondary-container px-5 py-3.5 rounded-xl flex items-center gap-2 font-label-md text-label-md shadow-sm active:scale-95 transition-transform min-h-[48px]">
 <span class="material-symbols-outlined text-[18px]">tune</span>
                     필터
                 </button>
 </div>
+<!-- 기간 퀵 프리셋 (Quick Presets) -->
+<div class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar" id="date-presets">
+<button data-preset="today" class="flex-1 min-h-[44px] px-4 py-2.5 rounded-full text-label-sm font-label-sm bg-white border border-outline-variant text-on-surface-variant transition-all whitespace-nowrap">오늘</button>
+<button data-preset="3days" class="flex-1 min-h-[44px] px-4 py-2.5 rounded-full text-label-sm font-label-sm bg-white border border-outline-variant text-on-surface-variant transition-all whitespace-nowrap">최근 3일</button>
+<button data-preset="week" class="flex-1 min-h-[44px] px-4 py-2.5 rounded-full text-label-sm font-label-sm bg-white border border-outline-variant text-on-surface-variant transition-all whitespace-nowrap">이번 주</button>
+<button data-preset="month" class="flex-1 min-h-[44px] px-4 py-2.5 rounded-full text-label-sm font-label-sm bg-white border border-outline-variant text-on-surface-variant transition-all whitespace-nowrap">이번 달</button>
+</div>
 <!-- Status Chips (Tabs) -->
-<div class="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
+<div class="flex overflow-x-auto gap-3 pb-2 hide-scrollbar" id="status-chips">
 <!-- Total (Active) -->
-<button class="flex-shrink-0 px-4 py-2 rounded-full bg-primary text-white flex items-center gap-2 shadow-md">
-<span class="font-label-md text-label-md">전체 내역: 124</span>
+<button id="chip-all" class="flex-shrink-0 px-4 py-2 rounded-full bg-primary text-white flex items-center gap-2 shadow-md">
+<span class="font-label-md text-label-md">전체 내역: 0</span>
 </button>
 <!-- Pending -->
-<button class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
-<span class="font-label-md text-label-md">대기 중: 12</span>
+<button id="chip-pending" class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
+<span class="font-label-md text-label-md">대기 중: 0</span>
 </button>
 <!-- Shipping -->
-<button class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
-<span class="font-label-md text-label-md">배송 중: 5</span>
+<button id="chip-shipping" class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
+<span class="font-label-md text-label-md">배송 중: 0</span>
+</button>
+<!-- Completed -->
+<button id="chip-completed" class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
+<span class="font-label-md text-label-md">완료됨: 0</span>
 </button>
 <!-- Cancelled -->
-<button class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
-<span class="font-label-md text-label-md">취소됨: 2</span>
+<button id="chip-cancelled" class="flex-shrink-0 px-4 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant flex items-center gap-2">
+<span class="font-label-md text-label-md">취소됨: 0</span>
 </button>
 </div>
 </section>
 <!-- Order List Section -->
 <section class="space-y-4">
 <h2 class="font-label-md text-label-md text-outline uppercase tracking-wider">주문 내역 리스트</h2>
-<div class="space-y-4">
-<!-- Order Card 1: Completed -->
-<div class="glass-panel rounded-xl p-4 transition-all active:scale-[0.98] cursor-pointer">
-<div class="flex justify-between items-start mb-3">
-<div class="space-y-1">
-<p class="font-data-mono text-label-sm text-outline">Order ID: #20240520-01</p>
-<p class="font-label-md text-label-md text-on-surface">2024.05.20</p>
-</div>
-<span class="px-3 py-1 bg-teal-50 text-teal-700 rounded-lg font-label-sm text-label-sm flex items-center gap-1 border border-teal-100">
-<span class="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
-                            Completed
-                        </span>
-</div>
-<div class="flex items-center gap-3 py-3 border-y border-outline-variant/20">
-<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-<span class="material-symbols-outlined text-primary">storefront</span>
-</div>
-<div>
-<p class="font-headline-md text-body-md font-semibold text-on-surface">서울 마늘 도매상</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">다진 마늘 외 4건</p>
-</div>
-</div>
-<div class="mt-3 flex justify-between items-center">
-<p class="font-body-sm text-body-sm text-outline">총 결제 금액</p>
-<p class="font-headline-md text-headline-md text-primary">₩150,000</p>
-</div>
-</div>
-<!-- Order Card 2: Shipping -->
-<div class="glass-panel rounded-xl p-4 transition-all active:scale-[0.98] cursor-pointer">
-<div class="flex justify-between items-start mb-3">
-<div class="space-y-1">
-<p class="font-data-mono text-label-sm text-outline">Order ID: #20240519-42</p>
-<p class="font-label-md text-label-md text-on-surface">2024.05.19</p>
-</div>
-<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg font-label-sm text-label-sm flex items-center gap-1 border border-secondary-container/30">
-<span class="w-1.5 h-1.5 bg-secondary rounded-full"></span>
-                            Shipping
-                        </span>
-</div>
-<div class="flex items-center gap-3 py-3 border-y border-outline-variant/20">
-<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-<span class="material-symbols-outlined text-primary">skillet</span>
-</div>
-<div>
-<p class="font-headline-md text-body-md font-semibold text-on-surface">신선 농장 채소</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">대파, 양파 번들 세트</p>
-</div>
-</div>
-<div class="mt-3 flex justify-between items-center">
-<p class="font-body-sm text-body-sm text-outline">총 결제 금액</p>
-<p class="font-headline-md text-headline-md text-primary">₩84,200</p>
-</div>
-</div>
-<!-- Order Card 3: Pending -->
-<div class="glass-panel rounded-xl p-4 transition-all active:scale-[0.98] cursor-pointer opacity-80">
-<div class="flex justify-between items-start mb-3">
-<div class="space-y-1">
-<p class="font-data-mono text-label-sm text-outline">Order ID: #20240518-15</p>
-<p class="font-label-md text-label-md text-on-surface">2024.05.18</p>
-</div>
-<span class="px-3 py-1 bg-surface-container-high text-outline rounded-lg font-label-sm text-label-sm flex items-center gap-1">
-<span class="w-1.5 h-1.5 bg-outline rounded-full"></span>
-                            Pending
-                        </span>
-</div>
-<div class="flex items-center gap-3 py-3 border-y border-outline-variant/20">
-<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-<span class="material-symbols-outlined text-primary">egg</span>
-</div>
-<div>
-<p class="font-headline-md text-body-md font-semibold text-on-surface">유기농 축산 직거래</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">신선 특란 50판</p>
-</div>
-</div>
-<div class="mt-3 flex justify-between items-center">
-<p class="font-body-sm text-body-sm text-outline">총 결제 금액</p>
-<p class="font-headline-md text-headline-md text-primary">₩210,000</p>
-</div>
-</div>
+<div class="space-y-4" id="orders-list">
+<!-- 동적으로 주문 카드가 렌더링됩니다. -->
 </div>
 </section>
 <!-- Empty state padding -->
@@ -320,4 +254,6 @@
             console.log('Menu toggled');
         });
     </script>
+    <script src="nav.js"></script>
+    <script src="orders-live.js"></script>
 </body></html>
