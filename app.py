@@ -1,8 +1,8 @@
 """
-스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
+스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI 애플리케이션
 
-이 애플리케이션은 기후 변화에 따른 농수산물 가격을 머신러닝 모델을 기반으로 예측하여
-대시보드와 앱 화면을 제공하며, Supabase Auth 및 DB를 이용한 사용자 계정 체계를 동기화합니다.
+농수산물 가격을 머신러닝으로 예측해 대시보드·앱 화면을 제공하고,
+Supabase Auth/DB로 사용자 계정 체계를 동기화한다.
 """
 import os
 import re
@@ -433,7 +433,9 @@ def _render_screen(slug):
     inject += '<script src="/app/static/ct-store.js"></script>'
     inject += '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
-            "item-analysis": "item-live.js", "bom-register": "bom-live.js"}.get(name)
+            "item-analysis": "item-live.js", "bom-register": "bom-live.js",
+            "deals": "deals-live.js", "orders": "orders-live.js",
+            "plan": "plan-live.js"}.get(name)
     if live:
         inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
@@ -447,7 +449,9 @@ def _render_screen(slug):
 @app.get("/app/static/{fname}")
 def app_static(fname: str):
     # 화면 공통 JS 서빙 (경로 이탈 차단)
-    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js", "ct-store.js"):
+    if fname not in ("nav.js", "ct-store.js", "home-live.js", "inventory-live.js",
+                     "item-live.js", "bom-live.js", "deals-live.js", "orders-live.js",
+                     "plan-live.js"):
         return HTMLResponse("not found", status_code=404)
     with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
         return HTMLResponse(f.read(), media_type="application/javascript")
