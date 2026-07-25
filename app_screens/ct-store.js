@@ -208,7 +208,28 @@
         options.headers = options.headers || {};
         options.headers['Authorization'] = `Bearer ${this.session.access_token}`;
       }
-      return fetch(url, options);
+      let response = await fetch(url, options);
+
+      // 401 Unauthorized 감지 시 토큰 갱신 시도
+      if (response.status === 401 && this.client && this.session) {
+        console.warn('API 401 에러 감지. 세션 갱신을 시도합니다.');
+        const { data, error } = await this.client.auth.refreshSession();
+        
+        if (error || !data.session) {
+          console.error('세션 갱신 실패. 강제 로그아웃 처리합니다.', error);
+          await this.client.auth.signOut();
+          alert('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+          window.location.href = '/app/onboarding';
+          return response;
+        }
+
+        console.log('세션 갱신 성공. 새 토큰으로 요청을 재시도합니다.');
+        this.session = data.session;
+        options.headers['Authorization'] = `Bearer ${this.session.access_token}`;
+        response = await fetch(url, options);
+      }
+
+      return response;
     },
 
     // 4-1) 매장 정보
