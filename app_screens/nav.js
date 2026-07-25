@@ -1,6 +1,11 @@
+<<<<<<< Updated upstream
 // Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장 + 데모 배지
 // app.py에서 </body> 직전에 <script src>로 주입됨 → DOM이 이미 준비된 상태이므로 DOMContentLoaded 불필
 (function () {
+=======
+// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장
+document.addEventListener('DOMContentLoaded', () => {
+>>>>>>> Stashed changes
   const path = location.pathname;
 
   // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
@@ -96,17 +101,7 @@
     });
   }
 
-  // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
-  const DEMO = ['/app/deals', '/app/plan', '/app/orders', '/app/orders-table', '/app/orders-filter'];
-  if (DEMO.includes(path)) {
-    const h = document.querySelector('header h1, header h2, main h1, main h2');
-    if (h) {
-      const tag = document.createElement('span');
-      tag.textContent = '데모';
-      tag.style.cssText = 'font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:8px;';
-      h.appendChild(tag);
-    }
-  }
+
 
   // ── 5.5) 로고 클릭 → 홈 ──
   document.querySelectorAll('header h1').forEach(h => {
