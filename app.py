@@ -34,6 +34,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
 
+import payment
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 KAMIS_KEY = os.getenv("KAMIS_KEY", "")
 KAMIS_ID = os.getenv("KAMIS_ID", "")
@@ -513,6 +515,49 @@ def app_screen(request: Request, slug: str = ""):
 
 with open(os.path.join(BASE_DIR, "dev_login.html"), encoding="utf-8") as _lf:
     LOGIN_HTML = _lf.read()
+
+@app.post("/api/payment/subscribe")
+async def subscribe_payment(request: Request):
+    body = await request.json()
+    auth_key = body.get("auth_key", "")
+    customer_key = body.get("customer_key", "")
+    amount = body.get("amount", 0)
+    order_id = body.get("order_id", "")
+    
+    # 1. 빌링키 발급
+    b_res = payment.request_billing_key(auth_key, customer_key)
+    if not b_res.get("success"):
+        return JSONResponse({"ok": False, "error": b_res.get("error")}, status_code=400)
+    
+    # 2. 결제 승인 요청
+    billing_key = b_res["billing_key"]
+    p_res = payment.process_subscription_payment(billing_key, amount, order_id)
+    if not p_res.get("success"):
+        return JSONResponse({"ok": False, "error": p_res.get("error")}, status_code=400)
+    
+    # DB 업데이트 로직 (추후 Supabase 연동)
+    return JSONResponse({
+        "ok": True,
+        "payment_key": p_res["payment_key"],
+        "billing_key": billing_key,
+        "next_billing_date": p_res["next_billing_date"],
+        "plan": "pro"
+    })
+
+@app.post("/api/payment/cancel")
+async def cancel_subscription(request: Request):
+    body = await request.json()
+    billing_key = body.get("billing_key", "")
+    
+    res = payment.cancel_subscription(billing_key)
+    if not res.get("success"):
+        return JSONResponse({"ok": False, "error": res.get("error")}, status_code=400)
+        
+    return JSONResponse({
+        "ok": True,
+        "message": res["message"],
+        "plan": "free"
+    })
 
 
 if __name__ == "__main__":
