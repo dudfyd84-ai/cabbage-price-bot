@@ -61,9 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
         const desc = card.querySelector('p.leading-relaxed');
-        const basePred =
-          `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
-          ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
+        if (desc) {
+          if (it.ci30 === null) {
+            desc.textContent = `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`;
+          } else {
+            desc.textContent =
+              `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
+              ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
+          }
+        }
 
         // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
         const box = card.querySelector('.px-md.pb-md');

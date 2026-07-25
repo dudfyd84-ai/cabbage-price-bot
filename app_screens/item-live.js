@@ -3,17 +3,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
 
   fetch('/api/dashboard').then(r => r.json()).then(data => {
-    const items = [...data.items].sort((a, b) => b.r30 - a.r30);
+    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
     const want = new URLSearchParams(location.search).get('item');
     const it = items.find(i => i.name === want) || items[0];
 
     // 예측·신뢰구간 보간: D+7, D+30 사이 선형 (모델 산출 지점 기준)
-    const at = d => d <= 0 ? it.cur
-      : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
-      : it.p7 + (it.p30 - it.p7) * (d - 7) / 23;
-    const ciAt = (d, k) => d <= 0 ? it.cur
-      : d <= 7 ? it.cur + (it.ci7[k] - it.cur) * d / 7
-      : it.ci7[k] + (it.ci30[k] - it.ci7[k]) * (d - 7) / 23;
+    const at = d => {
+      const p30 = it.p30 ?? it.p7;
+      return d <= 0 ? it.cur
+        : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
+        : it.p7 + (p30 - it.p7) * (d - 7) / 23;
+    };
+    const ciAt = (d, k) => {
+      const ci30k = (it.ci30 && it.ci30[k]) ?? (it.ci7 ? it.ci7[k] : it.cur);
+      const ci7k = (it.ci7 && it.ci7[k]) ?? it.cur;
+      return d <= 0 ? it.cur
+        : d <= 7 ? it.cur + (ci7k - it.cur) * d / 7
+        : ci7k + (ci30k - ci7k) * (d - 7) / 23;
+    };
 
     // 1) 제목·부제 + 과장 문구 정정 (통계적 신뢰구간이 아니므로 정직하게 표기)
     try {
