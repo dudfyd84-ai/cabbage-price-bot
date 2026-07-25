@@ -1,4 +1,14 @@
 // Supabase 연동 및 로컬 스토리지 폴백을 제공하는 공통 데이터 스토어 클라이언트
+// 
+// [ ctStore 공개 메서드 목록 ]
+// - init() : 초기화 (내부적으로 자동 호출되나 명시적 호출 가능)
+// - syncOnLogin() : 로그인 감지 시 동기화/마이그레이션 제어 (내부용)
+// - migrateLocalDataToServer(), syncServerToLocal() : 데이터 동기화
+// - authFetch(url, options) : 토큰을 포함하여 서버 API 호출
+// - getStore(), setStore(storeData) : 매장 정보 조회/저장
+// - getMenus(), setMenus(bomList) : 메뉴 BOM 정보 조회/저장
+// - getStockLevels(), setStockLevels(stockObj) : 재고 정보 조회/저장
+// - getAlertPrefs(), setAlertPrefs(alertsList) : 알림 설정 조회/저장
 (function() {
   const ctStore = {
     client: null,

@@ -2,22 +2,24 @@
 // + 보유 재고 일수 입력 → 소진 시점 예상가·선매입 절감액 실계산 (기획 원칙 ④)
 document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
-  // 소진 시점 예상가: 오늘~7일(cur→p7), 7~30일(p7→p30) 선형보간, 30일 초과는 p30
-  const priceAt = (it, d) => d <= 0 ? it.cur
-    : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
-    : d <= 30 ? it.p7 + (it.p30 - it.p7) * (d - 7) / 23
-    : it.p30;
+  const priceAt = (it, d) => {
+    const p30 = it.p30 ?? it.p7;
+    return d <= 0 ? it.cur
+      : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
+      : d <= 30 ? it.p7 + (p30 - it.p7) * (d - 7) / 23
+      : p30;
+  };
 
   Promise.all([
     fetch('/api/dashboard').then(r => r.json()),
     window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}'))
   ]).then(([data, stock]) => {
-    const items = [...data.items].sort((a, b) => b.r30 - a.r30);
-    const risers = items.filter(i => i.r30 > 5);
+    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
+    const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
 
     // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액)
     try {
-      const save = risers.reduce((s, i) => s + (i.p30 - i.cur), 0);
+      const save = risers.reduce((s, i) => s + ((i.p30 ?? i.p7) - i.cur), 0);
       const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
       hero.textContent = '₩' + fmt(save);
       const sub = document.querySelector('.bg-primary-container p.font-body-sm');
@@ -32,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       items.forEach(it => {
         const card = tpl.cloneNode(true);
-        const rise = it.r30 > 5, drop = it.r7 < -5;
+        const rise = (it.r30 ?? it.r7) > 5, drop = it.r7 < -5;
 
         // 이미지 → 품목 이니셜 블록 (템플릿 사진 오매칭 방지)
         const img = card.querySelector('[style*="background-image"]');
@@ -48,12 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.className = 'font-label-sm text-label-sm px-3 py-1 rounded-full text-white ' + (rise ? 'bg-primary' : 'bg-secondary');
 
         const trend = card.querySelector('.mt-xs span.flex');
-        const flat = Math.abs(it.r30) <= 5;
+        const rVal = it.r30 ?? it.r7;
+        const flat = Math.abs(rVal) <= 5;
+        const dText = it.p30 === null ? '7일' : '30일';
         trend.innerHTML = flat
-          ? '<span class="material-symbols-outlined text-[18px]">trending_flat</span> 30일 뒤 보합 예상'
-          : `<span class="material-symbols-outlined text-[18px]">${it.r30 > 0 ? 'trending_up' : 'trending_down'}</span> 30일 뒤 ${it.r30 > 0 ? '+' : ''}${it.r30}% ${it.r30 > 0 ? '상승' : '하락'} 예상`;
+          ? `<span class="material-symbols-outlined text-[18px]">trending_flat</span> ${dText} 뒤 보합 예상`
+          : `<span class="material-symbols-outlined text-[18px]">${rVal > 0 ? 'trending_up' : 'trending_down'}</span> ${dText} 뒤 ${rVal > 0 ? '+' : ''}${rVal}% ${rVal > 0 ? '상승' : '하락'} 예상`;
         trend.className = 'flex items-center font-label-md text-label-md ' +
-          (flat ? 'text-on-surface-variant' : (it.r30 > 0 ? 'text-error' : 'text-primary-container'));
+          (flat ? 'text-on-surface-variant' : (rVal > 0 ? 'text-error' : 'text-primary-container'));
 
         const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
         const desc = card.querySelector('p.leading-relaxed');
@@ -99,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
           if (rows[1]) {
-            const diff = rise ? it.p30 - it.cur : (drop ? it.cur - it.p7 : 0);
+            const diff = rise ? (it.p30 ?? it.p7) - it.cur : (drop ? it.cur - it.p7 : 0);
             rows[1].lastElementChild.textContent = diff > 0
               ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
               : '변동 미미';

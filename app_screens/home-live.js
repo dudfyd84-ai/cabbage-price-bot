@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const p = document.querySelector('.bg-error-container p.font-headline-md');
       const h = document.querySelector('.bg-error-container h2');
-      if (top && top.r30 > 5) {
-        p.textContent = `+${top.r30}% 지출 증가 예상`;
+      if (top && (top.r30 ?? top.r7) > 5) {
+        p.textContent = `+${top.r30 ?? top.r7}% 지출 증가 예상`;
         h.textContent = `다음 달 예상 비용 분석 · 상승 품목 ${risers.length}개 (${data.date} 기준)`;
       } else {
         p.textContent = '지출 안정 예상';
