@@ -33,6 +33,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
+from supabase import create_client, Client
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 KAMIS_KEY = os.getenv("KAMIS_KEY", "")
@@ -275,17 +276,17 @@ def get_user_plan(auth_header):
     if not auth_header or not auth_header.startswith("Bearer "):
         return "free"
     token = auth_header.split(" ")[1]
-    url = f"{SUPABASE_URL}/rest/v1/profiles?select=plan_type"
-    headers = {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": f"Bearer {token}"
-    }
+    sb_url = os.getenv("SUPABASE_URL", "")
+    sb_key = os.getenv("SUPABASE_ANON_KEY", "")
+    if not sb_url or not sb_key:
+        return "free"
+        
     try:
-        r = requests.get(url, headers=headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            if data and len(data) > 0:
-                return data[0].get("plan_type", "free")
+        sb: Client = create_client(sb_url, sb_key)
+        sb.postgrest.auth(token)
+        res = sb.table("profiles").select("plan_type").execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0].get("plan_type", "free")
     except Exception as e:
         print("Plan check error:", e)
     return "free"

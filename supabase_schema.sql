@@ -23,7 +23,30 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- 1) 매장 (사용자당 1개 가정, 여러 개도 허용)
+-- 1) 사용자 프로필 및 플랜 등급 (구독 게이팅용)
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  plan_type text not null default 'free' check (plan_type in ('free', 'pro')),
+  created_at timestamptz default now()
+);
+
+-- auth.users 회원가입 시 profiles 자동 생성 트리거
+create or replace function public.handle_new_user() 
+returns trigger as $$
+begin
+  insert into public.profiles (user_id, plan_type)
+  values (new.id, 'free');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- 트리거 중복 생성 방지를 위한 예외 처리(Supabase 환경)
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- 2) 매장 (사용자당 1개 가정, 여러 개도 허용)
 create table if not exists public.stores (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -59,21 +82,21 @@ create table if not exists public.alert_prefs (
 );
 
 -- RLS: 모든 테이블 소유자 전용
+alter table public.profiles enable row level security;
 alter table public.stores enable row level security;
 alter table public.menus enable row level security;
 alter table public.stock_levels enable row level security;
 alter table public.alert_prefs enable row level security;
-alter table public.profiles enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['stores','menus','stock_levels','alert_prefs','profiles'] loop
+  foreach t in array array['profiles','stores','menus','stock_levels','alert_prefs'] loop
     execute format('drop policy if exists own_all on public.%I', t);
     execute format(
       'create policy own_all on public.%I for all
          using (auth.uid() = %s) with check (auth.uid() = %s)', t,
-         case when t = 'profiles' then 'id' else 'user_id' end,
-         case when t = 'profiles' then 'id' else 'user_id' end);
+         case when t = 'profiles' then 'user_id' else 'user_id' end,
+         case when t = 'profiles' then 'user_id' else 'user_id' end);
   end loop;
 end $$;
