@@ -59,7 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
           box.appendChild(note);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[상세분석] 헤더/메타정보 렌더링 실패:', e);
+    }
 
     // 2) 호라이즌별 차트 렌더 (과거 30일 실측 x0~400 + 예측 x400~800)
     const render = H => {
@@ -98,7 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const chg = document.querySelector('.grid .flex.items-center.gap-1');
         if (chg) chg.innerHTML =
           `<span class="material-symbols-outlined">${pct >= 0 ? 'trending_up' : 'trending_down'}</span><span>${pct >= 0 ? '+' : ''}${pct}%</span>`;
-      } catch (e) {}
+      } catch (e) {
+        console.error('[상세분석] 차트 렌더링 실패:', e);
+        const chartBox = document.querySelector('.historical-line')?.closest('svg')?.parentElement;
+        if (chartBox && !document.getElementById('chart-error-msg')) {
+          const errMsg = document.createElement('div');
+          errMsg.id = 'chart-error-msg';
+          errMsg.className = 'absolute inset-0 flex flex-col items-center justify-center bg-surface/80 text-on-surface-variant text-xs font-medium';
+          errMsg.innerHTML = `
+            <span class="material-symbols-outlined text-error text-[28px] mb-1">error</span>
+            차트를 불러오지 못했습니다.
+          `;
+          chartBox.style.position = 'relative';
+          chartBox.appendChild(errMsg);
+        }
+      }
     };
 
     // 3) 기간 버튼 연결: 1주=7일, 2주=14일(보간), 4주=30일 / 8주는 예측 범위 밖 → 숨김
@@ -114,8 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
           render(H_MAP[t]);
         });
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('[상세분석] 기간 탭 이벤트 연동 실패:', e);
+    }
 
     render(30);   // 기본 4주
-  }).catch(() => {});
+  }).catch(err => {
+    console.error('[상세분석] API 통신 실패:', err);
+  });
 });

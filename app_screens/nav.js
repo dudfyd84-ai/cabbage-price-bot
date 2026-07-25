@@ -97,7 +97,8 @@
   }
 
   // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
-  const DEMO = ['/app/deals', '/app/plan', '/app/orders', '/app/orders-table', '/app/orders-filter'];
+  // 기준: 백엔드 API/실데이터 연동이 완료된 화면(deals, orders)은 제외하고, 여전히 프론트 전용 목업/플랜 시뮬레이션 상태인 화면(plan)에만 데모 배지를 유지합니다.
+  const DEMO = ['/app/plan'];
   if (DEMO.includes(path)) {
     const h = document.querySelector('header h1, header h2, main h1, main h2');
     if (h) {
@@ -164,5 +165,7 @@
         if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
       });
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('[내비게이션] 매장명 반영 실패:', e);
+  }
 })();

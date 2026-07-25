@@ -17,16 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const save = risers.reduce((s, i) => s + (i.p30 - i.cur), 0);
       const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
-      hero.textContent = '₩' + fmt(save);
+      if (hero) hero.textContent = '₩' + fmt(save);
       const sub = document.querySelector('.bg-primary-container p.font-body-sm');
       if (sub) sub.textContent = `상승 예상 ${risers.length}개 품목 기준단위당 합계 (${data.date} 기준) · 사용량 입력(BOM) 시 매장별 실제 절감액이 산출됩니다.`;
-    } catch (e) {}
+    } catch (e) {
+      console.error('[인벤토리] 히어로 카드 렌더링 실패:', e);
+    }
 
     // 2) 품목 카드: 첫 카드를 템플릿으로 전체 품목 재생성
     try {
       const list = document.querySelector('article').parentElement;
       const tpl = document.querySelector('article').cloneNode(true);
-      list.innerHTML = '';
+      const tempContainer = document.createDocumentFragment();
 
       items.forEach(it => {
         const card = tpl.cloneNode(true);
@@ -106,8 +108,25 @@ document.addEventListener('DOMContentLoaded', () => {
           cta.innerHTML = (rise ? '상세 분석 보기' : '상세 분석 보기') + ' <span class="material-symbols-outlined text-[20px]">query_stats</span>';
           cta.addEventListener('click', () => { location.href = '/app/item-analysis?item=' + encodeURIComponent(it.name); });
         }
-        list.appendChild(card);
+        tempContainer.appendChild(card);
       });
-    } catch (e) {}
-  }).catch(() => {});
+
+      list.innerHTML = '';
+      list.appendChild(tempContainer);
+    } catch (e) {
+      console.error('[인벤토리] 품목 리스트 렌더링 실패:', e);
+      const list = document.querySelector('article')?.parentElement;
+      if (list) {
+        list.innerHTML = `
+          <div class="glass-card rounded-xl p-lg text-center text-on-surface-variant col-span-full">
+            <span class="material-symbols-outlined text-[32px] text-error mb-xs">error</span>
+            <p class="font-label-md">데이터를 불러오지 못했습니다.</p>
+            <p class="text-xs text-outline mt-1">잠시 후 다시 시도해 주세요.</p>
+          </div>
+        `;
+      }
+    }
+  }).catch(err => {
+    console.error('[인벤토리] API 통신 실패:', err);
+  });
 });
