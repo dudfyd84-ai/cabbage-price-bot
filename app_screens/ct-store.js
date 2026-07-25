@@ -342,6 +342,22 @@
           prefs: alertsList
         });
       }
+    },
+
+    // 5. 유료 전용 데이터 마스킹 헬퍼 (UI 표준화)
+    // 5-1) 값 폴백 (정렬 및 로직용)
+    fallback(item, key, altKey) {
+      if (!item) return null;
+      return (item[key] !== null && item[key] !== undefined) ? item[key] : item[altKey];
+    },
+
+    // 5-2) UI 렌더링용 마스킹 (HTML 반환)
+    masked(item, key, formatter = v => v) {
+      if (!item) return '';
+      if (item[key] !== null && item[key] !== undefined) {
+        return formatter(item[key]);
+      }
+      return `<span class="pro-lock text-primary font-bold cursor-pointer" style="cursor:pointer; color:var(--color-primary-600);" onclick="location.href='/app/plan'">🔒 프로 전용</span>`;
     }
   };
 

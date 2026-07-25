@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
   const priceAt = (it, d) => {
-    const p30 = it.p30 ?? it.p7;
+    const p30 = ctStore.fallback(it, 'p30', 'p7');
     return d <= 0 ? it.cur
       : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
       : d <= 30 ? it.p7 + (p30 - it.p7) * (d - 7) / 23
@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/dashboard').then(r => r.json()),
     window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}'))
   ]).then(([data, stock]) => {
-    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
-    const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
+    const items = [...data.items].sort((a, b) => ctStore.fallback(b, 'r30', 'r7') - ctStore.fallback(a, 'r30', 'r7'));
+    const risers = items.filter(i => ctStore.fallback(i, 'r30', 'r7') > 5);
 
     // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액)
     try {
-      const save = risers.reduce((s, i) => s + ((i.p30 ?? i.p7) - i.cur), 0);
+      const save = risers.reduce((s, i) => s + (ctStore.fallback(i, 'p30', 'p7') - i.cur), 0);
       const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
       hero.textContent = '₩' + fmt(save);
       const sub = document.querySelector('.bg-primary-container p.font-body-sm');
@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       items.forEach(it => {
         const card = tpl.cloneNode(true);
-        const rise = (it.r30 ?? it.r7) > 5, drop = it.r7 < -5;
+        const rVal = ctStore.fallback(it, 'r30', 'r7');
+        const rise = rVal > 5, drop = it.r7 < -5;
 
         // 이미지 → 품목 이니셜 블록 (템플릿 사진 오매칭 방지)
         const img = card.querySelector('[style*="background-image"]');
@@ -50,23 +51,34 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.className = 'font-label-sm text-label-sm px-3 py-1 rounded-full text-white ' + (rise ? 'bg-primary' : 'bg-secondary');
 
         const trend = card.querySelector('.mt-xs span.flex');
-        const rVal = it.r30 ?? it.r7;
         const flat = Math.abs(rVal) <= 5;
-        const dText = it.p30 === null ? '7일' : '30일';
-        trend.innerHTML = flat
+        const dText = '30일';
+        trend.innerHTML = ctStore.masked(it, 'r30', v =>
+          flat
           ? `<span class="material-symbols-outlined text-[18px]">trending_flat</span> ${dText} 뒤 보합 예상`
-          : `<span class="material-symbols-outlined text-[18px]">${rVal > 0 ? 'trending_up' : 'trending_down'}</span> ${dText} 뒤 ${rVal > 0 ? '+' : ''}${rVal}% ${rVal > 0 ? '상승' : '하락'} 예상`;
+          : `<span class="material-symbols-outlined text-[18px]">${v > 0 ? 'trending_up' : 'trending_down'}</span> ${dText} 뒤 ${v > 0 ? '+' : ''}${v}% ${v > 0 ? '상승' : '하락'} 예상`
+        );
         trend.className = 'flex items-center font-label-md text-label-md ' +
           (flat ? 'text-on-surface-variant' : (rVal > 0 ? 'text-error' : 'text-primary-container'));
 
         const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
         const desc = card.querySelector('p.leading-relaxed');
+<<<<<<< Updated upstream
         // 아래 재고 분기에서도 재사용하므로 변수로 유지 (무료 사용자는 D+7까지만)
         const basePred = it.ci30 === null
           ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`
           : `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
             ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
         if (desc) desc.textContent = basePred;
+=======
+        const basePred = ctStore.masked(it, 'p30', v => 
+          `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(v)}원 예상 (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`
+        );
+        
+        if (desc) {
+          desc.innerHTML = basePred;
+        }
+>>>>>>> Stashed changes
 
         // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
         const box = card.querySelector('.px-md.pb-md');
@@ -101,17 +113,17 @@ document.addEventListener('DOMContentLoaded', () => {
           if (rows[1]) rows[1].lastElementChild.textContent = save > 0
             ? `${it.unit}당 ₩${fmt(save)} 절감 (소진일 매입 대비)`
             : (save < 0 ? `대기 시 ${it.unit}당 ₩${fmt(-save)} 절감` : '소진일 가격 변동 미미');
-          if (desc) desc.textContent =
+          if (desc) desc.innerHTML =
             `보유 재고 소진 예정일(D+${sd})의 예상가 ${fmt(dep)}원/${it.unit} (${depPct >= 0 ? '+' : ''}${depPct}%). ` + basePred;
         } else {
           if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
           if (rows[1]) {
-            const diff = rise ? (it.p30 ?? it.p7) - it.cur : (drop ? it.cur - it.p7 : 0);
+            const diff = rise ? ctStore.fallback(it, 'p30', 'p7') - it.cur : (drop ? it.cur - it.p7 : 0);
             rows[1].lastElementChild.textContent = diff > 0
               ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
               : '변동 미미';
           }
-          if (desc) desc.textContent = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
+          if (desc) desc.innerHTML = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
         }
 
         const cta = card.querySelector('button.w-full');

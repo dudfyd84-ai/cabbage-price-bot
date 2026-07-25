@@ -3,13 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt = n => Math.round(n).toLocaleString();
 
   fetch('/api/dashboard').then(r => r.json()).then(data => {
-    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
+    const items = [...data.items].sort((a, b) => ctStore.fallback(b, 'r30', 'r7') - ctStore.fallback(a, 'r30', 'r7'));
     const want = new URLSearchParams(location.search).get('item');
     const it = items.find(i => i.name === want) || items[0];
 
     // 예측·신뢰구간 보간: D+7, D+30 사이 선형 (모델 산출 지점 기준)
     const at = d => {
-      const p30 = it.p30 ?? it.p7;
+      const p30 = ctStore.fallback(it, 'p30', 'p7');
       return d <= 0 ? it.cur
         : d <= 7 ? it.cur + (it.p7 - it.cur) * d / 7
         : it.p7 + (p30 - it.p7) * (d - 7) / 23;
@@ -100,11 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // AI 인사이트: 호라이즌 기준 예상가·변동폭
         const pH = at(H), pct = Math.round((pH - it.cur) / it.cur * 100);
         const priceEl = document.querySelector('.text-display-lg');
-        if (priceEl) priceEl.innerHTML =
-          `₩${fmt(pH)}<span class="text-label-md font-label-md opacity-60 ml-1">/ ${it.unit} (${H}일 뒤)</span>`;
+        if (priceEl) {
+          const content = `₩${fmt(pH)}<span class="text-label-md font-label-md opacity-60 ml-1">/ ${it.unit} (${H}일 뒤)</span>`;
+          priceEl.innerHTML = H > 7 ? ctStore.masked(it, 'p30', v => content) : content;
+        }
         const chg = document.querySelector('.grid .flex.items-center.gap-1');
-        if (chg) chg.innerHTML =
-          `<span class="material-symbols-outlined">${pct >= 0 ? 'trending_up' : 'trending_down'}</span><span>${pct >= 0 ? '+' : ''}${pct}%</span>`;
+        if (chg) {
+          const content = `<span class="material-symbols-outlined">${pct >= 0 ? 'trending_up' : 'trending_down'}</span><span>${pct >= 0 ? '+' : ''}${pct}%</span>`;
+          chg.innerHTML = H > 7 ? ctStore.masked(it, 'p30', v => content) : content;
+        }
       } catch (e) {}
     };
 

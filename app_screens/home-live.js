@@ -9,16 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ctStore ? ctStore.getMenus() : Promise.resolve(JSON.parse(localStorage.getItem('ct_bom') || '[]')),
   ]).then(([data, retail, stock, boms]) => {
     const isFree = data.items.some(i => i.p30 === null);
-    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
-    const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
+    const items = [...data.items].sort((a, b) => ctStore.fallback(b, 'r30', 'r7') - ctStore.fallback(a, 'r30', 'r7'));
+    const risers = items.filter(i => ctStore.fallback(i, 'r30', 'r7') > 5);
     const top = items[0];
 
     // 1) 상단 경보: 다음 달 예상 비용 분석
     try {
       const p = document.querySelector('.bg-error-container p.font-headline-md');
       const h = document.querySelector('.bg-error-container h2');
-      if (top && (top.r30 ?? top.r7) > 5) {
-        p.textContent = `+${top.r30 ?? top.r7}% 지출 증가 예상`;
+      const topR = ctStore.fallback(top, 'r30', 'r7');
+      if (top && topR > 5) {
+        p.innerHTML = ctStore.masked(top, 'r30', v => `+${v}% 지출 증가 예상`);
         h.textContent = `다음 달 예상 비용 분석 · 상승 품목 ${risers.length}개 (${data.date} 기준)`;
       } else {
         p.textContent = '지출 안정 예상';
@@ -29,9 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2) 재고 확보 알림 카드: 최대 상승 품목 + 입력된 재고 일수 기반 실계산
     try {
       const card = document.querySelector('.bg-secondary');
-      if (top && (top.r30 ?? top.r7) > 5) {
-        card.querySelector('p.font-headline-md').textContent =
-          isFree ? `🔒 유료 전용 분석 (D+30일 예측)` : `${top.name} 가격 30일 뒤 ${top.r30}% 상승 예상!`;
+      const topR = ctStore.fallback(top, 'r30', 'r7');
+      if (top && topR > 5) {
+        card.querySelector('p.font-headline-md').innerHTML = ctStore.masked(top, 'r30', v => `${top.name} 가격 30일 뒤 ${v}% 상승 예상!`);
         const sd = parseInt(stock[top.name]) || 0;
         let msg;
         if (isFree) {
