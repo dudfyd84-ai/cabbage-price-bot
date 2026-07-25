@@ -156,17 +156,22 @@ fetch('/api/dashboard').then(r=>r.json()).then(data=>{
 
     const [stxt, scls] = sig[it.level] || sig['안정'];
     const card = document.createElement('div'); card.className='card';
-    card.innerHTML =
-      '<div class="card-top"><div><span class="iname">'+it.name+'</span>'
-      + '<span class="iunit">'+it.unit+'</span>'
-      + '<div class="price num">'+fmt(it.cur)+'<small> 원</small></div>'
-      + (it.per100g ? '<div class="num" style="font-size:12px;color:var(--muted);">100g당 '+fmt(it.per100g)+'원</div>' : '')
-      + '</div>'
-      + tchip(it.trend ?? (it.r30>5?'U':(it.r7<-5?'D':'S'))) + '</div>'
-      + '<div class="bars">'+bars+'</div>'
-      + '<div class="ci num">예상 범위 · 7일 '+fmt(it.ci7[0])+'~'+fmt(it.ci7[1])
-      + ' · 30일 '+fmt(it.ci30[0])+'~'+fmt(it.ci30[1])+'</div>'
-      + '<span class="signal '+scls+'">'+stxt+'</span>';
+      const r30Val = it.r30 ?? it.r7;
+      const ciHtml = (it.ci7 === null || it.ci30 === null)
+        ? '<div class="ci num">예상 범위 · Pro 전용 기능</div>'
+        : '<div class="ci num">예상 범위 · 7일 '+fmt(it.ci7[0])+'~'+fmt(it.ci7[1])
+          + ' · 30일 '+fmt(it.ci30[0])+'~'+fmt(it.ci30[1])+'</div>';
+      
+      card.innerHTML =
+        '<div class="card-top"><div><span class="iname">'+it.name+'</span>'
+        + '<span class="iunit">'+it.unit+'</span>'
+        + '<div class="price num">'+fmt(it.cur)+'<small> 원</small></div>'
+        + (it.per100g ? '<div class="num" style="font-size:12px;color:var(--muted);">100g당 '+fmt(it.per100g)+'원</div>' : '')
+        + '</div>'
+        + tchip(it.trend ?? (r30Val>5?'U':(it.r7<-5?'D':'S'))) + '</div>'
+        + '<div class="bars">'+bars+'</div>'
+        + ciHtml
+        + '<span class="signal '+scls+'">'+stxt+'</span>';
     grid.appendChild(card);
   });
 }).catch(()=>{ document.getElementById('grid').innerHTML='<div class="loading">데이터를 불러오지 못했습니다. 잠시 후 새로고침 해주세요.</div>'; });
