@@ -13,9 +13,6 @@ jobs:
   retrain:
     runs-on: ubuntu-latest
     steps:
-      - name: TEMP 알림 검증용 강제 실패
-        run: exit 1
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
