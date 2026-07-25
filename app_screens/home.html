@@ -179,10 +179,10 @@
 <span class="material-symbols-outlined text-[18px]">emergency</span>
 <span class="font-label-sm text-label-sm uppercase tracking-wider">재고 확보 알림</span>
 </div>
-<p class="font-headline-md text-headline-md font-bold leading-tight">마늘 가격 2주 뒤 30% 폭등 예상!</p>
-<p class="mt-sm font-body-sm text-body-sm opacity-90">사장님 재고가 7일 뒤 소진되는데, 그때 가격이 가장 비쌉니다. 지금 14일 치를 미리 발주하여 원가를 절감하세요.</p>
+<p class="font-headline-md text-headline-md font-bold leading-tight" id="bento-alert-title">분석을 불러오는 중...</p>
+<p class="mt-sm font-body-sm text-body-sm opacity-90" id="bento-alert-desc">잠시만 기다려 주세요.</p>
 </div>
-<div class="flex flex-col gap-sm w-full"><button class="bg-on-secondary text-secondary font-label-md text-label-md py-sm px-md rounded-lg w-full flex items-center justify-center gap-xs hover:bg-secondary-fixed transition-colors">최적 수량 선매입하기<span class="material-symbols-outlined text-[18px]">shopping_cart</span></button><a class="text-center font-label-sm text-label-sm text-on-secondary opacity-80 hover:opacity-100 underline decoration-on-secondary/30" href="#">가성비 대체재(냉동/수입산) 보러 가기</a></div>
+<div class="flex flex-col gap-sm w-full" id="bento-alert-actions" style="display:none;"><button class="bg-on-secondary text-secondary font-label-md text-label-md py-sm px-md rounded-lg w-full flex items-center justify-center gap-xs hover:bg-secondary-fixed transition-colors">최적 수량 선매입하기<span class="material-symbols-outlined text-[18px]">shopping_cart</span></button><a class="text-center font-label-sm text-label-sm text-on-secondary opacity-80 hover:opacity-100 underline decoration-on-secondary/30 font-link" href="#">가성비 대체재(냉동/수입산) 보러 가기</a></div>
 </div>
 </div>
 <!-- Advanced Chart: Price Trend (Bento Item 2) -->
@@ -190,28 +190,28 @@
 <div class="flex justify-between items-center mb-lg">
 <div>
 <h3 class="font-headline-md text-headline-md text-on-surface">핵심 식자재 가격 추이</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">AI 기반 향후 4주간 예측 트렌드</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant" id="bento-trend-desc">추이를 불러오는 중...</p>
 </div>
-<div class="flex gap-sm">
-<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">마늘</span>
-<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">양파</span>
+<div class="flex gap-sm" id="bento-trend-chips">
+<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">--</span>
+<span class="flex items-center gap-xs font-label-sm text-label-sm px-sm py-1 rounded bg-surface-container">--</span>
 </div>
 </div>
 <!-- Simplified Vector Chart Area -->
-<div class="relative h-48 w-full bg-surface-container-low/30 rounded-lg border border-dashed border-outline-variant/50 flex items-end px-md pb-md overflow-hidden">
+<div class="relative h-48 w-full bg-surface-container-low/30 rounded-lg border border-dashed border-outline-variant/50 flex items-end px-md pb-md overflow-hidden" id="bento-trend-chart-box">
 <!-- Chart Simulation using SVG -->
-<svg class="absolute inset-0 w-full h-full preserve-3d" viewbox="0 0 1000 200">
+<svg class="absolute inset-0 w-full h-full preserve-3d" viewbox="0 0 1000 200" id="bento-trend-svg">
 <!-- Garlic Path (Red/Up) -->
-<path d="M0,150 Q150,140 300,160 T600,100 T1000,20" fill="none" stroke="#ba1a1a" stroke-linecap="round" stroke-width="4"></path>
+<path d="" fill="none" stroke="#ba1a1a" stroke-linecap="round" stroke-width="4"></path>
 <!-- Onion Path (Blue/Down) -->
-<path d="M0,50 Q200,80 400,60 T700,120 T1000,140" fill="none" stroke="#3755c3" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="4"></path>
+<path d="" fill="none" stroke="#3755c3" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="4"></path>
 </svg>
-<div class="flex justify-between w-full relative z-10 text-[10px] font-label-sm text-on-surface-variant">
-<span>현재</span>
-<span>1주 뒤</span>
-<span>2주 뒤</span>
-<span>3주 뒤</span>
-<span>4주 뒤</span>
+<div class="flex justify-between w-full relative z-10 text-[10px] font-label-sm text-on-surface-variant" id="bento-trend-xlabels">
+<span>--</span>
+<span>--</span>
+<span>--</span>
+<span>--</span>
+<span>오늘</span>
 </div>
 </div>
 </div>
@@ -224,9 +224,21 @@
                         <span class="material-symbols-outlined text-[18px]">open_in_new</span>
 </button>
 </div>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
-<!-- BOM Card: Kimchi Stew -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md" id="bom-grid">
+    <!-- Loading skeleton -->
+    <div class="skeleton-loader col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md w-full">
+        <div class="glass-card rounded-xl p-md space-y-md animate-pulse">
+            <div class="flex justify-between items-start">
+                <div class="w-12 h-12 rounded bg-surface-container"></div>
+                <div class="h-6 bg-surface-container rounded w-1/3"></div>
+            </div>
+            <div class="h-5 bg-surface-container rounded w-2/3"></div>
+            <div class="h-8 bg-surface-container rounded w-full"></div>
+        </div>
+    </div>
+
+    <!-- BOM Card: Kimchi Stew -->
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow cursor-pointer hidden">
 <div class="flex justify-between items-start">
 <div class="w-12 h-12 rounded-lg bg-cover bg-center overflow-hidden" data-alt="A macro food photography shot of a bubbling red Kimchi stew in a black stone pot. The steam rises gently in a professional kitchen setting with soft warm lighting. The aesthetic is clean and modern, highlighting the vibrant colors of the ingredients. Corporate SaaS design style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCSZGYMJTSpGENbihRCnOXoFWL-6V6lJlu1bWmi2-3-aZVirNFtZ11I8NJjguNl4poac9n4utDPNb5EhwnjbpSNNK07GLnxkK9PMN_YCpOSEcMi18nBLG69mbLX8KfQxbr2ttp1BpnN0WzX_7HrxsgVUMRs35JPRBgsDjIemMEKcMgh_RElPWMM_cQxYix94RicDZksyopiBfnKMywlMp0KZXgZ_1s2PFy94909VGLE-VoagOmVl_TR')"></div>
 <span class="font-label-sm text-label-sm px-sm py-xs bg-error-container text-error rounded-full">+12% 위험 (+450원/인분)</span>
