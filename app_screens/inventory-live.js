@@ -61,15 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
         const desc = card.querySelector('p.leading-relaxed');
-        if (desc) {
-          if (it.ci30 === null) {
-            desc.textContent = `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`;
-          } else {
-            desc.textContent =
-              `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
-              ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
-          }
-        }
+        // 아래 재고 분기에서도 재사용하므로 변수로 유지 (무료 사용자는 D+7까지만)
+        const basePred = it.ci30 === null
+          ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`
+          : `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
+            ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
+        if (desc) desc.textContent = basePred;
 
         // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
         const box = card.querySelector('.px-md.pb-md');
