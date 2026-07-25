@@ -152,22 +152,26 @@
       ['내 정보', 'person', '/app/plan'],
     ];
     const bar = document.createElement('nav');
-    bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);padding-bottom:env(safe-area-inset-bottom);';
     const inner = document.createElement('div');
-    inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+    inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 4px;';
     TABS.forEach(([label, icon, href]) => {
       const active = href === '/app' ? (path === '/app' || path === '/app/home') : path.startsWith(href);
       const a = document.createElement('a');
       a.href = href;
-      a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+      a.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;padding:6px 0;border-radius:12px;flex:1;min-height:48px;transition:background 0.2s;'
         + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
       a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
-        + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+        + `<span style="font-size:10px;font-weight:600;white-space:nowrap;letter-spacing:-0.03em;">${label}</span>`;
       inner.appendChild(a);
     });
     bar.appendChild(inner);
     document.body.appendChild(bar);
-    document.body.style.paddingBottom = '88px';
+    
+    // 모바일 뷰포트에서 하단 탭바와 본문 콘텐츠가 겹치지 않게 보장
+    const style = document.createElement('style');
+    style.textContent = 'body { padding-bottom: 96px !important; }';
+    document.head.appendChild(style);
   }
 
   // ── 6) 등록된 매장명 반영 (전 화면 헤더의 '나의 레스토랑') ──
