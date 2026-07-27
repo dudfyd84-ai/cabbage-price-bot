@@ -55,23 +55,28 @@ jobs:
         # 재학습으로 실제 변경(push)이 있었을 때만 실행 — main에 다른 커밋이 올라갈 때(deploy.yml)는
         # 발송하지 않음. push 직후엔 Cloudtype 배포가 아직 안 끝나 어제자 예측이 조회될 수 있어,
         # /api/dashboard의 date가 방금 재학습한 날짜와 같아질 때까지 최대 10분 대기 후 발송.
+        # continue-on-error: 알림 실패가 재학습 워크플로 전체를 실패로 만들지 않도록.
         if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
         env:
           DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
           KAKAO_BIZ_API_KEY: ${{ secrets.KAKAO_BIZ_API_KEY }}
           KAKAO_SENDER_KEY: ${{ secrets.KAKAO_SENDER_KEY }}
           ALERT_RECEIVER_PHONE: ${{ secrets.ALERT_RECEIVER_PHONE }}
         run: |
-          pip install requests
           LATEST=$(grep -o '데이터 최신일 [0-9-]*' retrain_log.txt | tail -1 | awk '{print $NF}')
           echo "재학습된 데이터 최신일: ${LATEST:-(확인 실패)}"
-          for i in $(seq 1 20); do
-            LIVE_DATE=$(curl -s "$DASHBOARD_URL" | python -c "import json,sys; print(json.load(sys.stdin).get('date',''))" 2>/dev/null || echo "")
-            if [ -n "$LATEST" ] && [ "$LIVE_DATE" = "$LATEST" ]; then
-              echo "배포에 최신 데이터 반영 확인(date=$LIVE_DATE) — 알림 발송"
-              break
-            fi
-            echo "배포 반영 대기 중... ($i/20, 현재 배포된 date=$LIVE_DATE)"
-            sleep 30
-          done
+          if [ -z "$LATEST" ]; then
+            echo "LATEST 추출 실패 — 배포 반영 대기 없이 바로 발송"
+          else
+            for i in $(seq 1 20); do
+              LIVE_DATE=$(curl -s "$DASHBOARD_URL" | python -c "import json,sys; print(json.load(sys.stdin).get('date',''))" 2>/dev/null || echo "")
+              if [ "$LIVE_DATE" = "$LATEST" ]; then
+                echo "배포에 최신 데이터 반영 확인(date=$LIVE_DATE) — 알림 발송"
+                break
+              fi
+              echo "배포 반영 대기 중... ($i/20, 현재 배포된 date=$LIVE_DATE)"
+              sleep 30
+            done
+          fi
           python notify_kakao.py
