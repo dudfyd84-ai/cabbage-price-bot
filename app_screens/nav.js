@@ -186,6 +186,8 @@
           if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[내비게이션] 매장명 반영 실패:', e);
+    }
   })();
 })();
