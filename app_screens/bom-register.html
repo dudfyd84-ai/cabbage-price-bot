@@ -1011,7 +1011,7 @@
         });
 
         // ── 'BOM 등록 완료' 버튼 클릭 전송 및 가공 로직 ──
-        submitBomBtn.addEventListener('click', () => {
+        submitBomBtn.addEventListener('click', async () => {
             const menu = menuNameInput.value.trim();
             if (!menu) { alert('메뉴명을 입력해주세요.'); return; }
 
@@ -1054,8 +1054,10 @@
 
             console.log('🎉 [BOM Submission Success] Sending JSON object to server:', payload);
 
-            // Save to localStorage
-            const localBoms = JSON.parse(localStorage.getItem('ct_bom') || '[]');
+            // 저장: 로그인 시 Supabase(ctStore), 비로그인 시 localStorage 폴백
+            const localBoms = window.ctStore
+                ? await ctStore.getMenus()
+                : JSON.parse(localStorage.getItem('ct_bom') || '[]');
             localBoms.push({ 
                 menu: payload.menu_name, 
                 ings: payload.ingredients.map(i => ({
@@ -1067,7 +1069,11 @@
                 })), 
                 saved: new Date().toISOString().slice(0, 10) 
             });
-            localStorage.setItem('ct_bom', JSON.stringify(localBoms));
+            if (window.ctStore) {
+                await ctStore.setMenus(localBoms);
+            } else {
+                localStorage.setItem('ct_bom', JSON.stringify(localBoms));
+            }
 
             // Show custom success modal
             successModal.classList.remove('hidden');

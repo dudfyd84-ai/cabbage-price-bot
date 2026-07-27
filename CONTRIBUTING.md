@@ -50,6 +50,24 @@ python app.py            # http://localhost:8000  (앱: /app, 대시보드: /)
 ```
 재학습을 직접 돌려볼 일은 거의 없다(클라우드가 매일 자동 실행). 필요 시 키를 환경변수로 넣고 `python retrain_pipeline.py`.
 
+## 자동 검사 (PR을 올리면 실행됨)
+PR을 올리거나 브랜치에 push하면 **Checks** 워크플로가 자동으로 돈다. 실패하면 병합 전에 고쳐야 한다.
+
+| 검사 | 무엇을 잡나 |
+|---|---|
+| JS 문법 | `app_screens/*.js`의 문법 오류 — 이게 있으면 화면이 통째로 죽는다 |
+| Python 문법 | `*.py`의 문법 오류 |
+| 화면 스크립트 등록 | 새 `*-live.js`를 `app.py`에 등록하지 않아 404가 나는 실수 |
+
+**push 전에 로컬에서 미리 확인하면 왕복이 줄어든다.**
+```bash
+node --check app_screens/*.js      # JS 문법
+python -m py_compile app.py         # Python 문법
+```
+
+> 새 화면 스크립트를 추가했다면 `app.py`의 **두 곳**을 모두 고쳐야 한다.
+> ① `_render_screen()`의 `live` 딕셔너리(주입) ② `app_static()`의 허용목록(없으면 404)
+
 ## 배포
 - `main` 병합 → GitHub Actions(`deploy.yml`)가 Cloudtype에 자동 배포.
 - 매일 06:00(KST) 재학습(`retrain.yml`)이 데이터·모델을 갱신 후 자동 배포.

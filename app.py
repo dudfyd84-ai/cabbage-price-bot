@@ -1,8 +1,9 @@
 """
 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI 애플리케이션
-이 파일은 가격 예측 봇의 핵심 백엔드 서버로, 화면 렌더링, 스크립트 서빙 및 API 요청을 처리합니다.
+
+농수산물 가격을 머신러닝으로 예측해 대시보드·앱 화면을 제공하고,
+Supabase Auth/DB로 사용자 계정 체계를 동기화한다.
 """
-# 스마트 장바구니 물가 예측 봇 — 카카오 스킬 FastAPI (다품목: 배추·무·양파·대파·마늘)
 import os
 import re
 import ssl
@@ -11,6 +12,17 @@ import time
 import hmac
 import hashlib
 from datetime import date, timedelta
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_path):
+    with open(env_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ[k.strip()] = v.strip()
 
 import joblib
 import numpy as np
@@ -29,6 +41,8 @@ KAMIS_ID = os.getenv("KAMIS_ID", "")
 # 개발자 게이트: 환경변수로만 주입(코드/깃에 비번 없음). 미설정 시 게이트 비활성(앱 공개).
 DEV_USER = os.getenv("DEV_USER", "")
 DEV_PASS_HASH = os.getenv("DEV_PASS_HASH", "").lower()   # sha256 hex
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 
 def _dev_enabled():
@@ -62,6 +76,11 @@ VEG = os.path.join(BASE_DIR, "kamis_veg_retail.csv")  # 소매(체감) 기준
 ITEMS = {"배추": "211", "무": "231", "양파": "245", "대파": "246", "마늘": "258",
          "당근": "232", "오이": "223", "시금치": "213", "상추": "214",
          "사과": "411", "배": "412"}
+# 고변동 확장 품목 — 가격은 kamis_all_retail.csv에서 조달
+EXTRA_ITEMS = {"물오징어": "619", "호박": "224", "토마토": "225", "열무": "233",
+               "파프리카": "256", "피망": "255", "얼갈이배추": "215", "브로콜리": "280"}
+ITEMS.update(EXTRA_ITEMS)
+ALL_RETAIL = os.path.join(BASE_DIR, "kamis_all_retail.csv")
 # 반입량(공급) 보유 품목만
 INTAKE_FILE = {"배추": os.path.join(BASE_DIR, "garak_cabbage_intake.csv")}
 # 비쌀 때 대체재 추천 (품목별)
@@ -102,10 +121,29 @@ def _weather_with_lags():
     return w
 
 
+_veg_cache = {}
+
+
+def veg_prices():
+    # 기본 품목(VEG) + 확장 품목(전 품목 시세)을 합친 가격 프레임 (프로세스 캐시)
+    if "df" in _veg_cache:
+        return _veg_cache["df"]
+    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    if os.path.exists(ALL_RETAIL):
+        a = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
+        a = a[a["품목명"].isin(EXTRA_ITEMS.keys())].copy()
+        if len(a):
+            a["날짜"] = pd.to_datetime(a["날짜"])
+            a = a.drop_duplicates(subset=["날짜", "품목명"], keep="last")
+            veg = pd.concat([veg, a[["날짜", "품목명", "가격", "단위"]]], ignore_index=True)
+    _veg_cache["df"] = veg
+    return veg
+
+
 def build_feature_frame(item):
     # 학습(train_veg_models)과 동일한 피처 시계열을 로컬 CSV에서 구성
     w = _weather_with_lags()
-    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    veg = veg_prices()
     p = veg[veg["품목명"] == item][["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
     df = pd.merge(w, p, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
     df["price"] = df["price"].ffill().bfill()
@@ -257,6 +295,25 @@ def health():
     return {"status": "ok", "items": [i for i in ITEMS if MODELS.get(ITEMS[i])]}
 
 
+def get_user_plan(auth_header):
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return "free"
+    token = auth_header.split(" ")[1]
+    url = f"{SUPABASE_URL}/rest/v1/profiles?select=plan_type"
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {token}"
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data and len(data) > 0:
+                return data[0].get("plan_type", "free")
+    except Exception as e:
+        print("Plan check error:", e)
+    return "free"
+
 @app.post("/api/predict")
 async def predict(request: Request):
     body = await request.json()
@@ -282,7 +339,7 @@ def dashboard_data():
     key = date.today().isoformat()
     if key in _dash_cache:
         return _dash_cache[key]
-    veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
+    veg = veg_prices()
     items = []
     for name in ITEMS:
         if not MODELS.get(ITEMS[name]):
@@ -320,8 +377,30 @@ def _load_accuracy():
 
 
 @app.get("/api/dashboard")
-def api_dashboard():
-    return dashboard_data()
+def api_dashboard(request: Request):
+    auth_header = request.headers.get("Authorization")
+    plan = get_user_plan(auth_header)
+    
+    full_data = dashboard_data()
+    if plan == "pro":
+        return full_data
+        
+    import copy
+    masked_data = copy.deepcopy(full_data)
+    for item in masked_data.get("items", []):
+        item["p30"] = None
+        item["ci7"] = None
+        item["ci30"] = None
+        item["r30"] = None
+    return masked_data
+
+
+@app.get("/api/config")
+def api_config():
+    return {
+        "supabaseUrl": os.getenv("SUPABASE_URL", ""),
+        "supabaseAnonKey": os.getenv("SUPABASE_ANON_KEY", "")
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -374,7 +453,9 @@ def _render_screen(slug):
         html = f.read()
     if name == "home":
         html = _inject_home(html)
-    inject = '<script src="/app/static/nav.js"></script>'
+    inject = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
+    inject += '<script src="/app/static/ct-store.js"></script>'
+    inject += '<script src="/app/static/nav.js"></script>'
     live = {"home": "home-live.js", "inventory": "inventory-live.js",
             "item-analysis": "item-live.js", "bom-register": "bom-live.js",
             "deals": "deals-live.js", "orders": "orders-live.js",
@@ -392,7 +473,9 @@ def _render_screen(slug):
 @app.get("/app/static/{fname}")
 def app_static(fname: str):
     # 화면 공통 JS 서빙 (경로 이탈 차단)
-    if fname not in ("nav.js", "home-live.js", "inventory-live.js", "item-live.js", "bom-live.js", "deals-live.js", "orders-live.js", "plan-live.js"):
+    if fname not in ("nav.js", "ct-store.js", "home-live.js", "inventory-live.js",
+                     "item-live.js", "bom-live.js", "deals-live.js", "orders-live.js",
+                     "plan-live.js"):
         return HTMLResponse("not found", status_code=404)
     with open(os.path.join(SCREENS_DIR, fname), encoding="utf-8") as f:
         return HTMLResponse(f.read(), media_type="application/javascript")
