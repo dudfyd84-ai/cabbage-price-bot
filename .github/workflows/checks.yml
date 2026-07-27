@@ -9,6 +9,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:      # 기존 PR 브랜치를 즉시 검사할 때 사용 (Actions 탭 → Run workflow → 브랜치 선택)
 
 jobs:
   syntax:
