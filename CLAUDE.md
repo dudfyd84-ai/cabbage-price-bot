@@ -47,3 +47,5 @@ python app.py     # http://localhost:8000  (앱 /app, 대시보드 /)
   - Python: `# KIS API를 비동기로 래핑하는 클라이언트`
 - 한국어 문장은 `.` `?` `!`로 끝낸다.
 - 코드를 건드렸으면 로컬 실행(`python app.py`)으로 최소한 동작을 확인하고 보고한다.
+- **push 전 문법 검사는 필수.** `node --check app_screens/*.js` 와 `python -m py_compile app.py`.
+  PR에서 자동으로도 돌지만(Checks 워크플로), 미리 돌리면 왕복이 줄어든다.

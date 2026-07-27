@@ -1,0 +1,80 @@
+name: Checks
+
+# PR마다 자동 검사. 2026-07 회고에서 반복 확인된 3가지 유형을 잡는다.
+#  ① JS 문법 오류로 화면이 통째로 죽는 경우 (#19, #41)
+#  ② Python 문법 오류
+#  ③ 새 *-live.js를 app.py에 등록하지 않아 404가 나는 경우 (#18, #19)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:      # 기존 PR 브랜치를 즉시 검사할 때 사용 (Actions 탭 → Run workflow → 브랜치 선택)
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JS 문법 검사
+        run: |
+          fail=0
+          for f in app_screens/*.js; do
+            if node --check "$f" 2>/tmp/err; then
+              echo "  OK   $f"
+            else
+              echo "::error file=$f::JS 문법 오류"
+              sed 's/^/       /' /tmp/err
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python 문법 검사
+        run: |
+          fail=0
+          for f in *.py; do
+            if python -m py_compile "$f"; then
+              echo "  OK   $f"
+            else
+              echo "::error file=$f::Python 문법 오류"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: 화면 스크립트가 app.py에 등록됐는지 검사
+        run: |
+          python - <<'PY'
+          import re, sys, pathlib
+
+          app = pathlib.Path("app.py").read_text(encoding="utf-8")
+          # app_static()의 허용목록에 들어간 파일명
+          m = re.search(r"if fname not in \(([^)]*)\)", app, re.S)
+          allowed = set(re.findall(r'"([^"]+\.js)"', m.group(1))) if m else set()
+
+          # 실제 존재하는 화면 스크립트
+          scripts = {p.name for p in pathlib.Path("app_screens").glob("*.js")}
+
+          missing = sorted(scripts - allowed)
+          if missing:
+              for f in missing:
+                  print(f"::error file=app.py::{f} 가 app_screens/ 에 있는데 app.py 허용목록에 없습니다 "
+                        f"(브라우저에서 404 → 해당 기능이 동작하지 않습니다)")
+              print("\n두 곳 모두 수정해야 합니다:")
+              print("  1) _render_screen() 의 live 딕셔너리 — 화면에 <script>로 주입")
+              print("  2) app_static() 의 허용목록 — 없으면 404")
+              sys.exit(1)
+
+          # 반대로 목록에만 있고 파일이 없는 경우도 경고
+          ghost = sorted(allowed - scripts)
+          for f in ghost:
+              print(f"::warning file=app.py::{f} 가 허용목록에 있으나 파일이 없습니다")
+
+          print(f"화면 스크립트 {len(scripts)}개 전부 등록 확인")
+          PY

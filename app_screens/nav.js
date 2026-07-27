@@ -1,4 +1,4 @@
-// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장 + 데모 배지
+// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장
 // app.py에서 </body> 직전에 <script src>로 주입됨 → DOM이 이미 준비된 상태이므로 DOMContentLoaded 불필
 (function () {
   const path = location.pathname;
@@ -110,6 +110,9 @@
     })();
   }
 
+
+
+  // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
   // 기준: 백엔드 API/실데이터 연동이 완료된 화면(deals, orders)은 제외하고, 여전히 프론트 전용 목업/플랜 시뮬레이션 상태인 화면(plan)에만 데모 배지를 유지합니다.
   const DEMO = ['/app/plan'];
   if (DEMO.includes(path)) {
@@ -152,22 +155,26 @@
       ['내 정보', 'person', '/app/plan'],
     ];
     const bar = document.createElement('nav');
-    bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;z-index:60;background:#f8f9ff;border-top:1px solid #dce9ff;box-shadow:0 -2px 8px rgba(11,28,48,.06);padding-bottom:env(safe-area-inset-bottom);';
     const inner = document.createElement('div');
-    inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 8px;';
+    inner.style.cssText = 'max-width:640px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 4px;';
     TABS.forEach(([label, icon, href]) => {
       const active = href === '/app' ? (path === '/app' || path === '/app/home') : path.startsWith(href);
       const a = document.createElement('a');
       a.href = href;
-      a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:4px 12px;border-radius:9999px;'
+      a.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;padding:6px 0;border-radius:12px;flex:1;min-height:48px;transition:background 0.2s;'
         + (active ? 'background:#dde1ff;color:#00217a;' : 'color:#404944;');
       a.innerHTML = `<span class="material-symbols-outlined" style="font-size:24px;${active ? "font-variation-settings:'FILL' 1;" : ''}">${icon}</span>`
-        + `<span style="font-size:12px;font-weight:600;">${label}</span>`;
+        + `<span style="font-size:10px;font-weight:600;white-space:nowrap;letter-spacing:-0.03em;">${label}</span>`;
       inner.appendChild(a);
     });
     bar.appendChild(inner);
     document.body.appendChild(bar);
-    document.body.style.paddingBottom = '88px';
+    
+    // 모바일 뷰포트에서 하단 탭바와 본문 콘텐츠가 겹치지 않게 보장
+    const style = document.createElement('style');
+    style.textContent = 'body { padding-bottom: 96px !important; }';
+    document.head.appendChild(style);
   }
 
   // ── 6) 등록된 매장명 반영 (전 화면 헤더의 '나의 레스토랑') ──

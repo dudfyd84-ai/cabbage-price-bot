@@ -10,136 +10,195 @@ document.addEventListener('DOMContentLoaded', () => {
       : p30;
   };
 
-  Promise.all([
-    fetch('/api/dashboard').then(r => r.json()),
-    window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}'))
-  ]).then(([data, stock]) => {
-    const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
-    const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
-
-    // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액)
-    try {
-      const save = risers.reduce((s, i) => s + ((i.p30 ?? i.p7) - i.cur), 0);
-      const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
-      if (hero) hero.textContent = '₩' + fmt(save);
-      const sub = document.querySelector('.bg-primary-container p.font-body-sm');
-      if (sub) sub.textContent = `상승 예상 ${risers.length}개 품목 기준단위당 합계 (${data.date} 기준) · 사용량 입력(BOM) 시 매장별 실제 절감액이 산출됩니다.`;
-    } catch (e) {
-      console.error('[인벤토리] 히어로 카드 렌더링 실패:', e);
+  const loadData = () => {
+    const list = document.getElementById('recommendation-list');
+    const tpl = document.querySelector('article.hidden')?.cloneNode(true);
+    if (!tpl) {
+      console.warn('[인벤토리] 카드 템플릿(article.hidden)을 찾지 못해 렌더링을 건너뜁니다');
+    }
+    if (list) {
+      list.innerHTML = `
+        <div class="skeleton-loader space-y-md">
+            <div class="glass-card rounded-xl p-md space-y-md animate-pulse">
+                <div class="flex gap-md">
+                    <div class="w-20 h-20 rounded-lg bg-surface-container shrink-0"></div>
+                    <div class="flex-1 space-y-sm">
+                        <div class="h-6 bg-surface-container rounded w-1/3"></div>
+                        <div class="h-4 bg-surface-container rounded w-1/2"></div>
+                    </div>
+                </div>
+                <div class="h-10 bg-surface-container rounded w-full"></div>
+            </div>
+        </div>
+      `;
     }
 
-    // 2) 품목 카드: 첫 카드를 템플릿으로 전체 품목 재생성
-    try {
-      const list = document.querySelector('article').parentElement;
-      const tpl = document.querySelector('article').cloneNode(true);
-      const tempContainer = document.createDocumentFragment();
+    Promise.all([
+      fetch('/api/dashboard').then(r => {
+        if (!r.ok) throw new Error('서버 응답 오류');
+        return r.json();
+      }),
+      window.ctStore ? ctStore.getStockLevels() : Promise.resolve(JSON.parse(localStorage.getItem('ct_stock') || '{}'))
+    ]).then(([data, stock]) => {
+      const items = [...(data.items || [])].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
+      const risers = items.filter(i => (i.r30 ?? i.r7) > 5);
 
-      items.forEach(it => {
-        const card = tpl.cloneNode(true);
-        const rise = (it.r30 ?? it.r7) > 5, drop = it.r7 < -5;
+      // 1) 히어로: 단위당 절감 여력 합계 (상승 품목: 지금 사면 30일 뒤 대비 아끼는 금액)
+      try {
+        const save = risers.reduce((s, i) => s + ((i.p30 ?? i.p7) - i.cur), 0);
+        const hero = document.querySelector('.bg-primary-container .font-headline-lg-mobile, .bg-primary-container span[class*="headline-lg"]');
+        if (hero) hero.textContent = '₩' + fmt(save);
+        const sub = document.querySelector('.bg-primary-container p.font-body-sm');
+        if (sub) sub.textContent = `상승 예상 ${risers.length}개 품목 기준단위당 합계 (${data.date} 기준) · 사용량 입력(BOM) 시 매장별 실제 절감액이 산출됩니다.`;
+      } catch (e) {
+        console.error('[인벤토리] 히어로 카드 렌더링 실패:', e);
+      }
 
-        // 이미지 → 품목 이니셜 블록 (템플릿 사진 오매칭 방지)
-        const img = card.querySelector('[style*="background-image"]');
-        if (img) {
-          img.style.backgroundImage = 'none';
-          img.style.cssText += 'display:flex;align-items:center;justify-content:center;background:#e5eeff;font-weight:700;font-size:24px;color:#003527;';
-          img.textContent = it.name[0];
+      // 2) 품목 카드: 첫 카드를 템플릿으로 전체 품목 재생성
+      try {
+        const list = document.getElementById('recommendation-list');
+        if (!tpl) return;
+        
+        const tempContainer = document.createDocumentFragment();
+
+        if (items.length === 0) {
+          list.innerHTML = `
+            <div class="glass-card rounded-xl p-lg text-center text-on-surface-variant col-span-full">
+              <span class="material-symbols-outlined text-[32px] text-outline mb-xs">inventory_2</span>
+              <p class="font-label-md">현재 최적화 제안을 제공할 농산물 품목이 없습니다.</p>
+              <p class="text-xs text-outline mt-1">예측 모델에 품목이 추가되면 여기에 표시됩니다.</p>
+            </div>
+          `;
+          return;
         }
-        card.querySelector('h3').textContent = it.name;
 
-        const badge = card.querySelector('span.rounded-full');
-        badge.textContent = rise ? '선매입 권장' : (drop ? '구매 대기' : '평시 구매');
-        badge.className = 'font-label-sm text-label-sm px-3 py-1 rounded-full text-white ' + (rise ? 'bg-primary' : 'bg-secondary');
+        items.forEach(it => {
+          const card = tpl.cloneNode(true);
+          card.classList.remove('hidden');
+          const rise = (it.r30 ?? it.r7) > 5, drop = it.r7 < -5;
 
-        const trend = card.querySelector('.mt-xs span.flex');
-        const rVal = it.r30 ?? it.r7;
-        const flat = Math.abs(rVal) <= 5;
-        const dText = it.p30 === null ? '7일' : '30일';
-        trend.innerHTML = flat
-          ? `<span class="material-symbols-outlined text-[18px]">trending_flat</span> ${dText} 뒤 보합 예상`
-          : `<span class="material-symbols-outlined text-[18px]">${rVal > 0 ? 'trending_up' : 'trending_down'}</span> ${dText} 뒤 ${rVal > 0 ? '+' : ''}${rVal}% ${rVal > 0 ? '상승' : '하락'} 예상`;
-        trend.className = 'flex items-center font-label-md text-label-md ' +
-          (flat ? 'text-on-surface-variant' : (rVal > 0 ? 'text-error' : 'text-primary-container'));
+          // 이미지 → 품목 이니셜 블록 (템플릿 사진 오매칭 방지)
+          const img = card.querySelector('[style*="background-image"]');
+          if (img) {
+            img.style.backgroundImage = 'none';
+            img.style.cssText += 'display:flex;align-items:center;justify-content:center;background:#e5eeff;font-weight:700;font-size:24px;color:#003527;';
+            img.textContent = it.name[0];
+          }
+          card.querySelector('h3').textContent = it.name;
 
-        const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
-        const desc = card.querySelector('p.leading-relaxed');
-        // 아래 재고 분기에서도 재사용하므로 변수로 유지 (무료 사용자는 D+7까지만)
-        const basePred = it.ci30 === null
-          ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`
-          : `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
-            ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
-        if (desc) desc.textContent = basePred;
+          const badge = card.querySelector('span.rounded-full');
+          if (badge) {
+            badge.textContent = rise ? '선매입 권장' : (drop ? '구매 대기' : '평시 구매');
+            badge.className = 'font-label-sm text-label-sm px-3 py-1 rounded-full text-white ' + (rise ? 'bg-primary' : 'bg-secondary');
+          }
 
-        // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
-        const box = card.querySelector('.px-md.pb-md');
-        const sd = parseInt(stock[it.name]) || 0;
-        const stockRow = document.createElement('div');
-        stockRow.className = 'bg-surface-container-low p-sm rounded-lg flex items-center justify-between';
-        stockRow.innerHTML =
-          '<span class="font-body-sm text-body-sm text-on-surface-variant">보유 재고 (일)</span>' +
-          `<input type="number" min="0" max="60" placeholder="입력" value="${sd || ''}"` +
-          ' style="width:88px;text-align:right;border:1px solid #bfc9c3;border-radius:8px;padding:4px 8px;font-size:14px;background:#fff;">';
-        stockRow.querySelector('input').addEventListener('change', async e => {
-          const v = parseInt(e.target.value);
-          const s = window.ctStore ? await ctStore.getStockLevels() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
-          if (v > 0) s[it.name] = v; else delete s[it.name];
-          if (window.ctStore) {
-            await ctStore.setStockLevels(s);
+          const trend = card.querySelector('.mt-xs span.flex');
+          if (trend) {
+            const rVal = it.r30 ?? it.r7;
+            const flat = Math.abs(rVal) <= 5;
+            const dText = it.p30 === null ? '7일' : '30일';
+            trend.innerHTML = flat
+              ? `<span class="material-symbols-outlined text-[18px]">trending_flat</span> ${dText} 뒤 보합 예상`
+              : `<span class="material-symbols-outlined text-[18px]">${rVal > 0 ? 'trending_up' : 'trending_down'}</span> ${dText} 뒤 ${rVal > 0 ? '+' : ''}${rVal}% ${rVal > 0 ? '상승' : '하락'} 예상`;
+            trend.className = 'flex items-center font-label-md text-label-md ' +
+              (flat ? 'text-on-surface-variant' : (rVal > 0 ? 'text-error' : 'text-primary-container'));
+          }
+
+          const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
+          const desc = card.querySelector('p.leading-relaxed');
+          // 아래 재고 분기에서도 재사용하므로 변수로 유지 (무료 사용자는 D+7까지만)
+          const basePred = it.ci30 === null
+            ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`
+            : `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
+              ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
+          if (desc) desc.textContent = basePred;
+
+          // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
+          const box = card.querySelector('.px-md.pb-md');
+          const sd = parseInt(stock[it.name]) || 0;
+          const stockRow = document.createElement('div');
+          stockRow.className = 'bg-surface-container-low p-sm rounded-lg flex items-center justify-between';
+          stockRow.innerHTML =
+            '<span class="font-body-sm text-body-sm text-on-surface-variant">보유 재고 (일)</span>' +
+            `<input type="number" min="0" max="60" placeholder="입력" value="${sd || ''}"` +
+            ' style="width:88px;text-align:right;border:1px solid #bfc9c3;border-radius:8px;padding:4px 8px;font-size:14px;background:#fff;">';
+          stockRow.querySelector('input').addEventListener('change', async e => {
+            const v = parseInt(e.target.value);
+            const s = window.ctStore ? await ctStore.getStockLevels() : JSON.parse(localStorage.getItem('ct_stock') || '{}');
+            if (v > 0) s[it.name] = v; else delete s[it.name];
+            if (window.ctStore) {
+              await ctStore.setStockLevels(s);
+            } else {
+              localStorage.setItem('ct_stock', JSON.stringify(s));
+            }
+            location.reload();
+          });
+          if (box) box.insertBefore(stockRow, box.firstChild);
+
+          if (sd > 0) {
+            // 재고 기반 실계산: 소진 시점 예상가와 지금 매입의 차액
+            const dep = priceAt(it, sd);
+            const depPct = Math.round((dep - it.cur) / it.cur * 100);
+            const save = Math.round(dep - it.cur);
+            if (rows[0]) rows[0].lastElementChild.textContent = save > 0
+              ? `소진 D+${sd} → 지금 ${sd + 14}일치 선구매 권장`
+              : `소진 D+${sd} → 소진 직전 재구매 권장`;
+            if (rows[1]) rows[1].lastElementChild.textContent = save > 0
+              ? `${it.unit}당 ₩${fmt(save)} 절감 (소진일 매입 대비)`
+              : (save < 0 ? `대기 시 ${it.unit}당 ₩${fmt(-save)} 절감` : '소진일 가격 변동 미미');
+            if (desc) desc.textContent =
+              `보유 재고 소진 예정일(D+${sd})의 예상가 ${fmt(dep)}원/${it.unit} (${depPct >= 0 ? '+' : ''}${depPct}%). ` + basePred;
           } else {
-            localStorage.setItem('ct_stock', JSON.stringify(s));
+            if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
+            if (rows[1]) {
+              const diff = rise ? (it.p30 ?? it.p7) - it.cur : (drop ? it.cur - it.p7 : 0);
+              rows[1].lastElementChild.textContent = diff > 0
+                ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
+                : '변동 미미';
+            }
+            if (desc) desc.textContent = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
           }
-          location.reload();
+
+          const cta = card.querySelector('button.w-full');
+          if (cta) {
+            cta.innerHTML = (rise ? '상세 분석 보기' : '상세 분석 보기') + ' <span class="material-symbols-outlined text-[20px]">query_stats</span>';
+            cta.addEventListener('click', () => { location.href = '/app/item-analysis?item=' + encodeURIComponent(it.name); });
+          }
+          tempContainer.appendChild(card);
         });
-        box.insertBefore(stockRow, box.firstChild);
 
-        if (sd > 0) {
-          // 재고 기반 실계산: 소진 시점 예상가와 지금 매입의 차액
-          const dep = priceAt(it, sd);
-          const depPct = Math.round((dep - it.cur) / it.cur * 100);
-          const save = Math.round(dep - it.cur);
-          if (rows[0]) rows[0].lastElementChild.textContent = save > 0
-            ? `소진 D+${sd} → 지금 ${sd + 14}일치 선구매 권장`
-            : `소진 D+${sd} → 소진 직전 재구매 권장`;
-          if (rows[1]) rows[1].lastElementChild.textContent = save > 0
-            ? `${it.unit}당 ₩${fmt(save)} 절감 (소진일 매입 대비)`
-            : (save < 0 ? `대기 시 ${it.unit}당 ₩${fmt(-save)} 절감` : '소진일 가격 변동 미미');
-          if (desc) desc.textContent =
-            `보유 재고 소진 예정일(D+${sd})의 예상가 ${fmt(dep)}원/${it.unit} (${depPct >= 0 ? '+' : ''}${depPct}%). ` + basePred;
-        } else {
-          if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
-          if (rows[1]) {
-            const diff = rise ? (it.p30 ?? it.p7) - it.cur : (drop ? it.cur - it.p7 : 0);
-            rows[1].lastElementChild.textContent = diff > 0
-              ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
-              : '변동 미미';
-          }
-          if (desc) desc.textContent = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
-        }
+        list.innerHTML = '';
+        list.appendChild(tempContainer);
+      } catch (e) {
+        console.error('[인벤토리] 품목 리스트 렌더링 실패:', e);
+        showErrorState();
+      }
+    }).catch(err => {
+      console.error('[인벤토리] API 통신 실패:', err);
+      showErrorState();
+    });
+  };
 
-        const cta = card.querySelector('button.w-full');
-        if (cta) {
-          cta.innerHTML = (rise ? '상세 분석 보기' : '상세 분석 보기') + ' <span class="material-symbols-outlined text-[20px]">query_stats</span>';
-          cta.addEventListener('click', () => { location.href = '/app/item-analysis?item=' + encodeURIComponent(it.name); });
-        }
-        tempContainer.appendChild(card);
-      });
-
-      list.innerHTML = '';
-      list.appendChild(tempContainer);
-    } catch (e) {
-      console.error('[인벤토리] 품목 리스트 렌더링 실패:', e);
-      const list = document.querySelector('article')?.parentElement;
-      if (list) {
-        list.innerHTML = `
-          <div class="glass-card rounded-xl p-lg text-center text-on-surface-variant col-span-full">
-            <span class="material-symbols-outlined text-[32px] text-error mb-xs">error</span>
-            <p class="font-label-md">데이터를 불러오지 못했습니다.</p>
-            <p class="text-xs text-outline mt-1">잠시 후 다시 시도해 주세요.</p>
-          </div>
-        `;
+  const showErrorState = () => {
+    const list = document.getElementById('recommendation-list');
+    if (list) {
+      list.innerHTML = `
+        <div class="glass-card rounded-xl p-lg text-center text-on-surface-variant col-span-full">
+          <span class="material-symbols-outlined text-[32px] text-error mb-xs">error</span>
+          <p class="font-label-md">데이터를 불러오지 못했습니다.</p>
+          <p class="text-xs text-outline mt-1 mb-md">네트워크 상태를 확인하고 다시 시도해 주세요.</p>
+          <button id="btn-inventory-retry" class="mx-auto flex items-center justify-center gap-xs px-md py-sm bg-primary text-white font-label-md rounded-lg active:scale-95 transition-transform hover:brightness-110">
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+            다시 시도
+          </button>
+        </div>
+      `;
+      const retryBtn = document.getElementById('btn-inventory-retry');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => loadData());
       }
     }
-  }).catch(err => {
-    console.error('[인벤토리] API 통신 실패:', err);
-  });
+  };
+
+  loadData();
 });
