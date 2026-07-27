@@ -296,4 +296,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadHomeData();
 });
-});
