@@ -14,7 +14,7 @@
 
   // ── 0.5) 로그인 연동 및 로컬 마이그레이션 실행 ──
   if (window.ctStore) {
-    window.ctStore.migrateLocalStorageToSupabase().catch(e => console.error("[nav] 마이그레이션 오류:", e));
+    window.ctStore.syncOnLogin().catch(e => console.error("[nav] 마이그레이션 오류:", e));
   }
 
   // ── 1) 공통 네비: placeholder 앵커를 텍스트 매칭으로 라우팅 ──
