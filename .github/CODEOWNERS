@@ -1,38 +1,14 @@
-# CODEOWNERS — 파일별 담당자. 여기 지정된 사람은 해당 파일이 바뀐 PR에 자동으로 리뷰어로 붙는다.
-# 트랙 배정은 ROADMAP.md 참고. 아래 규칙은 뒤에 나온 것이 우선한다.
+# CODEOWNERS — 병합 승인 권한자
+#
+# 목적: 팀리드 부재 시에도 작업이 멈추지 않도록 대리 승인자를 둔다.
+# 아래 두 사람 중 "한 명"이 승인하면 병합할 수 있다.
+#
+#   @dudfyd84-ai      팀리드
+#   @clover1118-sudo  대리 승인자 (팀리드 부재 시 대행)
+#
+# 다른 팀원(@kjw0106, @ryong9797)도 리뷰·코멘트는 자유롭게 할 수 있으나,
+# 병합 조건을 충족하는 승인은 위 두 사람만 가능하다.
+#
+# 트랙별 파일 담당은 ROADMAP.md 참고 (자동 리뷰어 지정이 아닌 협업 규칙).
 
-# 기본: 팀리드가 전체를 본다
-*                               @dudfyd84-ai
-
-# ── Track A · 데이터·예측 엔진 (팀리드) ──
-/retrain_pipeline.py            @dudfyd84-ai
-/kamis_all_collect.py           @dudfyd84-ai
-/accuracy.json                  @dudfyd84-ai
-/*.csv                          @dudfyd84-ai
-/*.pkl                          @dudfyd84-ai
-
-# ── Track B · 계정·구독·결제 ──
-/supabase_schema.sql            @ryong9797 @dudfyd84-ai
-/payment.py                     @ryong9797 @dudfyd84-ai
-/app_screens/onboarding.html    @ryong9797 @dudfyd84-ai
-/app_screens/plan.html          @ryong9797 @dudfyd84-ai
-
-# ── Track C · 핵심 화면 ──
-/app_screens/                   @kjw0106 @dudfyd84-ai
-
-# ── Track D · 알림·리포트 ──
-/notify_kakao.py                @clover1118-sudo @dudfyd84-ai
-/app_screens/alerts.html        @clover1118-sudo @dudfyd84-ai
-
-# ── 공용 파일: 여러 기능이 함께 쓰므로 공용 모듈 담당(C) + 팀리드 리뷰 ──
-/app.py                         @kjw0106 @dudfyd84-ai
-/app_screens/nav.js             @kjw0106 @dudfyd84-ai
-/app_screens/ct-store.js        @kjw0106 @ryong9797 @dudfyd84-ai
-/app_screens/home-live.js       @kjw0106 @dudfyd84-ai
-/dashboard.html                 @kjw0106 @dudfyd84-ai
-
-# ── 인프라·규칙: 팀리드 전용 ──
-/.github/                       @dudfyd84-ai
-/CLAUDE.md                      @dudfyd84-ai
-/ROADMAP.md                     @dudfyd84-ai
-/CONTRIBUTING.md                @dudfyd84-ai
+*   @dudfyd84-ai @clover1118-sudo

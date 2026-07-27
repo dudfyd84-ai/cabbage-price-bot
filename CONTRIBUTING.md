@@ -68,19 +68,18 @@ python -m py_compile app.py         # Python 문법
 > 새 화면 스크립트를 추가했다면 `app.py`의 **두 곳**을 모두 고쳐야 한다.
 > ① `_render_screen()`의 `live` 딕셔너리(주입) ② `app_static()`의 허용목록(없으면 404)
 
-## 리뷰어 자동 지정 (CODEOWNERS)
-`.github/CODEOWNERS`에 파일별 담당자가 지정돼 있다. **그 파일을 바꾸는 PR에는 담당자가 자동으로 리뷰어로 붙고, 담당자 승인 없이는 병합되지 않는다.**
+## 병합 승인 (CODEOWNERS)
+`main` 병합에는 **승인 1명**이 필요하다. 승인 권한자는 두 명이다.
 
-| 영역 | 담당 |
+| 역할 | 계정 |
 |---|---|
-| 예측·데이터 (`retrain_pipeline.py`, 모델·CSV) | 팀리드 |
-| 계정·결제 (`supabase_schema.sql`, `payment.py`, 온보딩·구독 화면) | @ryong9797 |
-| 핵심 화면 (`app_screens/`) | @kjw0106 |
-| 알림 (`notify_kakao.py`, `alerts.html`) | @clover1118-sudo |
-| **공용** (`app.py`, `nav.js`, `ct-store.js`, `home-live.js`) | @kjw0106 + 팀리드 |
+| 팀리드 | @dudfyd84-ai |
+| **대리 승인자** (팀리드 부재 시 대행) | @clover1118-sudo |
 
-내 트랙 밖 파일을 바꿔야 하면, **PR 본문에 이유를 적고** 담당자 리뷰를 기다린다.
-자동으로 붙으니 따로 지정할 필요는 없다.
+**둘 중 한 명**이 승인하면 병합할 수 있다. 팀리드가 자리를 비워도 작업이 멈추지 않는다.
+
+다른 팀원도 리뷰·코멘트는 자유롭게 할 수 있다. 다만 병합 조건을 충족하는 승인은 위 두 사람만 가능하다.
+동료 리뷰는 여전히 권장한다 — 같은 파일을 만지는 사람이 있으면 먼저 확인을 부탁하자.
 
 ## 배포
 - `main` 병합 → GitHub Actions(`deploy.yml`)가 Cloudtype에 자동 배포.
