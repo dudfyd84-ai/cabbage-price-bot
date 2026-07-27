@@ -1,4 +1,4 @@
-// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장 + 데모 배지
+// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장
 // app.py에서 </body> 직전에 <script src>로 주입됨 → DOM이 이미 준비된 상태이므로 DOMContentLoaded 불필
 (function () {
   const path = location.pathname;
@@ -110,8 +110,11 @@
     })();
   }
 
+
+
   // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
-  const DEMO = ['/app/deals', '/app/plan', '/app/orders', '/app/orders-table', '/app/orders-filter'];
+  // 기준: 백엔드 API/실데이터 연동이 완료된 화면(deals, orders)은 제외하고, 여전히 프론트 전용 목업/플랜 시뮬레이션 상태인 화면(plan)에만 데모 배지를 유지합니다.
+  const DEMO = ['/app/plan'];
   if (DEMO.includes(path)) {
     const h = document.querySelector('header h1, header h2, main h1, main h2');
     if (h) {
