@@ -66,7 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
           box.appendChild(note);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[상세분석] 헤더/메타정보 렌더링 실패:', e);
+    }
 
     // 2) 호라이즌별 차트 렌더 (과거 30일 실측 x0~400 + 예측 x400~800)
     const render = H => {
@@ -125,8 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
           render(H_MAP[t]);
         });
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('[상세분석] 기간 탭 이벤트 연동 실패:', e);
+    }
 
     render(30);   // 기본 4주
-  }).catch(() => {});
+  }).catch(err => {
+    console.error('[상세분석] API 통신 실패:', err);
+  });
 });

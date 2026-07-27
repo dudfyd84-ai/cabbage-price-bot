@@ -87,7 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
           if (window.ctStore) {
             await ctStore.setStockLevels(s);
           } else {
-            localStorage.setItem('ct_stock', JSON.stringify(s));
+            if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
+            if (rows[1]) {
+              const diff = rise ? (it.p30 ?? it.p7) - it.cur : (drop ? it.cur - it.p7 : 0);
+              rows[1].lastElementChild.textContent = diff > 0
+                ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
+                : '변동 미미';
+            }
+            if (desc) desc.textContent = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
           }
           location.reload();
         });
@@ -117,13 +124,38 @@ document.addEventListener('DOMContentLoaded', () => {
           if (desc) desc.innerHTML = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
         }
 
-        const cta = card.querySelector('button.w-full');
-        if (cta) {
-          cta.innerHTML = (rise ? '상세 분석 보기' : '상세 분석 보기') + ' <span class="material-symbols-outlined text-[20px]">query_stats</span>';
-          cta.addEventListener('click', () => { location.href = '/app/item-analysis?item=' + encodeURIComponent(it.name); });
-        }
-        list.appendChild(card);
-      });
-    } catch (e) {}
-  }).catch(() => {});
+        list.innerHTML = '';
+        list.appendChild(tempContainer);
+      } catch (e) {
+        console.error('[인벤토리] 품목 리스트 렌더링 실패:', e);
+        showErrorState();
+      }
+    }).catch(err => {
+      console.error('[인벤토리] API 통신 실패:', err);
+      showErrorState();
+    });
+  };
+
+  const showErrorState = () => {
+    const list = document.getElementById('recommendation-list');
+    if (list) {
+      list.innerHTML = `
+        <div class="glass-card rounded-xl p-lg text-center text-on-surface-variant col-span-full">
+          <span class="material-symbols-outlined text-[32px] text-error mb-xs">error</span>
+          <p class="font-label-md">데이터를 불러오지 못했습니다.</p>
+          <p class="text-xs text-outline mt-1 mb-md">네트워크 상태를 확인하고 다시 시도해 주세요.</p>
+          <button id="btn-inventory-retry" class="mx-auto flex items-center justify-center gap-xs px-md py-sm bg-primary text-white font-label-md rounded-lg active:scale-95 transition-transform hover:brightness-110">
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+            다시 시도
+          </button>
+        </div>
+      `;
+      const retryBtn = document.getElementById('btn-inventory-retry');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => loadData());
+      }
+    }
+  };
+
+  loadData();
 });

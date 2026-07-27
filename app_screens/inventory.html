@@ -168,14 +168,38 @@
 </button>
 </div>
 <!-- Recommendation List -->
-<div class="space-y-md">
-<!-- Card 1: Garlic -->
-<article class="glass-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-<div class="flex p-md gap-md">
-<div class="w-20 h-20 rounded-lg bg-cover bg-center shrink-0 border border-outline-variant" data-alt="A clean, professional studio photograph of peeled garlic cloves in a small rustic wooden bowl. The lighting is soft and natural, emphasizing textures and fresh qualities. The background is a minimalist, light slate gray, maintaining a modern and high-end B2B SaaS aesthetic with professional clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDwpeOkXKmo8k_GZCjTFck1qOKhXf6z8Bgj9yPlXBX52hIKRZqZ7eoXvZBTrd_r2R02WK7RmafXQgkbyEk6XdH8_8Dw9KU37F8AWr_jXXOYPUWHnuvv_POiojvs4FrujFv0C4qL5cQBw4E09bDAEy1O0T-wTros3Vb-2oJNCyGqjKUMWQ9Fjf1jOfs8mvN5jdZadtqvxcAKZ3qUalPLW67kEB9oBKPI6X65u1xD-kJ1WB9V0K_D2xyN')"></div>
-<div class="flex-1">
-<div class="flex justify-between items-start">
-<h3 class="font-headline-md text-headline-md font-bold text-on-surface">깐마늘</h3>
+<div class="space-y-md" id="recommendation-list">
+    <!-- Skeleton Loading UI (목업 데이터 깜빡임 방지 및 로딩 표시) -->
+    <div class="skeleton-loader space-y-md">
+        <div class="glass-card rounded-xl p-md space-y-md animate-pulse">
+            <div class="flex gap-md">
+                <div class="w-20 h-20 rounded-lg bg-surface-container shrink-0"></div>
+                <div class="flex-1 space-y-sm">
+                    <div class="h-6 bg-surface-container rounded w-1/3"></div>
+                    <div class="h-4 bg-surface-container rounded w-1/2"></div>
+                </div>
+            </div>
+            <div class="h-10 bg-surface-container rounded w-full"></div>
+        </div>
+        <div class="glass-card rounded-xl p-md space-y-md animate-pulse">
+            <div class="flex gap-md">
+                <div class="w-20 h-20 rounded-lg bg-surface-container shrink-0"></div>
+                <div class="flex-1 space-y-sm">
+                    <div class="h-6 bg-surface-container rounded w-1/3"></div>
+                    <div class="h-4 bg-surface-container rounded w-1/2"></div>
+                </div>
+            </div>
+            <div class="h-10 bg-surface-container rounded w-full"></div>
+        </div>
+    </div>
+
+    <!-- Card 1: Garlic (Hidden by default, will be cloned by inventory-live.js) -->
+    <article class="glass-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow hidden">
+    <div class="flex p-md gap-md">
+    <div class="w-20 h-20 rounded-lg bg-cover bg-center shrink-0 border border-outline-variant" data-alt="A clean, professional studio photograph of peeled garlic cloves in a small rustic wooden bowl. The lighting is soft and natural, emphasizing textures and fresh qualities. The background is a minimalist, light slate gray, maintaining a modern and high-end B2B SaaS aesthetic with professional clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDwpeOkXKmo8k_GZCjTFck1qOKhXf6z8Bgj9yPlXBX52hIKRZqZ7eoXvZBTrd_r2R02WK7RmafXQgkbyEk6XdH8_8Dw9KU37F8AWr_jXXOYPUWHnuvv_POiojvs4FrujFv0C4qL5cQBw4E09bDAEy1O0T-wTros3Vb-2oJNCyGqjKUMWQ9Fjf1jOfs8mvN5jdZadtqvxcAKZ3qUalPLW67kEB9oBKPI6X65u1xD-kJ1WB9V0K_D2xyN')"></div>
+    <div class="flex-1">
+    <div class="flex justify-between items-start">
+    <h3 class="font-headline-md text-headline-md font-bold text-on-surface">깐마늘</h3>
 <span class="bg-primary text-white font-label-sm text-label-sm px-3 py-1 rounded-full">선매입 권장</span>
 </div>
 <div class="mt-xs flex items-center gap-sm">
