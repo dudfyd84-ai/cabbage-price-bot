@@ -112,6 +112,19 @@
 
 
 
+  // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
+  // 기준: 백엔드 API/실데이터 연동이 완료된 화면(deals, orders)은 제외하고, 여전히 프론트 전용 목업/플랜 시뮬레이션 상태인 화면(plan)에만 데모 배지를 유지합니다.
+  const DEMO = ['/app/plan'];
+  if (DEMO.includes(path)) {
+    const h = document.querySelector('header h1, header h2, main h1, main h2');
+    if (h) {
+      const tag = document.createElement('span');
+      tag.textContent = '데모';
+      tag.style.cssText = 'font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 8px;vertical-align:middle;margin-left:8px;';
+      h.appendChild(tag);
+    }
+  }
+
   // ── 5.5) 로고 클릭 → 홈 ──
   document.querySelectorAll('header h1').forEach(h => {
     if (h.textContent.includes('CartTiming')) {
