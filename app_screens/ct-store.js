@@ -271,6 +271,22 @@
       }
     },
 
+    // 데이터 병합용 헬퍼 함수 (마스킹 처리 등)
+    fallback(item, primaryKey, fallbackKey) {
+      if (!item) return null;
+      return item[primaryKey] ?? item[fallbackKey];
+    },
+
+    // 마스킹 UI용 헬퍼 함수
+    // 주의: 결과값이 innerHTML로 삽입되므로, 추후 사용자 입력값(매장명, 메뉴명 등)을
+    // 처리하게 될 경우 XSS 방지를 위한 이스케이프(escape) 처리가 필요합니다.
+    masked(item, key, renderFn) {
+      if (!item || item[key] === null) {
+        return '<span style="color:#ba1a1a;">🔒 유료 전용 (D+30일)</span>';
+      }
+      return renderFn(item[key]);
+    },
+
     // 4-2) 메뉴 BOM 정보
     async getMenus() {
       await this.init();
