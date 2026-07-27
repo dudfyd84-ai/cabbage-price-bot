@@ -235,6 +235,11 @@
   fetch('/api/dashboard')
     .then(r => r.json())
     .then(data => {
+      // 무료 사용자는 서버가 p30/r30을 null로 마스킹한다 → D+7 값으로 대체하고 라벨도 맞춘다
+      const masked = data.items.some(i => i.p30 === null);
+      const H_LABEL = masked ? '7일 뒤' : '30일 뒤';
+      data.items.forEach(i => { i.r30 = i.r30 ?? i.r7; i.p30 = i.p30 ?? i.p7; });
+
       // 상승률 내림차순 정렬 및 전역 변수 할당
       const items = [...data.items].sort((a, b) => b.r30 - a.r30);
       if (!items.length) return;
@@ -244,7 +249,7 @@
       const hero = document.getElementById('featured-deal-hero');
       if (hero && top) {
         const meta = ITEM_META[top.name] || { merchant: '산지 유통 영농조합', icon: 'storefront', img: '' };
-        hero.querySelector('h3').textContent = `${top.name} 가격 상승 경보! 30일 뒤 ${top.r30}% 폭등 예상.`;
+        hero.querySelector('h3').textContent = `${top.name} 가격 상승 경보! ${H_LABEL} ${top.r30}% 폭등 예상.`;
         hero.querySelector('p.font-body-md').textContent = `가격 인상 전, 산지 직송가로 미리 확보하세요. 현재 250 유닛 남음.`;
         hero.querySelector('.hero-stock-text').textContent = `남은 수량: 250 / 1000 유닛`;
         hero.querySelector('.hero-progress-pct').textContent = `75% 판매 완료`;
@@ -285,7 +290,7 @@
       const avgRise = activeRisers.length ? Math.round(activeRisers.reduce((acc, cur) => acc + cur.r30, 0) / activeRisers.length) : 18.5;
       const simText = document.querySelector('main p.text-on-surface-variant');
       if (simText) {
-        simText.innerHTML = `현재 시점에서 구매 시 향후 30일 대비 평균 <span class="text-primary font-bold">${avgRise}%</span> 예산을 절감할 수 있습니다.`;
+        simText.innerHTML = `현재 시점에서 구매 시 향후 ${masked ? '7일' : '30일'} 대비 평균 <span class="text-primary font-bold">${avgRise}%</span> 예산을 절감할 수 있습니다.`;
       }
     })
     .catch(err => {
