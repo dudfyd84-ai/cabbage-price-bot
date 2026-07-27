@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const loadData = () => {
     const list = document.getElementById('recommendation-list');
+    const tpl = document.querySelector('article.hidden')?.cloneNode(true);
+    if (!tpl) {
+      console.warn('[인벤토리] 카드 템플릿(article.hidden)을 찾지 못해 렌더링을 건너뜁니다');
+    }
     if (list) {
       list.innerHTML = `
         <div class="skeleton-loader space-y-md">
@@ -53,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2) 품목 카드: 첫 카드를 템플릿으로 전체 품목 재생성
       try {
         const list = document.getElementById('recommendation-list');
-        const tpl = document.querySelector('article.hidden');
         if (!tpl) return;
         
         const tempContainer = document.createDocumentFragment();
