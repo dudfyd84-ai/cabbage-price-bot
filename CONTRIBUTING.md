@@ -68,6 +68,20 @@ python -m py_compile app.py         # Python 문법
 > 새 화면 스크립트를 추가했다면 `app.py`의 **두 곳**을 모두 고쳐야 한다.
 > ① `_render_screen()`의 `live` 딕셔너리(주입) ② `app_static()`의 허용목록(없으면 404)
 
+## 리뷰어 자동 지정 (CODEOWNERS)
+`.github/CODEOWNERS`에 파일별 담당자가 지정돼 있다. **그 파일을 바꾸는 PR에는 담당자가 자동으로 리뷰어로 붙고, 담당자 승인 없이는 병합되지 않는다.**
+
+| 영역 | 담당 |
+|---|---|
+| 예측·데이터 (`retrain_pipeline.py`, 모델·CSV) | 팀리드 |
+| 계정·결제 (`supabase_schema.sql`, `payment.py`, 온보딩·구독 화면) | @ryong9797 |
+| 핵심 화면 (`app_screens/`) | @kjw0106 |
+| 알림 (`notify_kakao.py`, `alerts.html`) | @clover1118-sudo |
+| **공용** (`app.py`, `nav.js`, `ct-store.js`, `home-live.js`) | @kjw0106 + 팀리드 |
+
+내 트랙 밖 파일을 바꿔야 하면, **PR 본문에 이유를 적고** 담당자 리뷰를 기다린다.
+자동으로 붙으니 따로 지정할 필요는 없다.
+
 ## 배포
 - `main` 병합 → GitHub Actions(`deploy.yml`)가 Cloudtype에 자동 배포.
 - 매일 06:00(KST) 재학습(`retrain.yml`)이 데이터·모델을 갱신 후 자동 배포.
