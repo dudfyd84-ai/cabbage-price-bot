@@ -5,3 +5,4 @@ __pycache__/
 retrain_log.txt
 .venv/
 run_retrain.bat
+reports/

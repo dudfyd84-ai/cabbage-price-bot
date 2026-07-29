@@ -8,3 +8,5 @@ requests==2.34.2
 joblib==1.5.3
 urllib3==2.7.0
 supabase==2.3.4
+matplotlib==3.10.8
+reportlab==4.4.4
