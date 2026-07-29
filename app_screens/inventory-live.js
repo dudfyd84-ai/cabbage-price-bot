@@ -107,11 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const rows = card.querySelectorAll('.px-md.pb-md .flex.items-center.justify-between');
           const desc = card.querySelector('p.leading-relaxed');
           // 아래 재고 분기에서도 재사용하므로 변수로 유지 (무료 사용자는 D+7까지만)
+          // 무료 사용자: D+7 정보는 그대로 보여주고 D+30 자리에만 잠금 배지(ctStore.masked)
           const basePred = it.ci30 === null
-            ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 (D+30 예측은 Pro 전용).`
+            ? `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 예상 `
+              + (window.ctStore ? ctStore.masked(it, 'p30', () => '') : '(D+30 예측은 Pro 전용)')
             : `현재 ${fmt(it.cur)}원/${it.unit} → 7일 뒤 ${fmt(it.p7)}원 · 30일 뒤 ${fmt(it.p30)}원 예상` +
               ` (범위 ${fmt(it.ci30[0])}~${fmt(it.ci30[1])}).`;
-          if (desc) desc.textContent = basePred;
+          if (desc) desc.innerHTML = basePred;
 
           // 보유 재고(일) 입력 행 — 값 입력 시 소진 시점 기반 제안으로 전환
           const box = card.querySelector('.px-md.pb-md');
@@ -146,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (rows[1]) rows[1].lastElementChild.textContent = save > 0
               ? `${it.unit}당 ₩${fmt(save)} 절감 (소진일 매입 대비)`
               : (save < 0 ? `대기 시 ${it.unit}당 ₩${fmt(-save)} 절감` : '소진일 가격 변동 미미');
-            if (desc) desc.textContent =
+            if (desc) desc.innerHTML =
               `보유 재고 소진 예정일(D+${sd})의 예상가 ${fmt(dep)}원/${it.unit} (${depPct >= 0 ? '+' : ''}${depPct}%). ` + basePred;
           } else {
             if (rows[0]) rows[0].lastElementChild.textContent = rise ? '향후 14일치 선구매' : (drop ? '3일치 소량 분할 구매' : '평시 물량 유지');
@@ -156,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `${it.unit}당 ₩${fmt(diff)} ${rise ? '절감 예상' : '대기 시 절감'}`
                 : '변동 미미';
             }
-            if (desc) desc.textContent = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
+            if (desc) desc.innerHTML = basePred + ' 보유 재고 일수를 입력하면 맞춤 선매입 제안을 계산합니다.';
           }
 
           const cta = card.querySelector('button.w-full');

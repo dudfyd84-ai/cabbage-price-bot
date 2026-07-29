@@ -79,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (actionEl) actionEl.style.display = 'flex';
           } else {
             if (top.ci30 === null) {
-              msg = `현재 ${fmt(top.cur)}원/${top.unit} → 7일 뒤 ${fmt(top.p7)}원 예상 (D+30 범위는 Pro 전용). 재고 최적화 화면에서 확인하세요.`;
+              // 무료: D+7은 그대로, D+30 자리에만 잠금 표시
+              msg = `현재 ${fmt(top.cur)}원/${top.unit} → 7일 뒤 ${fmt(top.p7)}원 예상. 재고 최적화 화면에서 확인하세요.`;
             } else {
               msg = `현재 ${fmt(top.cur)}원/${top.unit} → 30일 뒤 ${fmt(top.p30)}원 예상` +
                 ` (범위 ${fmt(top.ci30[0])}~${fmt(top.ci30[1])}원). 재고 최적화 화면에서 보유 재고를 입력하면 맞춤 제안을 계산합니다.`;

@@ -208,7 +208,28 @@
         options.headers = options.headers || {};
         options.headers['Authorization'] = `Bearer ${this.session.access_token}`;
       }
-      return fetch(url, options);
+      let response = await fetch(url, options);
+
+      // 401 Unauthorized 감지 시 토큰 갱신 시도
+      if (response.status === 401 && this.client && this.session) {
+        console.warn('API 401 에러 감지. 세션 갱신을 시도합니다.');
+        const { data, error } = await this.client.auth.refreshSession();
+        
+        if (error || !data.session) {
+          console.error('세션 갱신 실패. 강제 로그아웃 처리합니다.', error);
+          await this.client.auth.signOut();
+          alert('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+          window.location.href = '/app/onboarding';
+          return response;
+        }
+
+        console.log('세션 갱신 성공. 새 토큰으로 요청을 재시도합니다.');
+        this.session = data.session;
+        options.headers['Authorization'] = `Bearer ${this.session.access_token}`;
+        response = await fetch(url, options);
+      }
+
+      return response;
     },
 
     // 4-1) 매장 정보
@@ -248,6 +269,22 @@
           });
         }
       }
+    },
+
+    // 데이터 병합용 헬퍼 함수 (마스킹 처리 등)
+    fallback(item, primaryKey, fallbackKey) {
+      if (!item) return null;
+      return item[primaryKey] ?? item[fallbackKey];
+    },
+
+    // 마스킹 UI용 헬퍼 함수
+    // 주의: 결과값이 innerHTML로 삽입되므로, 추후 사용자 입력값(매장명, 메뉴명 등)을
+    // 처리하게 될 경우 XSS 방지를 위한 이스케이프(escape) 처리가 필요합니다.
+    masked(item, key, renderFn) {
+      if (!item || item[key] === null) {
+        return '<span style="color:#ba1a1a;">🔒 유료 전용 (D+30일)</span>';
+      }
+      return renderFn(item[key]);
     },
 
     // 4-2) 메뉴 BOM 정보
