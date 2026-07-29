@@ -295,6 +295,9 @@ def health():
     return {"status": "ok", "items": [i for i in ITEMS if MODELS.get(ITEMS[i])]}
 
 
+import payment
+
+
 def get_user_plan(auth_header):
     if not auth_header or not auth_header.startswith("Bearer "):
         return "free"
@@ -313,6 +316,66 @@ def get_user_plan(auth_header):
     except Exception as e:
         print("Plan check error:", e)
     return "free"
+
+
+def get_user_id(auth_header):
+    # Supabase JWT로 본인 프로필을 조회해 사용자 id를 얻는다(토큰 위조 시 RLS가 차단).
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/profiles?select=id",
+                         headers={"apikey": SUPABASE_ANON_KEY,
+                                  "Authorization": f"Bearer {token}"}, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data:
+                return data[0].get("id")
+    except Exception as e:
+        print("User id lookup error:", e)
+    return None
+
+
+# 구독 플랜 정가 — 금액은 반드시 서버가 결정한다(클라이언트 입력 금지)
+PLANS = {"pro": 9900}
+
+
+@app.post("/api/payment/subscribe")
+async def subscribe_payment(request: Request):
+    # 1) 인증 확인 — 로그인하지 않은 요청은 거부
+    auth_header = request.headers.get("Authorization")
+    user_id = get_user_id(auth_header)
+    if not user_id:
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+
+    body = await request.json()
+    auth_key = body.get("auth_key", "")
+    plan = body.get("plan", "pro")
+
+    # 2) 금액·주문번호는 서버가 결정 (클라이언트가 보낸 값은 무시)
+    amount = PLANS.get(plan)
+    if amount is None:
+        return JSONResponse({"ok": False, "error": "invalid_plan"}, status_code=400)
+    order_id = f"ord_{user_id[:8]}_{int(time.time())}"
+
+    b_res = payment.request_billing_key(auth_key, user_id)
+    if not b_res.get("success"):
+        return JSONResponse({"ok": False, "error": b_res.get("error")}, status_code=400)
+
+    billing_key = b_res["billing_key"]
+    p_res = payment.process_subscription_payment(billing_key, amount, order_id)
+    if not p_res.get("success"):
+        return JSONResponse({"ok": False, "error": p_res.get("error")}, status_code=400)
+
+    # 3) billing_key는 반복 결제에 쓰이는 자격증명이므로 응답에 포함하지 않는다.
+    #    TODO: profiles.plan_type='pro' 갱신 + billing_key 서버 보관 (Supabase 연동 시)
+    return JSONResponse({
+        "ok": True,
+        "plan": plan,
+        "amount": amount,
+        "order_id": order_id,
+        "next_billing_date": p_res["next_billing_date"],
+    })
 
 @app.post("/api/predict")
 async def predict(request: Request):
