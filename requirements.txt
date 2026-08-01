@@ -8,3 +8,4 @@ requests==2.34.2
 joblib==1.5.3
 urllib3==2.7.0
 supabase==2.3.4
+google-cloud-bigquery==3.42.3
