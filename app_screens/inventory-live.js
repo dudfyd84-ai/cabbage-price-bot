@@ -1,6 +1,6 @@
 // 재고 최적화 제안 화면을 /api/dashboard 실데이터로 재구성 (템플릿 카드 복제 방식)
 // + 보유 재고 일수 입력 → 소진 시점 예상가·선매입 절감액 실계산 (기획 원칙 ④)
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const fmt = n => Math.round(n).toLocaleString();
   const priceAt = (it, d) => {
     const p30 = it.p30 ?? it.p7;

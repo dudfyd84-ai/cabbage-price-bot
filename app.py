@@ -524,7 +524,7 @@ def _render_screen(slug):
             "deals": "deals-live.js", "orders": "orders-live.js",
             "plan": "plan-live.js"}.get(name)
     if live:
-        inject += f'<script src="/app/static/{live}"></script>'
+      inject += f'<script src="/app/static/{live}"></script>'
     html = html.replace("</body>", inject + "</body>")
     if name == "home":   # 지난 날짜의 홈 캐시만 정리(다른 화면 캐시는 보존)
         for k in [k for k in _SCREEN_CACHE if k.startswith("home_")]:

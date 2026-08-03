@@ -1,22 +1,20 @@
-// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장
+// Stitch 화면 공통 셸: 네비 라우팅 + 온보딩 흐름 + 알림 토글 저장 + 데모 배지
 // app.py에서 </body> 직전에 <script src>로 주입됨 → DOM이 이미 준비된 상태이므로 DOMContentLoaded 불필
-(function () {
+(async function () {
   const path = location.pathname;
 
   // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
   if (path === '/app' || path === '/app/' || path === '/app/home') {
-    if (!localStorage.getItem('ct_store') && !localStorage.getItem('ct_dev')) {
-      if (window.ctStore) {
-        ctStore.init().then(() => {
-          if (!ctStore.session) {
-            location.replace('/app/onboarding');
-          }
-        });
-      } else {
-        location.replace('/app/onboarding');
-      }
+    const store = window.ctStore ? await window.ctStore.getStore() : null;
+    if (!store && !localStorage.getItem('ct_dev')) {
+      location.replace('/app/onboarding');
       return;
     }
+  }
+
+  // ── 0.5) 로그인 연동 및 로컬 마이그레이션 실행 ──
+  if (window.ctStore) {
+    window.ctStore.syncOnLogin().catch(e => console.error("[nav] 마이그레이션 오류:", e));
   }
 
   // ── 1) 공통 네비: placeholder 앵커를 텍스트 매칭으로 라우팅 ──
@@ -94,23 +92,19 @@
   // ── 4) 알림 설정: 토글 상태 저장·복원 ──
   if (path.endsWith('/alerts')) {
     const boxes = document.querySelectorAll('input[type="checkbox"]');
-    (async () => {
-      const saved = window.ctStore ? await ctStore.getAlertPrefs() : JSON.parse(localStorage.getItem('ct_alerts') || 'null');
-      boxes.forEach((b, i) => {
-        if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
-        b.addEventListener('change', async () => {
-          const prefs = [...boxes].map(x => x.checked);
-          if (window.ctStore) {
-            await ctStore.setAlertPrefs(prefs);
-          } else {
-            localStorage.setItem('ct_alerts', JSON.stringify(prefs));
-          }
-        });
+    const saved = window.ctStore ? await ctStore.getAlertPrefs() : JSON.parse(localStorage.getItem('ct_alerts') || 'null');
+    boxes.forEach((b, i) => {
+      if (saved && typeof saved[i] === 'boolean') b.checked = saved[i];
+      b.addEventListener('change', async () => {
+        const prefs = [...boxes].map(x => x.checked);
+        if (window.ctStore) {
+          await ctStore.setAlertPrefs(prefs);
+        } else {
+          localStorage.setItem('ct_alerts', JSON.stringify(prefs));
+        }
       });
-    })();
+    });
   }
-
-
 
   // ── 5) 데모 화면 배지: 거래·결제 데이터 미연동 화면 표기 ──
   // 기준: 백엔드 API/실데이터 연동이 완료된 화면(deals, orders)은 제외하고, 여전히 프론트 전용 목업/플랜 시뮬레이션 상태인 화면(plan)에만 데모 배지를 유지합니다.
@@ -178,16 +172,14 @@
   }
 
   // ── 6) 등록된 매장명 반영 (전 화면 헤더의 '나의 레스토랑') ──
-  (async () => {
-    try {
-      const store = window.ctStore ? await ctStore.getStore() : JSON.parse(localStorage.getItem('ct_store') || 'null');
-      if (store && store.name) {
-        document.querySelectorAll('span, div').forEach(el => {
-          if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
-        });
-      }
-    } catch (e) {
-      console.error('[내비게이션] 매장명 반영 실패:', e);
+  try {
+    const store = window.ctStore ? await ctStore.getStore() : JSON.parse(localStorage.getItem('ct_store') || 'null');
+    if (store && store.name) {
+      document.querySelectorAll('span, div').forEach(el => {
+        if (el.children.length === 0 && el.textContent.trim() === '나의 레스토랑') el.textContent = store.name;
+      });
     }
-  })();
+  } catch (e) {
+    console.error('[내비게이션] 매장명 반영 실패:', e);
+  }
 })();
