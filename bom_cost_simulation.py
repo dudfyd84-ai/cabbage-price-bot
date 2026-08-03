@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("bom_cost_simulation")
 
 BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", "")
-BQ_DATASET = os.getenv("BQ_DATASET", "dm")
+BQ_DATASET = os.getenv("BQ_DATASET", "carttiming")  # 실제 스키마: carttiming 데이터셋 하나(오너 확인)
 BQ_TABLE = os.getenv("BQ_TABLE", "dm_store_bom_cost_simulation")
 HORIZONS = (0, 7, 30)
 
