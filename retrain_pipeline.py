@@ -253,6 +253,31 @@ def _make():
                         subsample=0.8, colsample_bytree=0.8, random_state=42)
 
 
+# 예측 구간용 분위수(10%/90%) 모델. 한 모델이 두 분위수를 동시에 내므로 학습 비용이 절반이다.
+QUANTILES = [0.1, 0.9]
+NOMINAL = 80          # 목표 포함률(%)
+
+
+def _make_q():
+    return XGBRegressor(objective="reg:quantileerror", quantile_alpha=QUANTILES,
+                        n_estimators=300, max_depth=4, learning_rate=0.05,
+                        subsample=0.8, colsample_bytree=0.8, random_state=42)
+
+
+def _qbounds(model, X):
+    # 다중 분위수 출력(n,2)을 로그 역변환해 (하한, 상한)으로 정렬해서 반환
+    z = np.expm1(model.predict(X))
+    return np.minimum(z[:, 0], z[:, 1]), np.maximum(z[:, 0], z[:, 1])
+
+
+def _conformal_q(lo, hi, y):
+    # 컨포멀 보정폭. 분위수 회귀만 쓰면 구간이 과하게 좁아 실제 포함률이 50%대로 떨어진다(검증됨).
+    # 보정셋에서 구간 밖으로 벗어난 정도의 80% 분위수를 구해 양끝을 그만큼 넓힌다(CQR).
+    e = np.maximum(lo - y, y - hi)
+    k = min(1.0, np.ceil((len(e) + 1) * NOMINAL / 100) / len(e))
+    return float(np.quantile(e, k))
+
+
 def retrain_all():
     # 갱신된 데이터로 5품목 H7/H30 모델 재학습
     w = pd.read_csv(WEATHER)
@@ -270,7 +295,7 @@ def retrain_all():
 
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
     veg = pd.concat([veg, _extra_prices()], ignore_index=True)   # 확장 품목 가격 합류
-    summary, acc_items, pred_rows = {}, {}, []
+    summary, acc_items, pred_rows, intervals = {}, {}, [], {}
     for code, name in ITEMS.items():
         sub = veg[veg["품목명"] == name]
         p = sub[["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
@@ -312,6 +337,18 @@ def retrain_all():
                 "n": len(act), "wape": wape, "mape": mapes[H],
                 "dir_acc": round(dir_ok / len(act) * 100) if len(act) else 0,
                 "period": [str(d["날짜"].iloc[split].date()), str(d["날짜"].iloc[-1].date())]}
+            # ── 예측 구간(CQR) 검증: 학습 0~60% / 보정 60~80% / 평가 80~100% ──
+            # 로그 타깃에서도 분위수는 단조변환에 불변이라 expm1로 되돌리면 그대로 원가격 분위수다.
+            cal = int(len(d) * 0.6)
+            qv = _make_q(); qv.fit(X.iloc[:cal], np.log1p(y.iloc[:cal]))
+            lc, hc = _qbounds(qv, X.iloc[cal:split])
+            Qv = _conformal_q(lc, hc, y.iloc[cal:split].values)
+            lo_h, hi_h = _qbounds(qv, X.iloc[split:])
+            lo_h, hi_h = lo_h - Qv, hi_h + Qv
+            cov_q = round(float(((act >= lo_h) & (act <= hi_h)).mean()) * 100)
+            mp = mapes[H] / 100                                        # 기존 근사: 예측치 ±MAPE
+            cov_m = round(float(((act >= pred * (1 - mp)) & (act <= pred * (1 + mp))).mean()) * 100)
+
             final = _make(); final.fit(X, np.log1p(y))
             joblib.dump({"model": final, "features": fcols, "horizon": H, "log_target": True,
                          "item": name, "code": code, "unit": unit, "updated": str(date.today())},
@@ -331,11 +368,40 @@ def retrain_all():
                     "예측일": str(pdate.date()), "품목": name, "호라이즌": H,
                     "목표일": str((pdate + pd.Timedelta(days=H)).date()),
                     "현재가": round(float(dp["price"].iloc[-1])), "예측가": round(yhat)})
+
+                # 실제 서비스용 구간: 학습 0~80% / 보정은 가장 최근 20%(현 시세 국면 반영).
+                # 구간은 '예측치 대비 비율'로 저장한다. 절대값으로 두면 재학습이 하루 밀렸을 때
+                # 예측치만 갱신되고 구간은 옛 가격에 묶여 어긋난다.
+                qf = _make_q(); qf.fit(X.iloc[:split], np.log1p(y.iloc[:split]))
+                lf, hf = _qbounds(qf, X.iloc[split:])
+                Qf = _conformal_q(lf, hf, y.iloc[split:].values)
+                lo_t, hi_t = _qbounds(qf, dp[fcols].iloc[[-1]])
+                lo, hi = float(lo_t[0]) - Qf, float(hi_t[0]) + Qf
+                if yhat > 0 and lo < hi:
+                    intervals.setdefault(name, {})[f"h{H}"] = {
+                        "lo": round(min(lo / yhat, 0.99), 4), "hi": round(max(hi / yhat, 1.01), 4),
+                        "coverage": cov_q, "coverage_mape": cov_m, "n": len(act)}
         summary[name] = mapes
     latest = str(veg["날짜"].max().date())
     _log_predictions(pred_rows)
+    _write_intervals(intervals, latest)
     _write_accuracy(acc_items, latest, _live_accuracy(veg))
     return summary, latest
+
+
+def _write_intervals(intervals, latest):
+    # 품목·호라이즌별 80% 예측 구간 비율을 intervals.json에 기록 (app.py가 ci7/ci30 산출에 사용)
+    if not intervals:
+        return
+    covs = [v["coverage"] for it in intervals.values() for v in it.values()]
+    cms = [v["coverage_mape"] for it in intervals.values() for v in it.values()]
+    doc = {"updated": latest, "quantiles": QUANTILES, "nominal": NOMINAL, "method": "CQR",
+           "coverage_avg": round(sum(covs) / len(covs)),
+           "coverage_mape_avg": round(sum(cms) / len(cms)),
+           "items": intervals}
+    with open(os.path.join(DIR, "intervals.json"), "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=1)
+    log(f"예측 구간 갱신: CQR 포함률 {doc['coverage_avg']}% vs MAPE 근사 {doc['coverage_mape_avg']}% (목표 {NOMINAL}%)")
 
 
 def _extra_prices():

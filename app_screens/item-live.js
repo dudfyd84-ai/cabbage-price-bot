@@ -29,9 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const sub = document.querySelector('h2 + p');
       if (sub) sub.textContent = `KAMIS 소매가 · 기상 시차효과 기반 AI 예측 (${data.date} 기준)`;
 
-      // 범례 "95% 신뢰 구간" → "예상 범위(백테스트 오차 기반)"
+      // 범례 "95% 신뢰 구간" → 실제 구간 산출 방식과 실측 포함률로 정정
+      const iv = data.interval;
+      const ciLabel = iv && iv.nominal
+        ? `${iv.nominal}% 예측 구간 (실측 포함률 ${iv.coverage}%)`
+        : '예상 범위 (백테스트 오차 기반)';
       document.querySelectorAll('span').forEach(s => {
-        if (s.textContent.trim() === '95% 신뢰 구간') s.textContent = '예상 범위 (백테스트 오차 기반)';
+        if (s.textContent.trim() === '95% 신뢰 구간') s.textContent = ciLabel;
       });
       // 하드코딩 "신뢰도 94%" → 실제 백테스트 성능(accuracy.json)으로 교체
       const acc = (data.accuracy && data.accuracy.items[it.name]) || null;
