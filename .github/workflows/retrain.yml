@@ -49,8 +49,18 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: daily data/model update (cloud)"
-            git push origin main
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            # 체크아웃 이후 main이 움직였으면(PR 병합 등) push가 거부되고 그날 데이터가 통째로 버려진다.
+            # rebase 후 재시도한다. 데이터 파일은 봇만 건드리므로 충돌 여지가 없다.
+            for i in 1 2 3; do
+              if git push origin main; then
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "push 거부 — main 변경 반영 후 재시도 ($i/3)"
+              git pull --rebase origin main
+            done
+            echo "3회 재시도에도 push 실패"
+            exit 1
           fi
 
       - name: 배포 반영 대기 후 카카오 급등 알림
