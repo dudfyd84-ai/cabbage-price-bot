@@ -16,8 +16,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      # region_probe는 retrain_pipeline에서 품목·지역 목록만 가져오지만,
+      # 그 모듈이 joblib/xgboost까지 import하므로 전체 의존성이 필요하다.
       - name: Install deps
-        run: pip install requests pandas
+        run: pip install -r requirements.txt
 
       - name: KAMIS 지역별 커버리지 조사
         env:
