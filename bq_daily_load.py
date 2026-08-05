@@ -101,7 +101,9 @@ DW_SQL = """
 -- 스테이징 4컬럼으로 dim_item을 덮으면 이 컬럼들이 조용히 사라져 기존 쿼리가 깨진다.
 CREATE OR REPLACE TABLE `{ds}.dim_item`
 OPTIONS (description = '[DW-DIM] 농산물 표준 마스터.') AS
-SELECT item_cd, api_item_cd, item_nm, std_unit,
+-- 품목코드는 '211' 같은 숫자 문자열이라 autodetect가 INT64로 추론한다.
+-- 그대로 두면 dm_price_predict 조인에서 STRING vs INT64로 깨진다(실제로 겪음).
+SELECT item_cd, CAST(api_item_cd AS STRING) AS api_item_cd, item_nm, std_unit,
   CAST(NULL AS NUMERIC) AS conversion_rate, CAST(NULL AS STRING) AS main_region_cd
 FROM `{ds}.stg_dim_item`;
 
