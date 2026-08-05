@@ -92,10 +92,16 @@ def load_to_bigquery(rows):
     try:
         from google.cloud import bigquery
         client = bigquery.Client(project=BQ_PROJECT_ID)
-        errors = client.insert_rows_json(table_id, rows)
-        if errors:
-            logger.error("BigQuery 적재 일부 실패: %s", errors)
-            return {"status": "error", "errors": errors}
+        # 스트리밍 삽입(insert_rows_json)은 BigQuery 샌드박스(무료)에서 금지된다
+        # ("Streaming insert is not allowed in the free tier"). 로드 잡은 허용되므로 그쪽을 쓴다.
+        job = client.load_table_from_json(
+            rows,
+            table_id,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            ),
+        )
+        job.result()   # 완료 대기 (실패 시 예외)
         logger.info("BigQuery 적재 완료: %s행 → %s", len(rows), table_id)
         return {"status": "loaded", "rows": len(rows), "table": table_id}
     except Exception as e:
