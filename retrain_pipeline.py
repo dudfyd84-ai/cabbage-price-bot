@@ -38,6 +38,8 @@ CAT_OF = {c: ("400" if c in ("411", "412") else "200") for c in ITEMS}
 CATS = ["200", "400"]
 INTAKE_ITEMS = {"배추": INTAKE}
 ALL_RETAIL = os.path.join(DIR, "kamis_all_retail.csv")   # 전 품목(농축수산) 일별 시세
+# 서울 외 지역 소매가. 서울은 VEG에 이미 있어 중복 저장하지 않는다(#6).
+REGION_RETAIL = os.path.join(DIR, "kamis_region_retail.csv")
 ALL_CATS = {"100": "식량", "200": "채소", "400": "과일", "500": "축산", "600": "수산"}
 
 GARAK_URL = "http://www.garak.co.kr/homepage/publicdata/dataJsonOpen.do"
@@ -78,11 +80,11 @@ COLLECT_URL = os.getenv("COLLECT_URL", "")
 COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
 
 
-def _remote_rows(kind, start, end):
+def _remote_rows(kind, start, end, country="1101"):
     # 라이브 서버(/api/collect)에 수집을 위임해 행 목록만 받아온다.
     r = requests.get(COLLECT_URL, params={"kind": kind, "start": start.isoformat(),
-                                          "end": end.isoformat()},
-                     headers={"X-Collect-Token": COLLECT_TOKEN}, timeout=180)
+                                          "end": end.isoformat(), "country": country},
+                     headers={"X-Collect-Token": COLLECT_TOKEN}, timeout=300)
     r.raise_for_status()
     return r.json().get("rows", [])
 
@@ -171,6 +173,45 @@ def incremental_veg():
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(VEG, index=False, encoding="utf-8-sig")
     log(f"채소가격 {start}~{end} 추가 {len(rows)}행.")
     return len(rows)
+
+
+def collect_region(start, end, regions=None):
+    # 서울 외 지역 소매가를 수집해 kamis_region_retail.csv에 누적한다.
+    # 백필·증분 겸용이며 (날짜, 지역, 품목명) 기준으로 중복을 제거해 재실행에 안전하다.
+    regions = regions or {k: v for k, v in REGION_CODES.items() if k != "서울"}
+    old = pd.read_csv(REGION_RETAIL) if os.path.exists(REGION_RETAIL) else         pd.DataFrame(columns=["날짜", "지역", "품목명", "단위", "가격"])
+    days = list(weekdays(start, end))
+    if not days:
+        log("지역 시세: 대상 평일 없음."); return 0
+
+    added = []
+    for rname, code in regions.items():
+        # /api/collect는 한 요청당 60일로 제한된다. 그보다 짧게 끊어야 타임아웃도 피한다.
+        for i in range(0, len(days), 30):
+            chunk = days[i:i + 30]
+            s_dt, e_dt = chunk[0], chunk[-1]
+            rows = _remote_rows("veg", s_dt, e_dt, code) if COLLECT_URL else fetch_veg_rows(chunk, code)
+            for r in rows:
+                added.append({"날짜": r["날짜"], "지역": rname, "품목명": r["품목명"],
+                              "단위": r["단위"], "가격": r["가격"]})
+            log(f"  {rname} {s_dt}~{e_dt} {len(rows)}행")
+
+    if not added:
+        log("지역 시세: 추가 없음."); return 0
+    df = pd.concat([old, pd.DataFrame(added)], ignore_index=True)
+    df = df.drop_duplicates(subset=["날짜", "지역", "품목명"], keep="last")
+    df.to_csv(REGION_RETAIL, index=False, encoding="utf-8-sig")
+    log(f"지역 시세 {start}~{end} 누적 {len(df)}행 (이번 {len(added)}행)")
+    return len(added)
+
+
+def incremental_region():
+    # 지역 시세 증분. 파일이 없으면 백필 전이므로 건너뛴다(백필은 region_backfill.py로 따로 돌린다).
+    if not os.path.exists(REGION_RETAIL):
+        log("지역 시세 파일 없음 — 백필 전이라 건너뜀."); return 0
+    df = pd.read_csv(REGION_RETAIL)
+    last = pd.to_datetime(df["날짜"]).max().date()
+    return collect_region(last + timedelta(days=1), date.today() - timedelta(days=1))
 
 
 def fetch_all_retail_rows(days, country="1101"):

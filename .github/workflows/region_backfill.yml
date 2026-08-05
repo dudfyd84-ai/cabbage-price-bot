@@ -1,0 +1,56 @@
+name: Region backfill
+
+# 지역 확장(#6) 과거 이력 백필. 오래 걸리는 일회성 작업이라 수동 실행만 한다.
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "백필 기간(년)"
+        required: false
+        default: "2"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHP_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: 지역 시세 백필
+        env:
+          KAMIS_KEY: ${{ secrets.KAMIS_KEY }}
+          KAMIS_ID: ${{ secrets.KAMIS_ID }}
+          COLLECT_URL: ${{ secrets.COLLECT_URL }}     # 한국 IP 필요 → 라이브 서버에 위임
+          COLLECT_TOKEN: ${{ secrets.COLLECT_TOKEN }}
+          BACKFILL_YEARS: ${{ inputs.years }}
+          PYTHONUTF8: "1"
+        run: python region_backfill.py
+
+      - name: Commit & push
+        run: |
+          git config user.name cabbage-bot
+          git config user.email dudfyd84@gmail.com
+          git add kamis_region_retail.csv
+          if git diff --cached --quiet; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git commit -m "chore: 지역 시세 백필 (#6)"
+            # 재학습 봇과 겹치면 push가 거부된다. rebase 후 재시도한다.
+            for i in 1 2 3; do
+              git push origin main && exit 0
+              echo "push 거부 — 재시도 ($i/3)"
+              git pull --rebase origin main
+            done
+            exit 1
+          fi
