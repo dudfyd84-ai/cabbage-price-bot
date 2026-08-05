@@ -72,12 +72,22 @@ def weekdays(start, end):
         d += timedelta(days=1)
 
 
-def incremental_weather():
-    df = pd.read_csv(WEATHER)
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    if start > end:
-        log(f"날씨 최신 ({last}). 추가 없음."); return 0
+# 한국 공공 API(KAMIS·ASOS)는 GitHub Actions의 해외 IP에서 차단·타임아웃된다.
+# COLLECT_URL이 설정되면 국내 리전에 떠 있는 라이브 서버에 수집을 대신 요청한다.
+COLLECT_URL = os.getenv("COLLECT_URL", "")
+COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
+
+
+def _remote_rows(kind, start, end):
+    # 라이브 서버(/api/collect)에 수집을 위임해 행 목록만 받아온다.
+    r = requests.get(COLLECT_URL, params={"kind": kind, "start": start.isoformat(),
+                                          "end": end.isoformat()},
+                     headers={"X-Collect-Token": COLLECT_TOKEN}, timeout=180)
+    r.raise_for_status()
+    return r.json().get("rows", [])
+
+
+def fetch_weather_rows(start, end):
     rows = []
     for stn, name in STATIONS.items():
         try:
@@ -96,20 +106,10 @@ def incremental_weather():
         except Exception as e:
             log(f"  날씨 {name} 실패: {e}")
         time.sleep(0.5)
-    if rows:
-        pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(WEATHER, index=False, encoding="utf-8-sig")
-    log(f"날씨 {start}~{end} 추가 {len(rows)}행.")
-    return len(rows)
+    return rows
 
 
-def incremental_veg():
-    # dailyPriceByCategoryList로 채소·과일 11품목 서울 소매가 증분 수집 (체감 기준)
-    df = pd.read_csv(VEG)
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    days = list(weekdays(start, end))
-    if not days:
-        log(f"채소가격 최신 ({last}). 추가 없음."); return 0
+def fetch_veg_rows(days):
     rows = []
     for d in days:
         for cat in CATS:
@@ -138,22 +138,38 @@ def incremental_veg():
             except Exception as e:
                 log(f"  채소가격 {d} {cat} 실패: {e}")
             time.sleep(0.2)
+    return rows
+
+
+def incremental_weather():
+    df = pd.read_csv(WEATHER)
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    if start > end:
+        log(f"날씨 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("weather", start, end) if COLLECT_URL else fetch_weather_rows(start, end)
+    if rows:
+        pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(WEATHER, index=False, encoding="utf-8-sig")
+    log(f"날씨 {start}~{end} 추가 {len(rows)}행.")
+    return len(rows)
+
+
+def incremental_veg():
+    # dailyPriceByCategoryList로 채소·과일 11품목 서울 소매가 증분 수집 (체감 기준)
+    df = pd.read_csv(VEG)
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    days = list(weekdays(start, end))
+    if not days:
+        log(f"채소가격 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("veg", start, end) if COLLECT_URL else fetch_veg_rows(days)
     if rows:
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(VEG, index=False, encoding="utf-8-sig")
     log(f"채소가격 {start}~{end} 추가 {len(rows)}행.")
     return len(rows)
 
 
-def incremental_all_retail():
-    # 농축수산 전 품목 소매가 증분 수집 (BOM 원가·예측 확장용 히스토리 축적)
-    if not os.path.exists(ALL_RETAIL):
-        log("전품목 시세 파일 없음(백필 전). 건너뜀."); return 0
-    df = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    days = list(weekdays(start, end))
-    if not days:
-        log(f"전품목 시세 최신 ({last}). 추가 없음."); return 0
+def fetch_all_retail_rows(days):
     rows = []
     for d in days:
         for cat, gname in ALL_CATS.items():
@@ -185,6 +201,20 @@ def incremental_all_retail():
             except Exception as e:
                 log(f"  전품목 {d} {cat} 실패: {e}")
             time.sleep(0.15)
+    return rows
+
+
+def incremental_all_retail():
+    # 농축수산 전 품목 소매가 증분 수집 (BOM 원가·예측 확장용 히스토리 축적)
+    if not os.path.exists(ALL_RETAIL):
+        log("전품목 시세 파일 없음(백필 전). 건너뜀."); return 0
+    df = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    days = list(weekdays(start, end))
+    if not days:
+        log(f"전품목 시세 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("all_retail", start, end) if COLLECT_URL else fetch_all_retail_rows(days)
     if rows:
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(ALL_RETAIL, index=False, encoding="utf-8-sig")
     log(f"전품목 시세 {start}~{end} 추가 {len(rows)}행.")

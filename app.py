@@ -458,6 +458,39 @@ def api_dashboard(request: Request):
     return masked_data
 
 
+# ── 데이터 수집 대행 (한국 IP 필요) ────────────────────────────────
+# KAMIS·ASOS는 GitHub Actions의 해외 IP에서 차단·타임아웃된다. 국내 리전에 떠 있는
+# 이 서버가 대신 호출해 행 목록만 돌려주고, 적재·학습·커밋은 Actions가 맡는다.
+COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
+
+
+@app.get("/api/collect")
+def api_collect(request: Request, kind: str = "", start: str = "", end: str = ""):
+    if not COLLECT_TOKEN:
+        return JSONResponse({"ok": False, "error": "not_configured"}, status_code=503)
+    if not hmac.compare_digest(request.headers.get("X-Collect-Token", ""), COLLECT_TOKEN):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    try:
+        s_dt = date.fromisoformat(start)
+        e_dt = date.fromisoformat(end)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "invalid_date"}, status_code=400)
+    if (e_dt - s_dt).days > 60:
+        return JSONResponse({"ok": False, "error": "range_too_wide"}, status_code=400)
+
+    import retrain_pipeline as rp
+    days = list(rp.weekdays(s_dt, e_dt))
+    if kind == "weather":
+        rows = rp.fetch_weather_rows(s_dt, e_dt)
+    elif kind == "veg":
+        rows = rp.fetch_veg_rows(days)
+    elif kind == "all_retail":
+        rows = rp.fetch_all_retail_rows(days)
+    else:
+        return JSONResponse({"ok": False, "error": "unknown_kind"}, status_code=400)
+    return {"ok": True, "kind": kind, "count": len(rows), "rows": rows}
+
+
 @app.get("/api/config")
 def api_config():
     return {
