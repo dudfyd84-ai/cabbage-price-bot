@@ -495,7 +495,7 @@ COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
 
 
 @app.get("/api/collect")
-def api_collect(request: Request, kind: str = "", start: str = "", end: str = ""):
+def api_collect(request: Request, kind: str = "", start: str = "", end: str = "", country: str = "1101"):
     if not COLLECT_TOKEN:
         return JSONResponse({"ok": False, "error": "not_configured"}, status_code=503)
     if not hmac.compare_digest(request.headers.get("X-Collect-Token", ""), COLLECT_TOKEN):
@@ -513,9 +513,9 @@ def api_collect(request: Request, kind: str = "", start: str = "", end: str = ""
     if kind == "weather":
         rows = rp.fetch_weather_rows(s_dt, e_dt)
     elif kind == "veg":
-        rows = rp.fetch_veg_rows(days)
+        rows = rp.fetch_veg_rows(days, country)
     elif kind == "all_retail":
-        rows = rp.fetch_all_retail_rows(days)
+        rows = rp.fetch_all_retail_rows(days, country)
     else:
         return JSONResponse({"ok": False, "error": "unknown_kind"}, status_code=400)
     return {"ok": True, "kind": kind, "count": len(rows), "rows": rows}

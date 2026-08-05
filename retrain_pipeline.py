@@ -109,13 +109,17 @@ def fetch_weather_rows(start, end):
     return rows
 
 
-def fetch_veg_rows(days):
+# KAMIS 소매 조사 지역 코드. 서울(1101)이 기본이고 나머지는 지역 확장(#6) 검증용이다.
+REGION_CODES = {"서울": "1101", "부산": "2100", "대구": "2200", "광주": "2401", "대전": "2501"}
+
+
+def fetch_veg_rows(days, country="1101"):
     rows = []
     for d in days:
         for cat in CATS:
             try:
                 r = _kamis.get(KAMIS_URL, params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "01",
-                                                  "p_item_category_code": cat, "p_country_code": "1101",
+                                                  "p_item_category_code": cat, "p_country_code": country,
                                                   "p_regday": d.isoformat(), "p_convert_kg_yn": "Y",
                                                   "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
                                timeout=(8, 15), verify=False)
@@ -169,13 +173,13 @@ def incremental_veg():
     return len(rows)
 
 
-def fetch_all_retail_rows(days):
+def fetch_all_retail_rows(days, country="1101"):
     rows = []
     for d in days:
         for cat, gname in ALL_CATS.items():
             try:
                 r = _kamis.get(KAMIS_URL, params={"action": "dailyPriceByCategoryList", "p_product_cls_code": "01",
-                                                  "p_item_category_code": cat, "p_country_code": "1101",
+                                                  "p_item_category_code": cat, "p_country_code": country,
                                                   "p_regday": d.isoformat(), "p_convert_kg_yn": "Y",
                                                   "p_cert_key": KAMIS_KEY, "p_cert_id": KAMIS_ID, "p_returntype": "json"},
                                timeout=(8, 15), verify=False)

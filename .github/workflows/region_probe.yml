@@ -1,0 +1,27 @@
+name: Region probe
+
+# 지역 확장(#6) 판단용 일회성 조사. 스케줄 없이 수동 실행만 한다.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests pandas
+
+      - name: KAMIS 지역별 커버리지 조사
+        env:
+          COLLECT_URL: ${{ secrets.COLLECT_URL }}     # 한국 IP 필요 → 라이브 서버에 위임
+          COLLECT_TOKEN: ${{ secrets.COLLECT_TOKEN }}
+          PYTHONUTF8: "1"
+        run: python region_probe.py
