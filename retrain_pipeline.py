@@ -323,7 +323,10 @@ def retrain_all():
             dp = dp.dropna(subset=fcols)
             if len(dp):
                 yhat = float(np.expm1(final.predict(dp[fcols].iloc[[-1]])[0]))
-                pdate = dp["날짜"].iloc[-1]
+                # 예측일은 '가격 데이터 기준일'이어야 한다. dp의 마지막 날짜는 날씨 기준이라,
+                # 가격 수집이 밀리면(ffill) 실제로는 옛 가격으로 낸 예측이 최신 날짜로 기록돼
+                # 실전 적중률이 오염된다(2026-07 수집 중단 때 실제로 발생).
+                pdate = p["날짜"].max()
                 pred_rows.append({
                     "예측일": str(pdate.date()), "품목": name, "호라이즌": H,
                     "목표일": str((pdate + pd.Timedelta(days=H)).date()),
@@ -381,8 +384,19 @@ def _live_accuracy(veg, window=90):
         return {"status": "집계중", "n": 0, "next_days": days}
     look = veg.rename(columns={"품목명": "품목", "날짜": "목표일_dt", "가격": "실측가"})
     m = matured.merge(look[["품목", "목표일_dt", "실측가"]], on=["품목", "목표일_dt"], how="left").dropna(subset=["실측가"])
+
+    # 가격 수집이 밀린 날 만든 예측은 평가에서 제외한다.
+    # 기록된 '현재가'가 그날 실측과 다르면 = 옛 가격(ffill)으로 낸 예측이므로 공정한 측정이 아니다.
+    # (2026-07 수집 중단 때 3주치가 옛 가격 기준으로 쌓여 실전 오차가 4배로 부풀었다.)
+    cur_look = veg.rename(columns={"품목명": "품목", "날짜": "예측일_dt", "가격": "기준일_실측가"})
+    m["예측일_dt"] = pd.to_datetime(m["예측일"])
+    m = m.merge(cur_look[["품목", "예측일_dt", "기준일_실측가"]], on=["품목", "예측일_dt"], how="left")
+    stale = m["기준일_실측가"].isna() | ((m["현재가"] - m["기준일_실측가"]).abs() > 1)
+    if stale.any():
+        log(f"실전 적중률: 가격 지연 기간 예측 {int(stale.sum())}건 제외")
+    m = m[~stale]
     if m.empty:
-        return {"status": "집계중", "n": 0}
+        return {"status": "집계중", "n": 0, "reason": "유효 성숙분 없음"}
     items = {}
     for (item, H), g in m.groupby(["품목", "호라이즌"]):
         act, pred, now = g["실측가"].values, g["예측가"].values, g["현재가"].values
