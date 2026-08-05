@@ -5,22 +5,27 @@
   0.9
  ],
  "nominal": 80,
- "method": "CQR",
- "coverage_avg": 80,
+ "method": "CQR+MAPE",
+ "cqr_picked": "34/38",
+ "coverage_avg": 82,
  "coverage_mape_avg": 63,
  "items": {
   "배추": {
    "h7": {
     "lo": 0.781,
     "hi": 1.0203,
+    "method": "CQR",
     "coverage": 90,
+    "coverage_cqr": 90,
     "coverage_mape": 66,
     "n": 395
    },
    "h30": {
     "lo": 0.8649,
     "hi": 1.0735,
+    "method": "CQR",
     "coverage": 83,
+    "coverage_cqr": 83,
     "coverage_mape": 60,
     "n": 391
    }
@@ -29,14 +34,18 @@
    "h7": {
     "lo": 0.796,
     "hi": 1.087,
+    "method": "CQR",
     "coverage": 99,
+    "coverage_cqr": 99,
     "coverage_mape": 63,
     "n": 395
    },
    "h30": {
     "lo": 0.8729,
     "hi": 1.4272,
+    "method": "CQR",
     "coverage": 99,
+    "coverage_cqr": 99,
     "coverage_mape": 65,
     "n": 391
    }
@@ -45,14 +54,18 @@
    "h7": {
     "lo": 0.8634,
     "hi": 1.1156,
+    "method": "CQR",
     "coverage": 74,
+    "coverage_cqr": 74,
     "coverage_mape": 62,
     "n": 395
    },
    "h30": {
     "lo": 0.9591,
     "hi": 1.168,
+    "method": "CQR",
     "coverage": 92,
+    "coverage_cqr": 92,
     "coverage_mape": 65,
     "n": 391
    }
@@ -61,14 +74,18 @@
    "h7": {
     "lo": 0.9094,
     "hi": 1.1477,
+    "method": "CQR",
     "coverage": 84,
+    "coverage_cqr": 84,
     "coverage_mape": 56,
     "n": 395
    },
    "h30": {
     "lo": 0.8417,
     "hi": 1.076,
+    "method": "CQR",
     "coverage": 80,
+    "coverage_cqr": 80,
     "coverage_mape": 61,
     "n": 391
    }
@@ -77,14 +94,18 @@
    "h7": {
     "lo": 0.8567,
     "hi": 1.1569,
+    "method": "CQR",
     "coverage": 71,
+    "coverage_cqr": 71,
     "coverage_mape": 59,
     "n": 395
    },
    "h30": {
     "lo": 0.7998,
     "hi": 1.2452,
+    "method": "CQR",
     "coverage": 68,
+    "coverage_cqr": 68,
     "coverage_mape": 59,
     "n": 391
    }
@@ -93,14 +114,18 @@
    "h7": {
     "lo": 0.9619,
     "hi": 1.2255,
+    "method": "CQR",
     "coverage": 100,
+    "coverage_cqr": 100,
     "coverage_mape": 60,
     "n": 395
    },
    "h30": {
     "lo": 0.917,
     "hi": 1.1849,
+    "method": "CQR",
     "coverage": 98,
+    "coverage_cqr": 98,
     "coverage_mape": 60,
     "n": 391
    }
@@ -109,14 +134,18 @@
    "h7": {
     "lo": 0.717,
     "hi": 1.1556,
+    "method": "CQR",
     "coverage": 83,
+    "coverage_cqr": 83,
     "coverage_mape": 70,
     "n": 395
    },
    "h30": {
     "lo": 0.619,
     "hi": 1.3149,
+    "method": "CQR",
     "coverage": 72,
+    "coverage_cqr": 72,
     "coverage_mape": 65,
     "n": 391
    }
@@ -125,14 +154,18 @@
    "h7": {
     "lo": 0.7718,
     "hi": 1.01,
+    "method": "CQR",
     "coverage": 84,
+    "coverage_cqr": 84,
     "coverage_mape": 56,
     "n": 395
    },
    "h30": {
     "lo": 0.754,
     "hi": 1.2059,
+    "method": "CQR",
     "coverage": 76,
+    "coverage_cqr": 76,
     "coverage_mape": 55,
     "n": 391
    }
@@ -141,14 +174,18 @@
    "h7": {
     "lo": 0.9,
     "hi": 1.1505,
+    "method": "CQR",
     "coverage": 78,
+    "coverage_cqr": 78,
     "coverage_mape": 58,
     "n": 395
    },
    "h30": {
     "lo": 0.8745,
     "hi": 1.3812,
+    "method": "CQR",
     "coverage": 70,
+    "coverage_cqr": 70,
     "coverage_mape": 57,
     "n": 391
    }
@@ -157,14 +194,18 @@
    "h7": {
     "lo": 0.8967,
     "hi": 1.2532,
+    "method": "CQR",
     "coverage": 74,
+    "coverage_cqr": 74,
     "coverage_mape": 63,
     "n": 395
    },
    "h30": {
     "lo": 0.6701,
     "hi": 1.01,
+    "method": "CQR",
     "coverage": 71,
+    "coverage_cqr": 71,
     "coverage_mape": 63,
     "n": 391
    }
@@ -173,14 +214,18 @@
    "h7": {
     "lo": 0.8164,
     "hi": 1.1264,
+    "method": "CQR",
     "coverage": 99,
+    "coverage_cqr": 99,
     "coverage_mape": 62,
     "n": 395
    },
    "h30": {
     "lo": 0.856,
     "hi": 1.4649,
+    "method": "CQR",
     "coverage": 95,
+    "coverage_cqr": 95,
     "coverage_mape": 60,
     "n": 391
    }
@@ -189,30 +234,38 @@
    "h7": {
     "lo": 0.7832,
     "hi": 1.4165,
+    "method": "CQR",
     "coverage": 76,
+    "coverage_cqr": 76,
     "coverage_mape": 55,
     "n": 395
    },
    "h30": {
     "lo": 0.6205,
     "hi": 1.4646,
+    "method": "CQR",
     "coverage": 76,
+    "coverage_cqr": 76,
     "coverage_mape": 57,
     "n": 391
    }
   },
   "호박": {
    "h7": {
-    "lo": 0.7284,
-    "hi": 1.4306,
-    "coverage": 63,
+    "lo": 0.813,
+    "hi": 1.187,
+    "method": "MAPE",
+    "coverage": 65,
+    "coverage_cqr": 63,
     "coverage_mape": 65,
     "n": 398
    },
    "h30": {
-    "lo": 0.859,
-    "hi": 1.5025,
-    "coverage": 55,
+    "lo": 0.705,
+    "hi": 1.295,
+    "method": "MAPE",
+    "coverage": 73,
+    "coverage_cqr": 55,
     "coverage_mape": 73,
     "n": 394
    }
@@ -221,14 +274,18 @@
    "h7": {
     "lo": 0.8359,
     "hi": 1.4299,
+    "method": "CQR",
     "coverage": 80,
+    "coverage_cqr": 80,
     "coverage_mape": 71,
     "n": 398
    },
    "h30": {
     "lo": 0.5863,
     "hi": 1.1631,
+    "method": "CQR",
     "coverage": 91,
+    "coverage_cqr": 91,
     "coverage_mape": 71,
     "n": 394
    }
@@ -237,30 +294,38 @@
    "h7": {
     "lo": 0.8337,
     "hi": 1.0938,
+    "method": "CQR",
     "coverage": 93,
+    "coverage_cqr": 93,
     "coverage_mape": 65,
     "n": 398
    },
    "h30": {
     "lo": 0.7271,
     "hi": 1.1918,
+    "method": "CQR",
     "coverage": 95,
+    "coverage_cqr": 95,
     "coverage_mape": 61,
     "n": 394
    }
   },
   "파프리카": {
    "h7": {
-    "lo": 0.99,
-    "hi": 4.9523,
-    "coverage": 68,
+    "lo": 0.418,
+    "hi": 1.582,
+    "method": "MAPE",
+    "coverage": 89,
+    "coverage_cqr": 68,
     "coverage_mape": 89,
     "n": 398
    },
    "h30": {
-    "lo": 0.765,
-    "hi": 1.2629,
-    "coverage": 55,
+    "lo": 0.333,
+    "hi": 1.667,
+    "method": "MAPE",
+    "coverage": 91,
+    "coverage_cqr": 55,
     "coverage_mape": 91,
     "n": 394
    }
@@ -269,14 +334,18 @@
    "h7": {
     "lo": 0.9125,
     "hi": 1.2621,
+    "method": "CQR",
     "coverage": 88,
+    "coverage_cqr": 88,
     "coverage_mape": 57,
     "n": 398
    },
    "h30": {
     "lo": 0.732,
     "hi": 1.1011,
+    "method": "CQR",
     "coverage": 86,
+    "coverage_cqr": 86,
     "coverage_mape": 56,
     "n": 394
    }
@@ -285,14 +354,18 @@
    "h7": {
     "lo": 0.8052,
     "hi": 1.124,
+    "method": "CQR",
     "coverage": 75,
+    "coverage_cqr": 75,
     "coverage_mape": 60,
     "n": 398
    },
    "h30": {
     "lo": 0.7637,
     "hi": 1.2028,
+    "method": "CQR",
     "coverage": 72,
+    "coverage_cqr": 72,
     "coverage_mape": 60,
     "n": 394
    }
@@ -301,14 +374,18 @@
    "h7": {
     "lo": 0.826,
     "hi": 1.1166,
+    "method": "CQR",
     "coverage": 66,
+    "coverage_cqr": 66,
     "coverage_mape": 59,
     "n": 398
    },
    "h30": {
     "lo": 0.844,
     "hi": 1.161,
+    "method": "CQR",
     "coverage": 79,
+    "coverage_cqr": 79,
     "coverage_mape": 59,
     "n": 394
    }
