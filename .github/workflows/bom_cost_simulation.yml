@@ -5,6 +5,10 @@ on:
     - cron: "10 22 * * *"   # 매일 재학습(retrain.yml, 06:00 KST) 이후 반영되도록 07:10 KST
   workflow_dispatch: {}       # 수동 실행 허용
 
+permissions:
+  contents: read
+  id-token: write          # Workload Identity Federation(OIDC) 토큰 발급에 필요
+
 jobs:
   bom-cost-simulation:
     runs-on: ubuntu-latest
@@ -20,16 +24,20 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt -r requirements-batch.txt
 
+      # 조직 정책(iam.disableServiceAccountKeyCreation)으로 서비스 계정 키를 만들 수 없어
+      # Workload Identity Federation을 쓴다. 저장되는 키가 없고 실행 때마다 단기 토큰을 받는다.
+      - name: GCP 인증 (WIF)
+        id: auth
+        continue-on-error: true       # 인증 실패가 파이프라인을 죽이지 않도록 (스크립트는 dry-run으로 빠짐)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Run BOM cost simulation
         env:
           PYTHONUTF8: "1"
           BQ_PROJECT_ID: ${{ secrets.BQ_PROJECT_ID }}
           BQ_DATASET: ${{ vars.BQ_DATASET }}
           BQ_TABLE: ${{ vars.BQ_TABLE }}
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-        run: |
-          if [ -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
-            echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/gcp-key.json
-            export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          fi
-          python bom_cost_simulation.py
+        run: python bom_cost_simulation.py
