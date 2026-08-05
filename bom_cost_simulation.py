@@ -1,7 +1,7 @@
 # 샘플 매장 BOM 원가 시나리오를 산출해 BigQuery DM 테이블에 적재하는 모듈 (1매장 시범)
 import logging
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("bom_cost_simulation")
@@ -11,17 +11,10 @@ BQ_DATASET = os.getenv("BQ_DATASET", "carttiming")  # 실제 스키마: carttimi
 BQ_TABLE = os.getenv("BQ_TABLE", "dm_store_bom_cost_simulation")
 HORIZONS = (0, 7, 30)
 
-# dm_store_bom_cost_simulation 스키마(신규 제안 — Track A/B 예측·매장 데이터와 합의 전이라 가변적):
-#   sim_date STRING, store_id STRING, menu_name STRING, horizon_days INTEGER,
-#   total_cost INTEGER, created_at TIMESTAMP
-SCHEMA = [
-    ("sim_date", "STRING"),
-    ("store_id", "STRING"),
-    ("menu_name", "STRING"),
-    ("horizon_days", "INTEGER"),
-    ("total_cost", "INTEGER"),
-    ("created_at", "TIMESTAMP"),
-]
+# 적재 대상 테이블은 이미 DW 설계에 정의돼 있다(carttiming_bigquery_ddl.sql).
+# 이 스크립트는 그 스키마를 따른다 — 임의로 컬럼을 만들면 적재가 거부된다.
+#   store_id STRING NOT NULL / menu_id STRING NOT NULL
+#   target_dt DATE NOT NULL (파티션 키) / simulated_total_cost NUMERIC
 
 # 실제 매장별 BOM은 브라우저 localStorage/Supabase에만 있어 서버에서 못 읽음(이슈 #11과 동일한 제약) →
 # report_weekly.py의 1품목 시범과 같은 방식으로, 데모 매장의 샘플 메뉴 1개로 시범 구현.
@@ -48,7 +41,6 @@ def fetch_dashboard():
 def build_scenarios(data):
     items_by_name = {i["name"]: i for i in data.get("items", [])}
     sim_date = data.get("date", date.today().isoformat())
-    created_at = datetime.now(timezone.utc).isoformat()
 
     price_by_horizon = {0: "cur", 7: "p7", 30: "p30"}
     rows = []
@@ -66,13 +58,15 @@ def build_scenarios(data):
         if missing:
             logger.warning("품목 데이터 부족으로 horizon=%s일 시나리오 생략", h)
             continue
+        # DW 스키마(carttiming.dm_store_bom_cost_simulation)에 맞춘 컬럼명·타입:
+        #   store_id STRING / menu_id STRING / target_dt DATE / simulated_total_cost NUMERIC
+        # horizon(0·7·30일)은 별도 컬럼 없이 target_dt로 표현한다.
+        target_dt = (date.fromisoformat(sim_date) + timedelta(days=h)).isoformat()
         rows.append({
-            "sim_date": sim_date,
             "store_id": DEMO_STORE_ID,
-            "menu_name": SAMPLE_MENU["name"],
-            "horizon_days": h,
-            "total_cost": int(round(total)),
-            "created_at": created_at,
+            "menu_id": SAMPLE_MENU["name"],     # 메뉴 ID 체계 도입 전까지는 메뉴명을 키로 사용
+            "target_dt": target_dt,
+            "simulated_total_cost": int(round(total)),
         })
     return rows
 
@@ -112,7 +106,11 @@ def load_to_bigquery(rows):
 def main():
     data = fetch_dashboard()
     rows = build_scenarios(data)
-    load_to_bigquery(rows)
+    result = load_to_bigquery(rows)
+    # 적재 실패를 워크플로 실패로 드러낸다(전에는 조용히 성공으로 끝나 알림이 안 갔음).
+    # dry_run·empty는 정상 종료로 취급.
+    if result.get("status") == "error":
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
