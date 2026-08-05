@@ -12,6 +12,7 @@ import time
 import hmac
 import hashlib
 from datetime import date, timedelta
+from functools import lru_cache
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(BASE_DIR, ".env")
@@ -85,7 +86,8 @@ ALL_RETAIL = os.path.join(BASE_DIR, "kamis_all_retail.csv")
 INTAKE_FILE = {"배추": os.path.join(BASE_DIR, "garak_cabbage_intake.csv")}
 # 비쌀 때 대체재 추천 (품목별)
 ALT = {"배추": [("양배추", "212"), ("얼갈이배추", "215")]}
-# 신뢰구간 근사용 백테스트 MAPE(%) — (H7, H30). 2026-07-04 retrain_log 홀드아웃 기준
+# 예측 구간 폴백용 백테스트 MAPE(%) — (H7, H30). intervals.json이 없을 때만 쓰인다.
+# 정식 구간은 재학습이 만드는 intervals.json(CQR 기반, _interval_ratio 참조).
 MAPE_PCT = {"배추": (14.4, 18.1), "무": (12.2, 15.7), "양파": (10.4, 11.9),
             "대파": (10.4, 10.1), "마늘": (8.5, 9.4), "당근": (9.6, 12.0),
             "오이": (16.4, 21.6), "시금치": (12.4, 16.4), "상추": (10.3, 15.0),
@@ -415,16 +417,44 @@ def dashboard_data():
         sub = veg[veg["품목명"] == name].sort_values("날짜").tail(90)
         trend = [{"d": d.strftime("%m/%d"), "p": int(p)} for d, p in zip(sub["날짜"], sub["가격"])]
         m7, m30 = MAPE_PCT.get(name, (15.0, 20.0))
+        lo7, hi7 = _interval_ratio(name, 7, m7)
+        lo30, hi30 = _interval_ratio(name, 30, m30)
         u = UNITS.get(name, "kg")
         per100g = round(cur / 10) if "kg" in u else (cur if "100g" in u else None)  # 무게 품목만 100g 표준화
         items.append({"name": name, "unit": u, "per100g": per100g, "cur": cur, "p7": p7, "p30": p30,
                       "r7": r7, "r30": r30, "level": level, "trend": trend,
-                      "ci7": [round(p7 * (1 - m7 / 100)), round(p7 * (1 + m7 / 100))],
-                      "ci30": [round(p30 * (1 - m30 / 100)), round(p30 * (1 + m30 / 100))]})
+                      "ci7": [round(p7 * lo7), round(p7 * hi7)],
+                      "ci30": [round(p30 * lo30), round(p30 * hi30)]})
     latest = veg["날짜"].max().strftime("%Y-%m-%d")
-    result = {"date": latest, "items": items, "accuracy": _load_accuracy()}
+    doc = _load_intervals() or {}
+    interval_meta = {"nominal": doc.get("nominal"), "coverage": doc.get("coverage_avg"),
+                     "method": doc.get("method")} if doc else None
+    result = {"date": latest, "items": items, "accuracy": _load_accuracy(),
+              "interval": interval_meta}
     _dash_cache.clear(); _dash_cache[key] = result
     return result
+
+
+@lru_cache(maxsize=1)
+def _load_intervals():
+    # 재학습이 만든 CQR 예측 구간 비율(intervals.json)을 로드. 없으면 None → MAPE 근사로 폴백
+    p = os.path.join(BASE_DIR, "intervals.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _interval_ratio(name, H, mape_pct):
+    # 품목·호라이즌별 (하한비율, 상한비율). intervals.json이 있으면 CQR 값, 없으면 ±MAPE 대칭 근사
+    doc = _load_intervals()
+    v = (doc or {}).get("items", {}).get(name, {}).get(f"h{H}")
+    if v:
+        return v["lo"], v["hi"]
+    return 1 - mape_pct / 100, 1 + mape_pct / 100
 
 
 def _load_accuracy():
