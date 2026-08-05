@@ -72,12 +72,22 @@ def weekdays(start, end):
         d += timedelta(days=1)
 
 
-def incremental_weather():
-    df = pd.read_csv(WEATHER)
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    if start > end:
-        log(f"날씨 최신 ({last}). 추가 없음."); return 0
+# 한국 공공 API(KAMIS·ASOS)는 GitHub Actions의 해외 IP에서 차단·타임아웃된다.
+# COLLECT_URL이 설정되면 국내 리전에 떠 있는 라이브 서버에 수집을 대신 요청한다.
+COLLECT_URL = os.getenv("COLLECT_URL", "")
+COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
+
+
+def _remote_rows(kind, start, end):
+    # 라이브 서버(/api/collect)에 수집을 위임해 행 목록만 받아온다.
+    r = requests.get(COLLECT_URL, params={"kind": kind, "start": start.isoformat(),
+                                          "end": end.isoformat()},
+                     headers={"X-Collect-Token": COLLECT_TOKEN}, timeout=180)
+    r.raise_for_status()
+    return r.json().get("rows", [])
+
+
+def fetch_weather_rows(start, end):
     rows = []
     for stn, name in STATIONS.items():
         try:
@@ -96,20 +106,10 @@ def incremental_weather():
         except Exception as e:
             log(f"  날씨 {name} 실패: {e}")
         time.sleep(0.5)
-    if rows:
-        pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(WEATHER, index=False, encoding="utf-8-sig")
-    log(f"날씨 {start}~{end} 추가 {len(rows)}행.")
-    return len(rows)
+    return rows
 
 
-def incremental_veg():
-    # dailyPriceByCategoryList로 채소·과일 11품목 서울 소매가 증분 수집 (체감 기준)
-    df = pd.read_csv(VEG)
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    days = list(weekdays(start, end))
-    if not days:
-        log(f"채소가격 최신 ({last}). 추가 없음."); return 0
+def fetch_veg_rows(days):
     rows = []
     for d in days:
         for cat in CATS:
@@ -138,22 +138,38 @@ def incremental_veg():
             except Exception as e:
                 log(f"  채소가격 {d} {cat} 실패: {e}")
             time.sleep(0.2)
+    return rows
+
+
+def incremental_weather():
+    df = pd.read_csv(WEATHER)
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    if start > end:
+        log(f"날씨 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("weather", start, end) if COLLECT_URL else fetch_weather_rows(start, end)
+    if rows:
+        pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(WEATHER, index=False, encoding="utf-8-sig")
+    log(f"날씨 {start}~{end} 추가 {len(rows)}행.")
+    return len(rows)
+
+
+def incremental_veg():
+    # dailyPriceByCategoryList로 채소·과일 11품목 서울 소매가 증분 수집 (체감 기준)
+    df = pd.read_csv(VEG)
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    days = list(weekdays(start, end))
+    if not days:
+        log(f"채소가격 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("veg", start, end) if COLLECT_URL else fetch_veg_rows(days)
     if rows:
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(VEG, index=False, encoding="utf-8-sig")
     log(f"채소가격 {start}~{end} 추가 {len(rows)}행.")
     return len(rows)
 
 
-def incremental_all_retail():
-    # 농축수산 전 품목 소매가 증분 수집 (BOM 원가·예측 확장용 히스토리 축적)
-    if not os.path.exists(ALL_RETAIL):
-        log("전품목 시세 파일 없음(백필 전). 건너뜀."); return 0
-    df = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
-    last = pd.to_datetime(df["날짜"]).max().date()
-    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
-    days = list(weekdays(start, end))
-    if not days:
-        log(f"전품목 시세 최신 ({last}). 추가 없음."); return 0
+def fetch_all_retail_rows(days):
     rows = []
     for d in days:
         for cat, gname in ALL_CATS.items():
@@ -185,6 +201,20 @@ def incremental_all_retail():
             except Exception as e:
                 log(f"  전품목 {d} {cat} 실패: {e}")
             time.sleep(0.15)
+    return rows
+
+
+def incremental_all_retail():
+    # 농축수산 전 품목 소매가 증분 수집 (BOM 원가·예측 확장용 히스토리 축적)
+    if not os.path.exists(ALL_RETAIL):
+        log("전품목 시세 파일 없음(백필 전). 건너뜀."); return 0
+    df = pd.read_csv(ALL_RETAIL, dtype={"품목코드": str})
+    last = pd.to_datetime(df["날짜"]).max().date()
+    start, end = last + timedelta(days=1), date.today() - timedelta(days=1)
+    days = list(weekdays(start, end))
+    if not days:
+        log(f"전품목 시세 최신 ({last}). 추가 없음."); return 0
+    rows = _remote_rows("all_retail", start, end) if COLLECT_URL else fetch_all_retail_rows(days)
     if rows:
         pd.concat([df, pd.DataFrame(rows)], ignore_index=True).to_csv(ALL_RETAIL, index=False, encoding="utf-8-sig")
     log(f"전품목 시세 {start}~{end} 추가 {len(rows)}행.")
@@ -293,7 +323,10 @@ def retrain_all():
             dp = dp.dropna(subset=fcols)
             if len(dp):
                 yhat = float(np.expm1(final.predict(dp[fcols].iloc[[-1]])[0]))
-                pdate = dp["날짜"].iloc[-1]
+                # 예측일은 '가격 데이터 기준일'이어야 한다. dp의 마지막 날짜는 날씨 기준이라,
+                # 가격 수집이 밀리면(ffill) 실제로는 옛 가격으로 낸 예측이 최신 날짜로 기록돼
+                # 실전 적중률이 오염된다(2026-07 수집 중단 때 실제로 발생).
+                pdate = p["날짜"].max()
                 pred_rows.append({
                     "예측일": str(pdate.date()), "품목": name, "호라이즌": H,
                     "목표일": str((pdate + pd.Timedelta(days=H)).date()),
@@ -351,8 +384,19 @@ def _live_accuracy(veg, window=90):
         return {"status": "집계중", "n": 0, "next_days": days}
     look = veg.rename(columns={"품목명": "품목", "날짜": "목표일_dt", "가격": "실측가"})
     m = matured.merge(look[["품목", "목표일_dt", "실측가"]], on=["품목", "목표일_dt"], how="left").dropna(subset=["실측가"])
+
+    # 가격 수집이 밀린 날 만든 예측은 평가에서 제외한다.
+    # 기록된 '현재가'가 그날 실측과 다르면 = 옛 가격(ffill)으로 낸 예측이므로 공정한 측정이 아니다.
+    # (2026-07 수집 중단 때 3주치가 옛 가격 기준으로 쌓여 실전 오차가 4배로 부풀었다.)
+    cur_look = veg.rename(columns={"품목명": "품목", "날짜": "예측일_dt", "가격": "기준일_실측가"})
+    m["예측일_dt"] = pd.to_datetime(m["예측일"])
+    m = m.merge(cur_look[["품목", "예측일_dt", "기준일_실측가"]], on=["품목", "예측일_dt"], how="left")
+    stale = m["기준일_실측가"].isna() | ((m["현재가"] - m["기준일_실측가"]).abs() > 1)
+    if stale.any():
+        log(f"실전 적중률: 가격 지연 기간 예측 {int(stale.sum())}건 제외")
+    m = m[~stale]
     if m.empty:
-        return {"status": "집계중", "n": 0}
+        return {"status": "집계중", "n": 0, "reason": "유효 성숙분 없음"}
     items = {}
     for (item, H), g in m.groupby(["품목", "호라이즌"]):
         act, pred, now = g["실측가"].values, g["예측가"].values, g["현재가"].values

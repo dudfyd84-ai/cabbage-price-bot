@@ -31,6 +31,8 @@ jobs:
           KAMIS_KEY: ${{ secrets.KAMIS_KEY }}
           KAMIS_ID: ${{ secrets.KAMIS_ID }}
           ASOS_KEY: ${{ secrets.ASOS_KEY }}
+          COLLECT_URL: ${{ secrets.COLLECT_URL }}       # 한국 IP 필요 → 라이브 서버에 수집 위임
+          COLLECT_TOKEN: ${{ secrets.COLLECT_TOKEN }}
           GARAK_ID: ${{ secrets.GARAK_ID }}
           GARAK_PASSWD: ${{ secrets.GARAK_PASSWD }}
           PYTHONUTF8: "1"

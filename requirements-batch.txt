@@ -1,3 +1,4 @@
-# 운영 웹 서버 컨테이너에는 안 들어가는 배치/리포트 전용 의존성 (weekly_report.yml 등에서만 설치)
+# 운영 웹 서버 컨테이너에는 안 들어가는 배치 전용 의존성 (관련 워크플로에서만 설치)
 matplotlib==3.10.8
 reportlab==4.4.4
+google-cloud-bigquery==3.42.3

@@ -165,10 +165,10 @@
     // 2) 정렬
     filtered.sort((a, b) => {
       if (currentSort === 'rise_desc') {
-        return b.r30 - a.r30; // 상승률 높은순
+        return (b.r30 ?? b.r7) - (a.r30 ?? a.r7); // 상승률 높은순
       } else if (currentSort === 'savings_desc') {
-        const aSavings = a.p30 - a.cur;
-        const bSavings = b.p30 - b.cur;
+        const aSavings = (a.p30 ?? a.p7) - a.cur;
+        const bSavings = (b.p30 ?? b.p7) - b.cur;
         return bSavings - aSavings; // 절감금액 높은순
       } else if (currentSort === 'price_asc') {
         return a.cur - b.cur; // 가격 낮은순
@@ -185,8 +185,8 @@
 
     filtered.forEach(item => {
       const meta = ITEM_META[item.name] || { merchant: '종합 식자재 도매상', icon: 'storefront', img: '' };
-      const savingsPct = Math.max(5, item.r30);
-      const originPrice = item.p30;
+      const savingsPct = Math.max(5, item.r30 ?? item.r7);
+      const originPrice = item.p30 ?? item.p7;
       const dealPrice = item.cur;
 
       const card = document.createElement('div');
@@ -197,7 +197,7 @@
         </div>
         <div class="flex justify-between items-start mb-xs">
           <h4 class="font-label-md text-label-md text-on-surface">${item.name} (${item.unit})</h4>
-          <span class="text-error font-label-sm text-label-sm">+${item.r30}% 예상</span>
+          <span class="text-error font-label-sm text-label-sm">+${item.r30 ?? item.r7}% 예상</span>
         </div>
         <div class="flex items-center gap-xs mb-md">
           <span class="bg-secondary-container/20 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">Predictive Savings ${savingsPct}%</span>
@@ -241,7 +241,7 @@
       data.items.forEach(i => { i.r30 = i.r30 ?? i.r7; i.p30 = i.p30 ?? i.p7; });
 
       // 상승률 내림차순 정렬 및 전역 변수 할당
-      const items = [...data.items].sort((a, b) => b.r30 - a.r30);
+      const items = [...data.items].sort((a, b) => (b.r30 ?? b.r7) - (a.r30 ?? a.r7));
       if (!items.length) return;
 
       const top = items[0];
@@ -286,8 +286,8 @@
       renderDealsGrid();
 
       // 구매 시점 시뮬레이션 문구 업데이트
-      const activeRisers = items.filter(i => i.r30 > 0);
-      const avgRise = activeRisers.length ? Math.round(activeRisers.reduce((acc, cur) => acc + cur.r30, 0) / activeRisers.length) : 18.5;
+      const activeRisers = items.filter(i => (i.r30 ?? i.r7) > 0);
+      const avgRise = activeRisers.length ? Math.round(activeRisers.reduce((acc, cur) => acc + (cur.r30 ?? cur.r7), 0) / activeRisers.length) : 18.5;
       const simText = document.querySelector('main p.text-on-surface-variant');
       if (simText) {
         simText.innerHTML = `현재 시점에서 구매 시 향후 ${masked ? '7일' : '30일'} 대비 평균 <span class="text-primary font-bold">${avgRise}%</span> 예산을 절감할 수 있습니다.`;

@@ -38,6 +38,8 @@ jobs:
                   value: ${{ secrets.KAMIS_ID }}
                 - name: ASOS_KEY
                   value: ${{ secrets.ASOS_KEY }}
+                - name: COLLECT_TOKEN
+                  value: ${{ secrets.COLLECT_TOKEN }}
                 - name: DEV_USER
                   value: ${{ secrets.DEV_USER }}
                 - name: DEV_PASS_HASH
