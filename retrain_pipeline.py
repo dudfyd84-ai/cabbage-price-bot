@@ -270,6 +270,12 @@ def _qbounds(model, X):
     return np.minimum(z[:, 0], z[:, 1]), np.maximum(z[:, 0], z[:, 1])
 
 
+def _miscal(cov):
+    # 보정 실패 점수. 포함률이 목표보다 '모자란' 쪽에 2배 벌점을 준다.
+    # 구간이 넓어 과하게 담는 건 보수적일 뿐이지만, 모자라면 사용자가 범위를 믿고 틀린다.
+    return (NOMINAL - cov) if cov < NOMINAL else (cov - NOMINAL) * 0.5
+
+
 def _conformal_q(lo, hi, y):
     # 컨포멀 보정폭. 분위수 회귀만 쓰면 구간이 과하게 좁아 실제 포함률이 50%대로 떨어진다(검증됨).
     # 보정셋에서 구간 밖으로 벗어난 정도의 80% 분위수를 구해 양끝을 그만큼 넓힌다(CQR).
@@ -377,10 +383,20 @@ def retrain_all():
                 Qf = _conformal_q(lf, hf, y.iloc[split:].values)
                 lo_t, hi_t = _qbounds(qf, dp[fcols].iloc[[-1]])
                 lo, hi = float(lo_t[0]) - Qf, float(hi_t[0]) + Qf
+                # 품목별로 홀드아웃 포함률이 목표에 더 가까운 쪽을 채택한다.
+                # CQR이 항상 이기지는 않는다. 변동성이 큰 품목(파프리카·호박)에선 구간이
+                # 예측치의 5배까지 벌어지면서 오히려 포함률이 떨어졌다.
+                use_q = _miscal(cov_q) <= _miscal(cov_m)
                 if yhat > 0 and lo < hi:
+                    if use_q:
+                        r_lo, r_hi = min(lo / yhat, 0.99), max(hi / yhat, 1.01)
+                    else:
+                        r_lo, r_hi = 1 - mapes[H] / 100, 1 + mapes[H] / 100
                     intervals.setdefault(name, {})[f"h{H}"] = {
-                        "lo": round(min(lo / yhat, 0.99), 4), "hi": round(max(hi / yhat, 1.01), 4),
-                        "coverage": cov_q, "coverage_mape": cov_m, "n": len(act)}
+                        "lo": round(r_lo, 4), "hi": round(r_hi, 4),
+                        "method": "CQR" if use_q else "MAPE",
+                        "coverage": cov_q if use_q else cov_m,
+                        "coverage_cqr": cov_q, "coverage_mape": cov_m, "n": len(act)}
         summary[name] = mapes
     latest = str(veg["날짜"].max().date())
     _log_predictions(pred_rows)
@@ -393,15 +409,19 @@ def _write_intervals(intervals, latest):
     # 품목·호라이즌별 80% 예측 구간 비율을 intervals.json에 기록 (app.py가 ci7/ci30 산출에 사용)
     if not intervals:
         return
-    covs = [v["coverage"] for it in intervals.values() for v in it.values()]
-    cms = [v["coverage_mape"] for it in intervals.values() for v in it.values()]
-    doc = {"updated": latest, "quantiles": QUANTILES, "nominal": NOMINAL, "method": "CQR",
+    vals = [v for it in intervals.values() for v in it.values()]
+    covs = [v["coverage"] for v in vals]
+    cms = [v["coverage_mape"] for v in vals]
+    n_q = sum(1 for v in vals if v["method"] == "CQR")
+    doc = {"updated": latest, "quantiles": QUANTILES, "nominal": NOMINAL,
+           "method": "CQR+MAPE", "cqr_picked": f"{n_q}/{len(vals)}",
            "coverage_avg": round(sum(covs) / len(covs)),
            "coverage_mape_avg": round(sum(cms) / len(cms)),
            "items": intervals}
     with open(os.path.join(DIR, "intervals.json"), "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, indent=1)
-    log(f"예측 구간 갱신: CQR 포함률 {doc['coverage_avg']}% vs MAPE 근사 {doc['coverage_mape_avg']}% (목표 {NOMINAL}%)")
+    log(f"예측 구간 갱신: 채택 포함률 {doc['coverage_avg']}% vs 기존 근사 {doc['coverage_mape_avg']}% "
+        f"(목표 {NOMINAL}%, CQR 채택 {doc['cqr_picked']})")
 
 
 def _extra_prices():
