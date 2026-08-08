@@ -329,10 +329,9 @@ def _conformal_q(lo, hi, y):
     return float(np.quantile(e, k))
 
 
-def retrain_all():
-    # 갱신된 데이터로 5품목 H7/H30 모델 재학습
-    w = pd.read_csv(WEATHER)
-    w = w[w["지점명"] == "서울"].copy()
+def _weather_lags(w):
+    # 기상 시차·이동평균 피처 생성. 지역별 재학습도 같은 피처를 써야 예측이 비교 가능하다.
+    w = w.copy()
     w["날짜"] = pd.to_datetime(w["날짜"]); w = w.sort_values("날짜").reset_index(drop=True)
     for c in ["평균기온", "최고기온", "일강수량"]:
         w[c] = pd.to_numeric(w[c], errors="coerce")
@@ -343,6 +342,92 @@ def retrain_all():
             n = f"{col}_lag{lag}"; w[n] = w[col].shift(lag); wf.append(n)
         for win in [7, 14]:
             n = f"{col}_ma{win}"; w[n] = w[col].shift(1).rolling(win).mean(); wf.append(n)
+    return w, wf
+
+
+def retrain_regions():
+    # 서울 외 지역 예측을 산출해 region_predictions.json에 기록한다.
+    # 모델 파일(.pkl)은 저장하지 않는다. 지역까지 저장하면 144개·91MB가 매일 커밋된다.
+    if not os.path.exists(REGION_RETAIL):
+        log("지역 시세 없음 — 지역 예측 건너뜀."); return {}
+
+    reg = pd.read_csv(REGION_RETAIL); reg["날짜"] = pd.to_datetime(reg["날짜"])
+    wall = pd.read_csv(WEATHER)
+    out = {}
+    for rname in sorted(reg["지역"].unique()):
+        ws = wall[wall["지점명"] == rname]
+        if ws.empty:
+            log(f"  {rname}: 해당 지점 날씨 없음 — 건너뜀"); continue
+        w, wf = _weather_lags(ws)
+        sub_all = reg[reg["지역"] == rname]
+        items = {}
+        for name in sorted(sub_all["품목명"].unique()):
+            sub = sub_all[sub_all["품목명"] == name]
+            p = sub[["날짜", "가격"]].rename(columns={"가격": "price"}).sort_values("날짜")
+            if len(p) < 200:
+                continue
+            df = pd.merge(w, p, on="날짜", how="left").sort_values("날짜").reset_index(drop=True)
+            df["price"] = df["price"].ffill().bfill()
+            for lag in [7, 14, 30]:
+                df[f"price_lag{lag}"] = df["price"].shift(lag)
+            feats = wf + ["price_lag7", "price_lag14", "price_lag30"]
+
+            rec = {"unit": sub["단위"].mode().iloc[0] if len(sub) else "",
+                   "cur": int(p["price"].iloc[-1])}
+            for H in [7, 30]:
+                got = _region_predict(df, feats, H)
+                if got:
+                    rec[f"p{H}"], rec[f"lo{H}"], rec[f"hi{H}"] = got
+            if "p7" in rec:
+                items[name] = rec
+        out[rname] = {"date": str(sub_all["날짜"].max().date()), "items": items}
+        log(f"  {rname}: {len(items)}품목 예측 산출")
+
+    doc = {"updated": str(reg["날짜"].max().date()), "regions": out}
+    with open(os.path.join(DIR, "region_predictions.json"), "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=1)
+    return out
+
+
+def _region_predict(df, feats, H):
+    # 지역 1품목 1호라이즌: 점 예측 + CQR 구간 비율. 백테스트 지표는 서울에서 이미 재고 있어 생략한다.
+    d = df.copy()
+    d["target"] = d["price"].shift(-H)
+    d["target_month"] = (d["날짜"] + pd.Timedelta(days=H)).dt.month
+    fcols = feats + ["target_month"]
+    d = d.dropna(subset=fcols + ["target"]).reset_index(drop=True)
+    if len(d) < 150:
+        return None
+    X, y = d[fcols], d["target"]
+    split = int(len(d) * 0.8)
+
+    dp = df.copy()
+    dp["target_month"] = (dp["날짜"] + pd.Timedelta(days=H)).dt.month
+    dp = dp.dropna(subset=fcols)
+    if not len(dp):
+        return None
+    last = dp[fcols].iloc[[-1]]
+
+    m = _make(); m.fit(X, np.log1p(y))
+    yhat = float(np.expm1(m.predict(last)[0]))
+    if yhat <= 0:
+        return None
+
+    q = _make_q(); q.fit(X.iloc[:split], np.log1p(y.iloc[:split]))
+    lf, hf = _qbounds(q, X.iloc[split:])
+    Q = _conformal_q(lf, hf, y.iloc[split:].values)
+    lo_t, hi_t = _qbounds(q, last)
+    lo, hi = float(lo_t[0]) - Q, float(hi_t[0]) + Q
+    if lo >= hi:
+        return None
+    return round(yhat), round(min(lo / yhat, 0.99), 4), round(max(hi / yhat, 1.01), 4)
+
+
+def retrain_all():
+    # 갱신된 데이터로 5품목 H7/H30 모델 재학습
+    w = pd.read_csv(WEATHER)
+    w = w[w["지점명"] == "서울"].copy()
+    w, wf = _weather_lags(w)
 
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
     veg = pd.concat([veg, _extra_prices()], ignore_index=True)   # 확장 품목 가격 합류
@@ -573,7 +658,9 @@ def main():
     incremental_veg()
     incremental_all_retail()
     incremental_intake()
+    incremental_region()
     summary, latest = retrain_all()
+    retrain_regions()
     perf = " | ".join(f"{n} H7:{m[7]}% H30:{m[30]}%" for n, m in summary.items())
     log(f"재학습 완료. 데이터 최신일 {latest} | {perf}")
     log("===== 종료 =====\n")
