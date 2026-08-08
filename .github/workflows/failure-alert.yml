@@ -1,11 +1,12 @@
 name: Failure alert
 
-# 배포·재학습이 실패하면 이슈로 알린다.
+# 자동화 워크플로가 실패하면 이슈로 알린다.
 # (2026-07 장애 재발 방지: GHP_TOKEN 만료로 두 워크플로가 3일간 조용히 실패했음)
+# 감시 대상은 '실패해도 아무도 모르는' 무인 워크플로 전부다. 새 배치를 추가하면 여기도 추가할 것.
 
 on:
   workflow_run:
-    workflows: ["Deploy to cloudtype", "Daily retrain"]
+    workflows: ["Deploy to cloudtype", "Daily retrain", "Weekly report", "BOM cost simulation"]
     types: [completed]
 
 permissions:
