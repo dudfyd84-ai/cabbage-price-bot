@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CartTiming — 분석 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface:#f8f9ff; --card:#ffffff; --border:#e2e8f0; --ink:#0b1c30; --muted:#64748b;
+    --primary:#064e3b; --secondary:#1e40af; --nav:#0f2942;
+    --teal:#0d9488; --teal-tint:#ccfbf1; --teal-ink:#0f766e;
+    --amber:#f59e0b; --amber-tint:#fef3c7; --amber-ink:#92400e;
+    --rose:#e11d48; --rose-tint:#ffe4e6; --rose-ink:#9f1239;
+    --slate-tint:#f1f5f9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hanken Grotesk','Noto Sans KR',sans-serif;background:var(--surface);
+       color:var(--ink);line-height:1.55;display:flex;min-height:100vh}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ── 사이드바 ── */
+  aside{width:248px;flex:none;background:var(--card);border-right:1px solid var(--border);
+        padding:20px 0 40px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .home{display:flex;align-items:center;gap:10px;margin:0 14px 22px;padding:12px 14px;
+        background:var(--nav);color:#fff;border-radius:8px;font-weight:700;font-size:15px;
+        text-decoration:none}
+  .navgroup{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);
+            text-transform:uppercase;margin:20px 22px 8px}
+  .navitem{display:flex;align-items:center;gap:11px;margin:0 10px;padding:10px 12px;
+           border-radius:8px;font-size:14px;font-weight:500;color:var(--ink);
+           cursor:pointer;border:0;background:transparent;width:calc(100% - 20px);text-align:left}
+  .navitem:hover{background:var(--slate-tint)}
+  .navitem.on{background:var(--teal-tint);color:var(--teal-ink);font-weight:700}
+  .navitem .ic{width:20px;text-align:center;font-size:15px;flex:none}
+  .backlink{display:block;margin:24px 22px 0;font-size:13px;color:var(--muted);text-decoration:none}
+  .backlink:hover{color:var(--teal-ink)}
+
+  /* ── 본문 ── */
+  main{flex:1;min-width:0;max-width:1180px;padding:28px 32px 72px;overflow-x:hidden}
+  .crumb{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.01em;margin:4px 0 6px}
+  .lede{font-size:15px;color:var(--muted);max-width:76ch}
+  .sec{font-size:19px;font-weight:700;margin:34px 0 4px}
+  .sec-sub{font-size:13px;color:var(--muted);margin-bottom:14px;max-width:80ch}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;
+        box-shadow:0 1px 4px rgba(11,28,48,.05)}
+  .card.click{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+  .card.click:hover{border-color:#cbd5e1;box-shadow:0 4px 14px rgba(11,28,48,.09);transform:translateY(-2px)}
+  .card h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .card p{font-size:13px;color:var(--muted)}
+  .card .go{font-size:12px;font-weight:700;color:var(--teal-ink);margin-top:12px;display:inline-block}
+
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:12px;margin:14px 0}
+  .kpi .b{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .kpi .lab{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:4px}
+  .kpi .sub{font-size:12px;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  .tbox{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow-x:auto;max-width:100%}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+  th{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--muted);
+     text-transform:uppercase;background:var(--slate-tint)}
+  tbody tr:last-child td{border-bottom:0}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  td.wrap{white-space:normal;min-width:220px;color:var(--muted)}
+
+  .bars{display:flex;gap:6px;align-items:flex-end;height:120px;margin:16px 0 4px}
+  .bars .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+  .bars .b{width:100%;border-radius:3px 3px 0 0;background:#cbd5e1;min-height:2px}
+  .bars .b.pos{background:var(--amber)} .bars .b.neg{background:var(--teal)}
+  .bars .v{font-size:10px;font-weight:600;color:var(--muted)}
+  .bars .l{font-size:10px;color:var(--muted)}
+
+  .note{border-left:3px solid var(--secondary);background:var(--card);border:1px solid var(--border);
+        border-left:3px solid var(--secondary);border-radius:8px;padding:14px 16px;font-size:13.5px;margin-top:14px}
+  .note.warn{border-left-color:var(--amber)} .note.bad{border-left-color:var(--rose)}
+  .note b{font-weight:700}
+
+  .chip{display:inline-block;border-radius:9999px;font-size:11px;font-weight:700;padding:3px 10px}
+  .c-up{background:var(--amber-tint);color:var(--amber-ink)}
+  .c-down{background:var(--teal-tint);color:var(--teal-ink)}
+  .c-flat{background:var(--slate-tint);color:var(--muted)}
+  .c-bad{background:var(--rose-tint);color:var(--rose-ink)}
+
+  .steps{display:grid;gap:10px;margin-top:8px}
+  .stepr{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+         display:grid;grid-template-columns:180px 1fr;gap:16px}
+  .stepr .t{font-weight:700;font-size:14px}
+  .stepr dl{display:grid;grid-template-columns:52px 1fr;gap:4px 10px;font-size:13px}
+  .stepr dt{color:var(--muted);font-weight:600}
+
+  .loading{color:var(--muted);font-size:14px;padding:40px 0}
+  @media(max-width:820px){
+    body{display:block} aside{width:100%;height:auto;position:static;border-right:0;border-bottom:1px solid var(--border)}
+    main{padding:20px 16px 60px} .stepr{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<aside>
+  <a class="home" href="/"><span>◧</span> 메인 대시보드</a>
+
+  <div class="navgroup">개요</div>
+  <button class="navitem on" data-key="overview"><span class="ic">▦</span>분석 요약</button>
+
+  <div class="navgroup">데이터 이해</div>
+  <button class="navitem" data-key="structure"><span class="ic">▤</span>데이터 구조</button>
+  <button class="navitem" data-key="eda"><span class="ic">◔</span>탐색적 분석 (EDA)</button>
+  <button class="navitem" data-key="preprocessing"><span class="ic">⧗</span>전처리 과정</button>
+
+  <div class="navgroup">분석 &amp; 모델링</div>
+  <button class="navitem" data-key="modeling"><span class="ic">◑</span>모델 · 핵심 지표</button>
+  <button class="navitem" data-key="regions"><span class="ic">◈</span>지역 분석</button>
+
+  <div class="navgroup">결론</div>
+  <button class="navitem" data-key="insights"><span class="ic">✦</span>인사이트 · 액션플랜</button>
+
+  <a class="backlink" href="/app?demo=1">→ 서비스 앱 보기</a>
+</aside>
+
+<main id="main"><div class="loading">불러오는 중…</div></main>
+
+<script>
+const $ = (s,r)=> (r||document).querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n = v => v==null ? '—' : Number(v).toLocaleString();
+const cache = {};
+
+async function load(key){
+  if (cache[key]) return cache[key];
+  const r = await fetch('/api/analysis/' + key);
+  if (!r.ok) throw new Error('불러오지 못했습니다 (' + r.status + ')');
+  cache[key] = await r.json();
+  return cache[key];
+}
+
+/* ── 개요: 카드를 누르면 해당 섹션으로 ── */
+const OVERVIEW = [
+  {g:'데이터 이해', items:[
+    {k:'structure', ic:'▤', t:'데이터 구조', d:'원천 4종·산출 2종의 스키마와 조인 키, 수집 주기.'},
+    {k:'eda', ic:'◔', t:'탐색적 분석 (EDA)', d:'품목별 변동성·계절 패턴·결측·기상 시차 상관.'},
+    {k:'preprocessing', ic:'⧗', t:'전처리 과정', d:'평일 필터부터 시계열 분할까지 7단계와 각 단계의 이유.'},
+  ]},
+  {g:'분석 & 모델링', items:[
+    {k:'modeling', ic:'◑', t:'모델 · 핵심 지표', d:'피처 설계, XGBoost 선택 근거, WAPE·방향적중률·예측구간.'},
+    {k:'regions', ic:'◈', t:'지역 분석', d:'가설 H3 검증 결과와 지역별 예측 격차.'},
+  ]},
+  {g:'결론', items:[
+    {k:'insights', ic:'✦', t:'인사이트 · 액션플랜', d:'발견→의미→전략 도출 과정, 실패 사례, 개선 제안.'},
+  ]},
+];
+
+async function renderOverview(){
+  const [m, e] = await Promise.all([load('modeling'), load('eda')]);
+  const o = m.data.overall || {}, iv = m.data.interval || {};
+  const h7 = o.h7 || {}, h30 = o.h30 || {};
+  let html = `
+   <p class="crumb">CARTTIMING · 분석 대시보드</p>
+   <h1>분석 요약</h1>
+   <p class="lede">농산물 소매가 예측 프로젝트의 데이터·모델·인사이트를 한곳에 모았습니다.
+     아래 지표는 매일 재학습이 끝난 뒤 자동으로 갱신됩니다.</p>
+   <div class="kpi">
+     <div class="b"><div class="lab">분석 기간</div><div class="val" style="font-size:19px">${esc(e.data.period)}</div><div class="sub">${e.data.items}품목 · ${n(e.data.rows)}행</div></div>
+     <div class="b"><div class="lab">7일 예측 오차</div><div class="val num">${h7.wape ?? '—'}%</div><div class="sub">WAPE · 검증 ${n(h7.n)}건</div></div>
+     <div class="b"><div class="lab">30일 예측 오차</div><div class="val num">${h30.wape ?? '—'}%</div><div class="sub">WAPE · 검증 ${n(h30.n)}건</div></div>
+     <div class="b"><div class="lab">30일 방향 적중</div><div class="val num">${h30.dir_acc ?? '—'}%</div><div class="sub">7일은 ${h7.dir_acc ?? '—'}%</div></div>
+     <div class="b"><div class="lab">예측구간 포함률</div><div class="val num">${iv.coverage ?? '—'}%</div><div class="sub">목표 ${iv.nominal ?? 80}% · 기존 ${iv.coverage_mape ?? '—'}%</div></div>
+   </div>`;
+  for (const grp of OVERVIEW){
+    html += `<h2 class="sec">${esc(grp.g)}</h2><div class="grid">`;
+    for (const it of grp.items){
+      html += `<div class="card click" data-go="${it.k}">
+        <h3><span>${it.ic}</span>${esc(it.t)}</h3><p>${esc(it.d)}</p>
+        <span class="go">자세히 보기 →</span></div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div class="note"><b>이 대시보드의 모든 수치는 API에서 옵니다.</b>
+    <code>/api/analysis/&lt;섹션&gt;</code>가 실제 CSV·모델 산출물을 계산해 내려주므로,
+    데이터가 갱신되면 문서를 고치지 않아도 화면이 따라 바뀝니다.</div>`;
+  $('#main').innerHTML = html;
+  document.querySelectorAll('[data-go]').forEach(c =>
+    c.addEventListener('click', ()=> select(c.dataset.go)));
+}
+
+/* ── 데이터 구조 ── */
+function renderStructure(d){
+  return `<p class="crumb">데이터 이해</p><h1>데이터 구조</h1>
+  <p class="lede">${esc(d.note)}</p>
+  <div class="kpi">
+    <div class="b"><div class="lab">테이블</div><div class="val num">${d.tables.length}</div><div class="sub">원천 4 · 산출 2</div></div>
+    <div class="b"><div class="lab">총 행 수</div><div class="val num">${n(d.total_rows)}</div><div class="sub">일 단위 누적</div></div>
+  </div>
+  <h2 class="sec">테이블 명세</h2>
+  <div class="tbox"><table><thead><tr>
+    <th>테이블</th><th>계층</th><th class="n">행</th><th>기간</th><th>그레인</th><th>설명</th>
+  </tr></thead><tbody>${d.tables.map(t=>`<tr>
+    <td><b>${esc(t.name)}</b><br><span style="color:var(--muted);font-size:11px">${esc(t.cols.join(', '))}</span></td>
+    <td><span class="chip ${t.layer==='원천'?'c-flat':'c-down'}">${esc(t.layer)}</span></td>
+    <td class="n">${n(t.rows)}</td><td>${esc(t.span)}</td><td>${esc(t.grain)}</td>
+    <td class="wrap">${esc(t.desc)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ── EDA ── */
+function renderEda(d){
+  const top = d.stats.slice(0, 12);
+  const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const seasonPick = ['배추','시금치','상추','무'].map(x=> d.seasonal.find(s=>s.item===x)).filter(Boolean);
+  const lagHead = [0,15,30,45,60];
+  return `<p class="crumb">데이터 이해</p><h1>탐색적 분석 (EDA)</h1>
+  <p class="lede">${esc(d.period)} · ${d.items}품목 · ${n(d.rows)}행. 모델을 만들기 전에 데이터가 어떤 모양인지부터 확인했습니다.</p>
+
+  <h2 class="sec">1. 품목별 변동성 — 어떤 품목이 예측할 가치가 있나</h2>
+  <p class="sec-sub">변동계수(CV)는 평균 대비 표준편차입니다. 값이 클수록 가격이 널뛰고, 그만큼 미리 아는 이득이 큽니다.
+    가격이 안정적인 품목은 잘 맞혀도 사장님이 얻는 게 없습니다.</p>
+  <div class="tbox"><table><thead><tr>
+    <th>품목</th><th>단위</th><th class="n">관측</th><th class="n">평균</th><th class="n">중앙값</th>
+    <th class="n">표준편차</th><th class="n">CV</th><th class="n">일변동</th><th class="n">최저~최고</th><th class="n">왜도</th>
+  </tr></thead><tbody>${top.map(r=>`<tr>
+    <td><b>${esc(r.item)}</b></td><td>${esc(r.unit)}</td><td class="n">${n(r.n)}</td>
+    <td class="n">${n(r.mean)}</td><td class="n">${n(r.median)}</td><td class="n">${n(r.std)}</td>
+    <td class="n"><span class="chip ${r.cv>30?'c-up':r.cv>15?'c-flat':'c-down'}">${r.cv}%</span></td>
+    <td class="n">${r.vol}%</td><td class="n">${n(r.min)}~${n(r.max)}</td><td class="n">${r.skew}</td>
+  </tr>`).join('')}</tbody></table></div>
+  <div class="note"><b>여기서 고변동 품목 확장이 나왔습니다.</b> 초기 11품목은 대중성 기준으로 골랐는데,
+    CV를 보니 시금치·상추·물오징어처럼 변동이 큰 품목이 따로 있었습니다. 8종을 추가해 19품목이 됐습니다.
+    왜도가 모두 양수라 가격 분포가 오른쪽으로 긴 꼬리를 가집니다 — 학습 시 <b>log1p 변환</b>을 쓴 근거입니다.</p></div>
+
+  <h2 class="sec">2. 기상 시차 상관 — 가설 H1의 직접 근거</h2>
+  <p class="sec-sub">평균기온과 가격의 상관계수를 시차별로 계산했습니다. 시차 0일(당일)보다
+    30~45일 전 기온과의 상관이 더 높다면, 날씨가 시간을 두고 가격에 반영된다는 뜻입니다.</p>
+  <div class="tbox"><table><thead><tr><th>품목</th>${lagHead.map(l=>`<th class="n">lag ${l}일</th>`).join('')}<th>해석</th></tr></thead>
+  <tbody>${d.lag_corr.map(r=>{
+    const vals = lagHead.map(l=> r['lag'+l]);
+    const abs = vals.map(v=> v==null?-1:Math.abs(v));
+    const best = abs.indexOf(Math.max(...abs));
+    return `<tr><td><b>${esc(r.item)}</b></td>${vals.map((v,i)=>
+      `<td class="n"${i===best?' style="font-weight:700;color:var(--teal-ink)"':''}>${v==null?'—':v.toFixed(2)}</td>`).join('')}
+      <td class="wrap">${best===0?'당일 기온이 가장 강함 — 시차 가설이 약한 품목':'lag '+lagHead[best]+'일에서 가장 강함'}</td></tr>`;
+  }).join('')}</tbody></table></div>
+  <div class="note"><b>가설이 지지됐습니다.</b> 배추·무·시금치·상추 모두 <b>lag 30~45일 상관이 당일보다 높습니다</b>
+    (시금치 0.60 vs 0.47). 파종·생육·출하에 한두 달이 걸린다는 도메인 지식과 일치합니다.
+    다만 <b>오이는 반대</b>로 당일 상관이 가장 강하고 부호도 음수입니다 — 시설재배 비중이 높아
+    노지 생육 주기를 따르지 않는 것으로 보이며, 이런 품목은 시차 피처의 기여가 낮습니다.</div>
+
+  <h2 class="sec">3. 계절 패턴 — 월별 평균 대비 편차</h2>
+  <p class="sec-sub">품목 자체 평균을 0%로 두고 월별 평균이 얼마나 위아래인지 봤습니다.
+    이 구조가 있어서 <code>target_month</code>를 피처로 넣었습니다.</p>
+  <div class="grid">${seasonPick.map(s=>{
+    const vals = months.map(m=> s.by_month[m] ?? 0);
+    const mx = Math.max(...vals.map(Math.abs), 1);
+    return `<div class="card"><h3>${esc(s.item)}</h3>
+      <div class="bars">${vals.map((v,i)=>`<div class="col">
+        <span class="v">${v>0?'+':''}${v.toFixed(0)}</span>
+        <div class="b ${v>=0?'pos':'neg'}" style="height:${Math.abs(v)/mx*88}px"></div>
+        <span class="l">${months[i]}</span></div>`).join('')}</div>
+      <p>월별 평균 편차(%). 위로 솟으면 비싼 달입니다.</p></div>`;
+  }).join('')}</div>
+
+  <h2 class="sec">4. 결측 현황</h2>
+  <p class="sec-sub">평일 기준으로 있어야 할 날짜 대비 실제로 값이 있는 날을 셌습니다.
+    조사 자체가 없는 날과 수집이 실패한 날을 구분하기 위한 지표입니다.</p>
+  <div class="tbox"><table><thead><tr><th>품목</th><th class="n">기대 영업일</th><th class="n">결측</th><th class="n">결측률</th></tr></thead>
+  <tbody>${d.missing.slice(0,8).map(r=>`<tr><td><b>${esc(r.item)}</b></td>
+    <td class="n">${n(r.expected)}</td><td class="n">${n(r.missing)}</td>
+    <td class="n"><span class="chip ${r.rate>8?'c-up':'c-flat'}">${r.rate}%</span></td></tr>`).join('')}</tbody></table></div>
+  <div class="note warn"><b>결측률이 높은 품목은 확장 품목입니다.</b> 브로콜리·물오직어·얼갈이배추는
+    KAMIS 조사 빈도 자체가 낮습니다. ffill로 메우지만, 메운 구간이 길면 예측 근거가 옛 가격에 묶입니다.
+    실제로 이 성질 때문에 <b>수집이 3주 멈췄을 때도 화면은 멀쩡해 보였습니다.</b></div>`;
+}
+
+/* ── 전처리 ── */
+function renderPre(d){
+  return `<p class="crumb">데이터 이해</p><h1>전처리 과정</h1>
+  <p class="lede">매일 도는 무인 배치라 사람이 개입할 수 없습니다. 결측·이상치·단위 처리를 코드로 고정하지 않으면
+    어느 날 조용히 다른 기준의 데이터가 섞입니다.</p>
+  <div class="kpi">
+    <div class="b"><div class="lab">원본 행</div><div class="val num">${n(d.raw_rows)}</div><div class="sub">kamis_veg_retail</div></div>
+    <div class="b"><div class="lab">정제 후</div><div class="val num">${n(d.clean_rows)}</div><div class="sub">확장 품목 포함</div></div>
+    <div class="b"><div class="lab">단위 종류</div><div class="val num">${Object.keys(d.unit_mix).length}</div><div class="sub">정규화 대상</div></div>
+  </div>
+  <h2 class="sec">단계별 처리와 그 이유</h2>
+  <div class="steps">${d.steps.map(s=>`<div class="stepr">
+    <div class="t">${esc(s.step)}</div>
+    <dl><dt>이유</dt><dd>${esc(s.why)}</dd>
+        <dt>방법</dt><dd>${esc(s.how)}</dd>
+        <dt>효과</dt><dd>${esc(s.effect)}</dd></dl></div>`).join('')}</div>
+  <h2 class="sec">단위 분포 — 가장 위험했던 지점</h2>
+  <div class="tbox"><table><thead><tr><th>조사 단위</th><th class="n">품목 수</th><th>무게 환산</th></tr></thead>
+  <tbody>${Object.entries(d.unit_mix).map(([u,c])=>{
+    const ok = /kg|100g/.test(u);
+    return `<tr><td><b>${esc(u)}</b></td><td class="n">${c}</td>
+      <td><span class="chip ${ok?'c-down':'c-bad'}">${ok?'가능':'불가'}</span></td></tr>`;
+  }).join('')}</tbody></table></div>
+  <div class="note bad"><b>실제로 사고가 났던 부분입니다.</b> 배추는 "1포기", 양파는 "1kg"으로 조사됩니다.
+    메뉴 원가 계산에서 모든 품목을 원/kg으로 가정해 곱했더니 배추가 2.5배로 잡혔고,
+    이 배추가 합계의 68%를 차지해 <b>"30일 뒤 원가 +31%"가 실제로는 -2%</b>였습니다.
+    포기→kg 계수는 근거 데이터가 없어 만들지 않고, 환산 가능한 품목만 합산하고 나머지는 "환산 불가"로 표시하도록 고쳤습니다.</div>`;
+}
+
+/* ── 모델 ── */
+function renderModel(d){
+  const o=d.overall||{}, h7=o.h7||{}, h30=o.h30||{}, iv=d.interval||{}, live=d.live||{};
+  const worst = d.items.filter(r=>r.mape30!=null).slice(-3).reverse();
+  return `<p class="crumb">분석 &amp; 모델링</p><h1>모델 · 핵심 지표</h1>
+  <p class="lede">${esc(d.algo.why)}</p>
+  <div class="kpi">
+    <div class="b"><div class="lab">알고리즘</div><div class="val" style="font-size:18px">${esc(d.algo.name)}</div><div class="sub">${esc(d.algo.params)}</div></div>
+    <div class="b"><div class="lab">7일 WAPE</div><div class="val num">${h7.wape ?? '—'}%</div><div class="sub">MAPE ${h7.mape ?? '—'}%</div></div>
+    <div class="b"><div class="lab">30일 WAPE</div><div class="val num">${h30.wape ?? '—'}%</div><div class="sub">MAPE ${h30.mape ?? '—'}%</div></div>
+    <div class="b"><div class="lab">30일 방향적중</div><div class="val num">${h30.dir_acc ?? '—'}%</div><div class="sub">7일 ${h7.dir_acc ?? '—'}%</div></div>
+    <div class="b"><div class="lab">실전 적중률</div><div class="val" style="font-size:18px">${esc(live.status||'—')}</div><div class="sub">${live.reason?esc(live.reason):'성숙 데이터 대기'}</div></div>
+  </div>
+  <div class="note"><b>왜 R²가 아니라 WAPE인가.</b> 사장님은 "설명력 0.87"을 이해하지 못하고 "평균 15% 틀립니다"는 이해합니다.
+    현업이 판단할 수 있는 단위로 보고합니다. 방향 적중률을 같이 보는 이유는, 금액이 조금 틀려도
+    오른다/내린다가 맞으면 발주 시점은 정할 수 있기 때문입니다.</div>
+
+  <h2 class="sec">1. 피처 설계</h2>
+  <p class="sec-sub">총 ${d.features.reduce((a,b)=>a+b.n,0)}개 변수. 각 묶음이 어떤 가설을 담는지 명시합니다.</p>
+  <div class="tbox"><table><thead><tr><th>묶음</th><th class="n">개수</th><th>변수</th><th>왜 넣었나</th></tr></thead>
+  <tbody>${d.features.map(f=>`<tr><td><b>${esc(f.group)}</b></td><td class="n">${f.n}</td>
+    <td>${esc(f.vars)}</td><td class="wrap">${esc(f.why)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="note"><b>학습 설정.</b> ${esc(d.algo.target)}<br><b>검증.</b> ${esc(d.algo.split)} —
+    시계열에서 랜덤 분할을 하면 미래 정보로 과거를 맞히게 돼 성능이 부풀려집니다.</div>
+
+  <h2 class="sec">2. 예측 구간 — 네 번의 시도</h2>
+  <p class="sec-sub">발주 판단에는 "얼마가 될까"보다 "최악이면 얼마까지"가 중요합니다.
+    구간이 목표만큼 실측을 담는지(포함률)를 기준으로 방식을 골랐습니다.</p>
+  <div class="tbox"><table><thead><tr><th>방식</th><th>설명</th><th class="n">실측 포함률</th><th>판정</th></tr></thead>
+  <tbody>${d.ladder.map(r=>`<tr><td><b>${esc(r.방식)}</b></td><td class="wrap">${esc(r.설명)}</td>
+    <td class="n"><b>${r.포함률}%</b></td>
+    <td><span class="chip ${r.판정==='최종'?'c-down':r.판정==='오히려 악화'?'c-bad':'c-flat'}">${esc(r.판정)}</span></td></tr>`).join('')}</tbody></table></div>
+  <div class="note warn"><b>교과서대로 했더니 더 나빠졌습니다.</b> 분위수 회귀만 쓰니 구간이 0.65배로 좁아져
+    "자신 있게 틀리는" 형태가 됐습니다. 컨포멀 보정을 붙여 목표를 맞췄고, 품목마다 더 잘 맞는 쪽을 채택해
+    최종 ${iv.coverage}%가 됐습니다(CQR 채택 ${esc(iv.picked||'—')}).
+    판정은 <b>비대칭</b>입니다 — 넓어서 과하게 담는 건 보수적일 뿐이지만, 모자라면 사용자가 범위를 믿고 틀립니다.</div>
+
+  <h2 class="sec">3. 품목별 성능</h2>
+  <p class="sec-sub">잘 맞는 순서입니다. 편차가 큰 것이 이 모델의 가장 솔직한 한계입니다.</p>
+  <div class="tbox"><table><thead><tr>
+    <th>품목</th><th class="n">7일 WAPE</th><th class="n">30일 WAPE</th><th class="n">30일 MAPE</th>
+    <th class="n">방향적중</th><th class="n">구간 포함률</th><th>구간 방식</th></tr></thead>
+  <tbody>${d.items.map(r=>`<tr><td><b>${esc(r.item)}</b></td>
+    <td class="n">${r.wape7 ?? '—'}%</td><td class="n">${r.wape30 ?? '—'}%</td>
+    <td class="n"><span class="chip ${r.mape30>30?'c-bad':r.mape30>18?'c-up':'c-down'}">${r.mape30 ?? '—'}%</span></td>
+    <td class="n">${r.dir30 ?? '—'}%</td><td class="n">${r.cov7 ?? '—'}%</td>
+    <td>${esc(r.method7||'—')}</td></tr>`).join('')}</tbody></table></div>
+  <div class="note bad"><b>못 맞히는 품목을 숨기지 않습니다.</b>
+    ${worst.map(r=>esc(r.item)+' '+r.mape30+'%').join(' · ')} 는 변동성이 극단적이라 같은 모델 구조로는 한계가 있습니다.
+    이런 품목은 수치를 제시하는 것 자체가 잘못된 신호라, <b>예측 대신 "변동성 높음" 경보로 전환</b>하는 것이 액션플랜에 있습니다.</div>`;
+}
+
+/* ── 지역 ── */
+function renderRegions(d){
+  const byItem = {};
+  d.rows.forEach(r => { (byItem[r.item] = byItem[r.item] || {})[r.region] = r; });
+  const items = Object.keys(byItem).sort();
+  return `<p class="crumb">분석 &amp; 모델링</p><h1>지역 분석</h1>
+  <p class="lede">가설 H3 "지역별 소매가는 서로 다르다"를 검증한 결과입니다. 모델을 만들기 전에 원천부터 확인했습니다 —
+    지역 코드를 넣어도 서울 값을 그대로 돌려주는 API가 흔하고, 그러면 "지역별"이라는 말만 붙고 예측은 전부 같아집니다.</p>
+  <div class="kpi">
+    <div class="b"><div class="lab">커버리지</div><div class="val" style="font-size:19px">${esc(d.probe.coverage)}</div><div class="sub">지역 간 편차 없음</div></div>
+    <div class="b"><div class="lab">서울 대비 가격차</div><div class="val" style="font-size:19px">${esc(d.probe.gap)}</div><div class="sub">평균 차이</div></div>
+    <div class="b"><div class="lab">서울과 동일 값</div><div class="val" style="font-size:19px">${esc(d.probe.same)}</div><div class="sub">복사가 아닌 실데이터</div></div>
+    <div class="b"><div class="lab">기준일</div><div class="val" style="font-size:19px">${esc(d.updated||'—')}</div><div class="sub">${d.regions.length}개 지역</div></div>
+  </div>
+  <div class="note"><b>세 번째 지표가 핵심이었습니다.</b> 서울과 완전히 같은 값인 품목이 0종이라
+    진짜 지역 데이터라는 뜻입니다. 이 확인 없이 모델부터 만들었다면 190개 모델이 전부 헛일이 될 뻔했습니다.</div>
+  <h2 class="sec">지역별 7일 예측 변동률</h2>
+  <p class="sec-sub">지역 시세와 그 지역 ASOS 관측으로 각각 학습했습니다. 서울 날씨로 부산 가격을 예측하면
+    "지역별"이라는 말만 붙고 근거는 그대로이기 때문입니다.</p>
+  <div class="tbox"><table><thead><tr><th>품목</th>${d.regions.map(r=>`<th class="n">${esc(r)}</th>`).join('')}<th class="n">최대 격차</th></tr></thead>
+  <tbody>${items.map(it=>{
+    const cells = d.regions.map(rg => byItem[it][rg]);
+    const chgs = cells.filter(Boolean).map(c=>c.chg);
+    const gap = chgs.length ? Math.max(...chgs) - Math.min(...chgs) : 0;
+    return `<tr><td><b>${esc(it)}</b></td>${cells.map(c=> c
+      ? `<td class="n"><span class="chip ${c.chg>3?'c-up':c.chg<-3?'c-down':'c-flat'}">${c.chg>0?'+':''}${c.chg}%</span><br>
+         <span style="font-size:11px;color:var(--muted)">${n(c.cur)}→${n(c.p7)}</span></td>`
+      : '<td class="n">—</td>').join('')}
+      <td class="n"><b>${gap}%p</b></td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+/* ── 인사이트 ── */
+function renderInsights(d){
+  return `<p class="crumb">결론</p><h1>인사이트 · 액션플랜</h1>
+  <p class="lede">분석 결과를 어떻게 해석했고, 그래서 무엇을 할 것인지입니다.</p>
+  <h2 class="sec">1. 도출 과정 — So What → Now What</h2>
+  <div class="steps">${d.chain.map((c,i)=>`<div class="stepr">
+    <div class="t">${i+1}. ${esc(c.stage)} <span style="color:var(--muted);font-weight:500">(${esc(c.label)})</span></div>
+    <dl><dt>내용</dt><dd>${esc(c.body)}</dd><dt>근거</dt><dd>${esc(c.evidence)}</dd></dl></div>`).join('')}</div>
+  <div class="note"><b>구간의 비대칭이 준 부가 정보.</b> 배추 7일 예측이 5,247원인데 구간은 4,067~5,329원이었습니다.
+    위로 +1.6%뿐이고 아래로 -22%입니다. <b>점 예측이 상방으로 치우쳐 있다</b>는 신호이며,
+    대칭 근사로는 볼 수 없던 것입니다.</div>
+
+  <h2 class="sec">2. 개선 제안 &amp; 액션플랜</h2>
+  <p class="sec-sub">각 항목에 측정 지표를 붙였습니다. 실행 여부를 판단할 수 없는 제안은 제안이 아닙니다.</p>
+  <div class="tbox"><table><thead><tr><th>우선</th><th>과제</th><th>왜</th><th>어떻게</th><th>측정 지표</th></tr></thead>
+  <tbody>${d.actions.map(a=>`<tr>
+    <td><span class="chip ${a.pri==='높음'?'c-up':a.pri==='중간'?'c-flat':'c-down'}">${esc(a.pri)}</span></td>
+    <td><b>${esc(a.title)}</b></td><td class="wrap">${esc(a.why)}</td>
+    <td class="wrap">${esc(a.how)}</td><td class="wrap">${esc(a.metric)}</td></tr>`).join('')}</tbody></table></div>
+
+  <h2 class="sec">3. 실패에서 배운 것</h2>
+  <p class="sec-sub">가장 큰 위험은 모델 성능이 아니라 파이프라인이었습니다. 성능이 나빠져서가 아니라
+    조용히 멈춰서 서비스가 3주간 죽었습니다.</p>
+  <div class="grid">${d.failures.map(f=>`<div class="card">
+    <h3><span style="color:var(--rose)">⚠</span>${esc(f.title)}</h3>
+    <dl style="display:grid;grid-template-columns:56px 1fr;gap:6px 10px;font-size:13px;margin-top:8px">
+      <dt style="color:var(--muted);font-weight:600">증상</dt><dd>${esc(f.detect)}</dd>
+      <dt style="color:var(--muted);font-weight:600">원인</dt><dd>${esc(f.cause)}</dd>
+      <dt style="color:var(--muted);font-weight:600">조치</dt><dd>${esc(f.fix)}</dd>
+    </dl></div>`).join('')}</div>`;
+}
+
+const RENDER = {structure:renderStructure, eda:renderEda, preprocessing:renderPre,
+                modeling:renderModel, regions:renderRegions, insights:renderInsights};
+
+async function select(key){
+  document.querySelectorAll('.navitem').forEach(b => b.classList.toggle('on', b.dataset.key === key));
+  location.hash = key;
+  window.scrollTo({top:0});
+  $('#main').innerHTML = '<div class="loading">불러오는 중…</div>';
+  try {
+    if (key === 'overview') { await renderOverview(); return; }
+    const res = await load(key);
+    $('#main').innerHTML = RENDER[key](res.data);
+  } catch (e) {
+    $('#main').innerHTML = `<h1>불러오지 못했습니다</h1><p class="lede">${esc(e.message)}</p>`;
+  }
+}
+
+document.querySelectorAll('.navitem').forEach(b =>
+  b.addEventListener('click', ()=> select(b.dataset.key)));
+window.addEventListener('hashchange', ()=>{
+  const k = location.hash.slice(1);
+  if (k && (k === 'overview' || RENDER[k])) select(k);
+});
+select(location.hash.slice(1) || 'overview');
+</script>
+</body>
+</html>
