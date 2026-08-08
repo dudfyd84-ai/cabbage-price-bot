@@ -548,6 +548,30 @@ def _load_accuracy():
         return None
 
 
+@app.get("/analysis", response_class=HTMLResponse)
+def analysis_page():
+    # 분석 대시보드. 내용은 /api/analysis/* 에서 받아 채운다.
+    with open(os.path.join(BASE_DIR, "analysis.html"), encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+
+@app.get("/api/analysis")
+def api_analysis_index():
+    # 사이드바·카드 그리드가 쓰는 섹션 목록
+    import analysis_data as ad
+    return {"sections": [{"key": k, "title": t} for k, (t, _) in ad.SECTIONS.items()]}
+
+
+@app.get("/api/analysis/{key}")
+def api_analysis(key: str):
+    import analysis_data as ad
+    data = ad.get(key)
+    if data is None:
+        return JSONResponse({"error": "unknown_section",
+                             "sections": list(ad.SECTIONS)}, status_code=404)
+    return {"key": key, "title": ad.SECTIONS[key][0], "data": data}
+
+
 @app.get("/api/regions")
 def api_regions():
     # 화면이 지역 선택을 그릴 때 쓰는 목록. 예측이 실제로 있는 지역만 돌려준다.
