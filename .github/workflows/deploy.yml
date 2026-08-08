@@ -40,10 +40,12 @@ jobs:
                   value: ${{ secrets.ASOS_KEY }}
                 - name: COLLECT_TOKEN
                   value: ${{ secrets.COLLECT_TOKEN }}
-                - name: DEV_USER
-                  value: ${{ secrets.DEV_USER }}
-                - name: DEV_PASS_HASH
-                  value: ${{ secrets.DEV_PASS_HASH }}
+                # 앱 화면 공개를 위해 개발자 게이트를 끈다(DEV_* 미주입 → _dev_enabled() False).
+                # Secret은 GitHub에 그대로 남아 있으니, 다시 잠그려면 이 두 줄을 되살리면 된다.
+                # - name: DEV_USER
+                #   value: ${{ secrets.DEV_USER }}
+                # - name: DEV_PASS_HASH
+                #   value: ${{ secrets.DEV_PASS_HASH }}
             context:
               git:
                 url: https://github.com/${{ github.repository }}.git
