@@ -457,6 +457,71 @@ def _interval_ratio(name, H, mape_pct):
     return 1 - mape_pct / 100, 1 + mape_pct / 100
 
 
+@lru_cache(maxsize=1)
+def _load_regions():
+    # 재학습이 산출한 지역 예측(region_predictions.json). 모델 파일 대신 결과만 싣는다.
+    p = os.path.join(BASE_DIR, "region_predictions.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+_region_cache = {}
+
+
+def region_dashboard(region):
+    # 서울 외 지역 대시보드. 예측은 JSON에서 읽고 추세만 지역 시세 CSV에서 만든다.
+    key = f"{region}_{date.today().isoformat()}"
+    if key in _region_cache:
+        return _region_cache[key]
+    doc = _load_regions() or {}
+    blk = (doc.get("regions") or {}).get(region)
+    if not blk:
+        return None
+
+    path = os.path.join(BASE_DIR, "kamis_region_retail.csv")
+    hist = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame()
+    if len(hist):
+        hist["날짜"] = pd.to_datetime(hist["날짜"])
+        hist = hist[hist["지역"] == region]
+
+    items = []
+    for name, v in blk.get("items", {}).items():
+        cur, p7, p30 = v["cur"], v.get("p7"), v.get("p30")
+        if p7 is None:
+            continue
+        p30 = p30 if p30 is not None else p7
+        r7 = round((p7 - cur) / cur * 100) if cur else 0
+        r30 = round((p30 - cur) / cur * 100) if cur else 0
+        level = "위험" if r30 > 15 else ("주의" if r7 > 10 else ("하락" if r7 < -10 else "안정"))
+        sub = hist[hist["품목명"] == name].sort_values("날짜").tail(90) if len(hist) else []
+        trend = [{"d": d.strftime("%m/%d"), "p": int(pr)} for d, pr in zip(sub["날짜"], sub["가격"])] if len(sub) else []
+        u = v.get("unit") or "kg"
+        per100g = round(cur / 10) if "kg" in u else (cur if "100g" in u else None)
+        items.append({"name": name, "unit": u, "per100g": per100g, "cur": cur, "p7": p7, "p30": p30,
+                      "r7": r7, "r30": r30, "level": level, "trend": trend,
+                      "ci7": [round(p7 * v["lo7"]), round(p7 * v["hi7"])],
+                      "ci30": [round(p30 * v.get("lo30", v["lo7"])), round(p30 * v.get("hi30", v["hi7"]))]})
+
+    idoc = _load_intervals() or {}
+    result = {"date": blk.get("date"), "region": region, "items": items,
+              "accuracy": _load_accuracy(),
+              "interval": {"nominal": idoc.get("nominal"), "coverage": idoc.get("coverage_avg"),
+                           "method": idoc.get("method")} if idoc else None}
+    _region_cache.clear(); _region_cache[key] = result
+    return result
+
+
+def available_regions():
+    # 지역 선택에 노출할 목록. 서울은 항상 있고 나머지는 예측이 산출된 지역만.
+    doc = _load_regions() or {}
+    return ["서울"] + sorted((doc.get("regions") or {}).keys())
+
+
 def _load_accuracy():
     # 백테스트 성능(accuracy.json)을 로드 (재학습 시 갱신, 없으면 None)
     p = os.path.join(BASE_DIR, "accuracy.json")
@@ -469,12 +534,24 @@ def _load_accuracy():
         return None
 
 
+@app.get("/api/regions")
+def api_regions():
+    # 화면이 지역 선택을 그릴 때 쓰는 목록. 예측이 실제로 있는 지역만 돌려준다.
+    return {"regions": available_regions()}
+
+
 @app.get("/api/dashboard")
-def api_dashboard(request: Request):
+def api_dashboard(request: Request, region: str = "서울"):
     auth_header = request.headers.get("Authorization")
     plan = get_user_plan(auth_header)
-    
-    full_data = dashboard_data()
+
+    if region and region != "서울":
+        full_data = region_dashboard(region)
+        if full_data is None:
+            return JSONResponse({"error": "unknown_region",
+                                 "regions": available_regions()}, status_code=404)
+    else:
+        full_data = dashboard_data()
     if plan == "pro":
         return full_data
         
