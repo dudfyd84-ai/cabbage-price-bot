@@ -658,18 +658,57 @@ def _inject_home(html):
     return html
 
 
-def _render_screen(slug):
+def _inject_item(html, want):
+    # 품목상세 목업의 하드코딩(마늘)을 실제로 표시될 품목으로 치환 → 첫 페인트 깜빡임 제거.
+    # 화면에 뜰 품목은 item-live.js와 같은 규칙으로 고른다(?item= 우선, 없으면 상승률 1위).
+    try:
+        items = sorted(dashboard_data()["items"],
+                       key=lambda x: (x["r30"] if x["r30"] is not None else x["r7"]), reverse=True)
+        it = next((i for i in items if i["name"] == want), items[0])
+        html = html.replace("마늘 원가 분석", f"{it['name']} 원가 분석")
+    except Exception:
+        pass
+    # 목업의 '변동 주요 원인'은 모델이 쓰지 않는 정보를 분석처럼 적어 두었다(산둥성 폭우·해상 운임 등).
+    # 근거 없는 서술을 공개 화면에 두지 않는다 — 실제 학습에 쓰는 피처로 바꾼다.
+    html = html.replace(
+        "기상 악화 (중국)",
+        "기상 시차 효과")
+    html = html.replace(
+        "산둥성 폭우로 인해 마늘 수확이 약 10일 지연될 것으로 예상됩니다.",
+        "산지 기온·강수량의 30·45·60일 시차와 7·14일 이동평균을 학습에 사용합니다. "
+        "날씨가 가격에 반영되기까지의 시차를 모델이 직접 추정합니다.")
+    html = html.replace(
+        "4분기 과거 데이터 분석 결과, 식자재 도매 구매량이 15% 증가하는 경향을 보입니다.",
+        "예측 대상 시점의 월을 피처로 넣어 품목별 계절 패턴을 반영합니다.")
+    html = html.replace(
+        "해상 운임 지수",
+        "최근 가격 흐름")
+    html = html.replace(
+        "표준 컨테이너 운임이 안정화 추세에 접어들어, 공급 측면의 가격 상승 압박이 완화되고 있습니다.",
+        "7·14·30일 전 가격을 함께 학습합니다. 배추는 가락시장 반입량(공급)도 반영합니다.")
+    return html
+
+
+def _render_screen(slug, want=None):
     name = SCREEN_ROUTES.get(slug)
     if not name:
         return None
-    # 홈은 실데이터 주입이라 일단위로 캐시(그 외 화면은 정적 캐시)
-    cache_key = f"home_{date.today().isoformat()}" if name == "home" else name
+    # 실데이터를 주입하는 화면은 일단위 캐시(그 외 화면은 정적 캐시)
+    today = date.today().isoformat()
+    if name == "home":
+        cache_key = f"home_{today}"
+    elif name == "item-analysis":
+        cache_key = f"item-analysis_{want or ''}_{today}"
+    else:
+        cache_key = name
     if cache_key in _SCREEN_CACHE:
         return _SCREEN_CACHE[cache_key]
     with open(os.path.join(SCREENS_DIR, f"{name}.html"), encoding="utf-8") as f:
         html = f.read()
     if name == "home":
         html = _inject_home(html)
+    elif name == "item-analysis":
+        html = _inject_item(html, want)
     inject = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
     inject += '<script src="/app/static/ct-store.js"></script>'
     inject += '<script src="/app/static/nav.js"></script>'
@@ -722,7 +761,7 @@ def app_screen(request: Request, slug: str = ""):
     # 게이트 활성 시 유효 쿠키 없으면 로그인 페이지로 전환 (앱 전체 잠금)
     if _dev_enabled() and not _dev_valid(request.cookies.get("ct_dev")):
         return HTMLResponse(LOGIN_HTML)
-    html = _render_screen(slug)
+    html = _render_screen(slug, request.query_params.get("item"))
     if html is None:
         return HTMLResponse("화면을 찾을 수 없습니다.", status_code=404)
     return html
