@@ -146,7 +146,28 @@ def eda():
             row[f"lag{lag}"] = round(float(np.corrcoef(t[ok], m["가격"][ok])[0, 1]), 3) if ok.sum() > 50 else None
         lagcorr.append(row)
 
+    # 가격 시계열 — 주 단위로 줄여 페이로드를 가볍게 유지한다(원본은 1,400여 일).
+    series = {}
+    for name in ["배추", "시금치", "양파", "사과"]:
+        g = veg[veg["품목명"] == name][["날짜", "가격"]].sort_values("날짜")
+        if not len(g):
+            continue
+        wk = g.set_index("날짜")["가격"].resample("W").mean().dropna()
+        series[name] = [{"d": d.strftime("%Y-%m-%d"), "p": round(float(v))} for d, v in wk.items()]
+
+    # 분포 — 로그 변환의 근거를 눈으로 보여주기 위해 원가격과 log1p를 같이 낸다.
+    def _hist(vals, bins=22):
+        cnt, edge = np.histogram(vals, bins=bins)
+        return {"counts": [int(c) for c in cnt],
+                "edges": [round(float(e), 3) for e in edge]}
+    hist = {}
+    for name in ["배추", "시금치"]:
+        v = veg[veg["품목명"] == name]["가격"].astype(float).values
+        if len(v) > 50:
+            hist[name] = {"raw": _hist(v), "log": _hist(np.log1p(v))}
+
     return {"stats": rows, "seasonal": seasonal, "missing": miss, "lag_corr": lagcorr,
+            "series": series, "hist": hist,
             "period": f"{veg['날짜'].min().date()} ~ {veg['날짜'].max().date()}",
             "items": int(veg['품목명'].nunique()), "rows": int(len(veg))}
 
