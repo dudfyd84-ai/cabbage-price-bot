@@ -471,6 +471,19 @@ def _load_regions():
 
 
 _region_cache = {}
+_region_hist = {}
+
+
+def _region_history():
+    # 지역 시세 35,000행을 요청마다 다시 파싱하면 요청당 0.7초가 든다. 하루 한 번만 읽는다.
+    key = date.today().isoformat()
+    if key not in _region_hist:
+        p = os.path.join(BASE_DIR, "kamis_region_retail.csv")
+        h = pd.read_csv(p) if os.path.exists(p) else pd.DataFrame()
+        if len(h):
+            h["날짜"] = pd.to_datetime(h["날짜"])
+        _region_hist.clear(); _region_hist[key] = h
+    return _region_hist[key]
 
 
 def region_dashboard(region):
@@ -483,10 +496,8 @@ def region_dashboard(region):
     if not blk:
         return None
 
-    path = os.path.join(BASE_DIR, "kamis_region_retail.csv")
-    hist = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame()
+    hist = _region_history()
     if len(hist):
-        hist["날짜"] = pd.to_datetime(hist["날짜"])
         hist = hist[hist["지역"] == region]
 
     items = []
@@ -512,7 +523,10 @@ def region_dashboard(region):
               "accuracy": _load_accuracy(),
               "interval": {"nominal": idoc.get("nominal"), "coverage": idoc.get("coverage_avg"),
                            "method": idoc.get("method")} if idoc else None}
-    _region_cache.clear(); _region_cache[key] = result
+    # 지역별로 각각 담아 둔다. 전체를 비우면 지역을 번갈아 볼 때 매번 캐시가 날아간다.
+    for k in [k for k in _region_cache if not k.endswith(date.today().isoformat())]:
+        del _region_cache[k]
+    _region_cache[key] = result
     return result
 
 
