@@ -85,21 +85,49 @@ def render_trend_chart(item):
     return buf
 
 
+def price_per_100g(it, field):
+    # app.py dashboard_data()의 per100g 계산과 동일한 규칙을 cur 외 p7/p30에도 적용.
+    # 무게 단위(kg/100g)가 아닌 품목(예: 배추는 "1포기" 단위)은 kg 환산 근거가 없어 None.
+    unit = it.get("unit", "")
+    val = it.get(field)
+    if val is None:
+        return None
+    if "kg" in unit:
+        return val / 10
+    if "100g" in unit:
+        return val
+    return None
+
+
 def bom_cost_summary(items_by_name):
+    # 재료 수량(qty_kg)에 품목 가격을 그대로 곱하면 "1포기"처럼 무게 단위가 아닌 품목에서
+    # 심하게 틀린 원가가 나옴(배추 1포기≈2.5~3kg인데 1kg 가격처럼 계산되어 약 2.5배 과대).
+    # 포기→kg 환산 계수는 이 PR 범위 밖의 근거 데이터가 필요하므로 만들지 않고,
+    # 무게 단위로 환산 가능한 품목만 합계에 넣고 나머지는 "환산 불가"로 표시한다.
     rows = [["재료", "수량", "현재 원가", "7일 뒤 예측", "30일 뒤 예측"]]
+    excluded = []
     total_now = total_p7 = total_p30 = 0
     for ing in SAMPLE_MENU["ings"]:
         it = items_by_name.get(ing["item"])
         if not it:
             continue
         qty = ing["qty_kg"]
-        c_now, c_p7, c_p30 = it["cur"] * qty, it["p7"] * qty, it["p30"] * qty
+        p_now = price_per_100g(it, "cur")
+        p_p7 = price_per_100g(it, "p7")
+        p_p30 = price_per_100g(it, "p30")
+        if p_now is None or p_p7 is None or p_p30 is None:
+            excluded.append(ing["item"])
+            rows.append([ing["item"], f"{qty}kg", "환산 불가", "환산 불가", "환산 불가"])
+            continue
+        units_100g = qty * 10
+        c_now, c_p7, c_p30 = p_now * units_100g, p_p7 * units_100g, p_p30 * units_100g
         total_now += c_now
         total_p7 += c_p7
         total_p30 += c_p30
         rows.append([ing["item"], f"{qty}kg", f"{int(c_now):,}원", f"{int(c_p7):,}원", f"{int(c_p30):,}원"])
-    rows.append(["합계", "", f"{int(total_now):,}원", f"{int(total_p7):,}원", f"{int(total_p30):,}원"])
-    return rows, total_now, total_p30
+    total_label = "합계(무게 단위 품목만)" if excluded else "합계"
+    rows.append([total_label, "", f"{int(total_now):,}원", f"{int(total_p7):,}원", f"{int(total_p30):,}원"])
+    return rows, total_now, total_p30, excluded
 
 
 def build_pdf(data, out_path):
@@ -159,9 +187,12 @@ def build_pdf(data, out_path):
     story.append(Spacer(1, 4 * mm))
 
     story.append(Paragraph("3. 메뉴 원가 변동", h2))
-    story.append(Paragraph(
-        f"* 매장별 실제 BOM 대신 데모 매장의 샘플 메뉴({SAMPLE_MENU['name']})로 계산한 시범 결과입니다.", note))
-    rows, total_now, total_p30 = bom_cost_summary(items_by_name)
+    rows, total_now, total_p30, excluded = bom_cost_summary(items_by_name)
+    note_text = f"* 매장별 실제 BOM 대신 데모 매장의 샘플 메뉴({SAMPLE_MENU['name']})로 계산한 시범 결과입니다."
+    if excluded:
+        note_text += (f" {', '.join(excluded)}은(는) 무게(kg)가 아닌 단위로 조사돼 kg당 원가로 환산할 근거가 없어 "
+                       f"원가·합계 계산에서 제외했습니다.")
+    story.append(Paragraph(note_text, note))
     t = Table(rows, colWidths=[25 * mm, 20 * mm, 27 * mm, 27 * mm, 27 * mm])
     t.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (-1, -1), "HYSMyeongJo-Medium"),
