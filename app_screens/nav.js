@@ -3,6 +3,18 @@
 (async function () {
   const path = location.pathname;
 
+  // ── 0-) 공유용 데모 링크: ?demo=1 이면 데모 매장을 심고 온보딩을 건너뛴다 ──
+  // 링크를 받은 사람이 소셜 로그인 화면부터 만나면 내용을 못 본다. 매장 등록은 화면을 보는 데
+  // 필요한 정보가 아니므로, 데모 매장으로 채워 바로 홈부터 보게 한다.
+  if (new URLSearchParams(location.search).get('demo') === '1') {
+    if (!localStorage.getItem('ct_store')) {
+      localStorage.setItem('ct_store', JSON.stringify({ name: '데모 식당', addr: '', cat: '한식' }));
+    }
+    localStorage.setItem('ct_demo', '1');
+    // 쿼리를 지워 이후 이동에서 계속 따라다니지 않게 한다.
+    history.replaceState(null, '', path);
+  }
+
   // ── 0) 첫 방문(매장 미등록) → 온보딩부터. 개발자 로그인(ct_dev) 또는 재방문자는 홈 유지 ──
   if (path === '/app' || path === '/app/' || path === '/app/home') {
     const store = window.ctStore ? await window.ctStore.getStore() : null;
