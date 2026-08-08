@@ -1,0 +1,33 @@
+name: Weekly report
+
+on:
+  schedule:
+    - cron: "0 22 * * 0"   # 매일 재학습(retrain.yml, 매일 06:00 KST) 이후 반영되도록 매주 월요일 07:00 KST
+  workflow_dispatch: {}      # 수동 실행 허용
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r requirements.txt -r requirements-batch.txt
+
+      - name: Generate weekly report
+        env:
+          PYTHONUTF8: "1"
+        run: python report_weekly.py
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: reports/*.pdf
+          retention-days: 90
