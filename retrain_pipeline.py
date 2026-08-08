@@ -80,6 +80,30 @@ COLLECT_URL = os.getenv("COLLECT_URL", "")
 COLLECT_TOKEN = os.getenv("COLLECT_TOKEN", "")
 
 
+def _check_collect():
+    # 수집 위임 대상(라이브 서버)이 살아 있는지 먼저 확인한다.
+    # 앱이 중지되면 404가 나고 이후 모든 수집이 줄줄이 실패하는데, 로그에는 HTTPError만 남아
+    # 무엇을 해야 하는지가 안 보였다(2026-08-06~08 실제 발생, #68).
+    if not COLLECT_URL:
+        return
+    for i in range(1, 4):
+        try:
+            # 잘못된 kind를 일부러 보낸다. 앱이 살아 있으면 400/401이 오고, 중지면 404가 온다.
+            r = requests.get(COLLECT_URL, params={"kind": "ping"},
+                             headers={"X-Collect-Token": COLLECT_TOKEN}, timeout=30)
+            if r.status_code != 404:
+                log(f"수집 서버 응답 확인 (status {r.status_code})")
+                return
+            log(f"수집 서버 404 — 재확인 {i}/3")
+        except requests.RequestException as e:
+            log(f"수집 서버 확인 실패 {i}/3: {e}")
+        time.sleep(10)
+    raise SystemExit(
+        "수집 서버가 응답하지 않는다(404). Cloudtype 앱이 중지된 것으로 보인다. "
+        "복구 절차: Actions에서 'Deploy to cloudtype' 워크플로를 수동 실행해 재기동한 뒤, "
+        "5분 이상 기다렸다가 'Daily retrain'을 다시 실행한다. (#68)")
+
+
 def _remote_rows(kind, start, end, country="1101"):
     # 라이브 서버(/api/collect)에 수집을 위임해 행 목록만 받아온다.
     r = requests.get(COLLECT_URL, params={"kind": kind, "start": start.isoformat(),
@@ -654,6 +678,7 @@ def _write_accuracy(acc_items, latest, live=None):
 
 def main():
     log("===== 재학습 파이프라인 시작 =====")
+    _check_collect()
     incremental_weather()
     incremental_veg()
     incremental_all_retail()
