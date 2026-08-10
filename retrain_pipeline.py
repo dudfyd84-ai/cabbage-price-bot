@@ -455,6 +455,10 @@ def retrain_all():
 
     veg = pd.read_csv(VEG); veg["날짜"] = pd.to_datetime(veg["날짜"])
     veg = pd.concat([veg, _extra_prices()], ignore_index=True)   # 확장 품목 가격 합류
+    # 두 수집 경로가 겹치는 품목이 있어 같은 (날짜, 품목명)이 두 번 들어온다.
+    # 남겨두면 학습에서 중복 가중이 생기고, 실측 대조 때 병합이 부풀어 건수가 왜곡된다.
+    # (실전 적중률에서 성숙분 178건이 262건으로 불어난 원인이다.)
+    veg = veg.drop_duplicates(subset=["날짜", "품목명"], keep="last")
     summary, acc_items, pred_rows, intervals = {}, {}, [], {}
     for code, name in ITEMS.items():
         sub = veg[veg["품목명"] == name]
