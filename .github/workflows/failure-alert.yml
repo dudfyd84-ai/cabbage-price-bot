@@ -6,7 +6,7 @@ name: Failure alert
 
 on:
   workflow_run:
-    workflows: ["Deploy to cloudtype", "Daily retrain", "Weekly report", "BOM cost simulation"]
+    workflows: ["Deploy to cloudtype", "Daily retrain", "Weekly report", "BOM cost simulation", "Keepalive"]
     types: [completed]
 
 permissions:
