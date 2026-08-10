@@ -1,14 +1,20 @@
 name: Keepalive
 
-# 라이브 앱이 반복해서 내려간다(#68). 두 가지를 한다.
-#  1) 예방 — 주기적으로 두드려 유휴 상태로 넘어가지 않게 한다.
-#  2) 복구 — 죽어 있으면 배포를 자동으로 걸어 되살린다.
-#     이 앱은 요청으로는 안 깨어나고 배포로만 살아난다는 것을 관측했다.
-# 살아 있을 때의 uptime·메모리도 같이 기록해 원인을 좁힌다.
+# 원인 확정 — Cloudtype 콘솔에 이렇게 적혀 있다.
+#   "프리티어 리소스는 매일 1회 중지됩니다."
+# 유휴 때문이 아니라 하루 한 번 정해진 대로 꺼진다. 두드려도 막을 수 없다.
+# 꺼지면 replica가 0이 되고 요청으로는 깨어나지 않는다. 배포만이 다시 1로 올린다.
+#
+# 그래서 이 워크플로가 하는 일은 '예방'이 아니라 '빨리 되살리기'다.
+#  - 평시: 10분마다 확인해 죽어 있으면 배포를 건다.
+#  - 자정 직후: 중지 시각으로 추정되는 구간을 6분 간격으로 촘촘히 훑는다.
+# 살아 있을 때의 uptime을 매번 기록한다. uptime이 리셋된 시각이 곧 중지 시각이라
+# 며칠 쌓이면 실제 중지 시각을 확정할 수 있다.
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/10 * * * *"                  # 평시 — 최대 10분 안에 복구
+    - cron: "2,8,14,20,26 15 * * *"         # 00:02~00:26 KST — 중지 직후 촘촘히
   workflow_dispatch: {}
 
 concurrency:
@@ -32,6 +38,8 @@ jobs:
           # DASHBOARD_URL은 /api/dashboard를 가리키므로 호스트만 떼어 쓴다.
           BASE=$(echo "$URL" | sed -E 's#(https?://[^/]+).*#\1#')
           echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "| 시각(KST) | 상태 | 가동 | 메모리 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
           BODY=$(curl -s -m 20 "$BASE/health" || true)
           CODE=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$BASE/health" || echo 000)
           echo "HTTP $CODE"
@@ -42,9 +50,14 @@ jobs:
             MEM=$(echo "$BODY" | grep -o '"peak_rss_mb":[0-9]*' | cut -d: -f2)
             echo ""
             echo "살아 있음 — 가동 ${UP:-?}초 · 최대 메모리 ${MEM:-?}MB"
+            # 실행 요약에 남긴다. uptime이 작아진 시점이 곧 중지 시각이다.
+            KST=$(TZ=Asia/Seoul date '+%m-%d %H:%M')
+            echo "| $KST | 살아 있음 | ${UP:-?}초 | ${MEM:-?}MB |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "alive=false" >> "$GITHUB_OUTPUT"
             echo "죽어 있음 (HTTP $CODE) — 배포로 재기동한다"
+            KST=$(TZ=Asia/Seoul date '+%m-%d %H:%M')
+            echo "| $KST | **중지됨** | — | — |" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 재기동
