@@ -1,0 +1,95 @@
+name: Keepalive
+
+# 라이브 앱이 반복해서 내려간다(#68). 두 가지를 한다.
+#  1) 예방 — 주기적으로 두드려 유휴 상태로 넘어가지 않게 한다.
+#  2) 복구 — 죽어 있으면 배포를 자동으로 걸어 되살린다.
+#     이 앱은 요청으로는 안 깨어나고 배포로만 살아난다는 것을 관측했다.
+# 살아 있을 때의 uptime·메모리도 같이 기록해 원인을 좁힌다.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write      # 죽었을 때 deploy 워크플로를 트리거하려면 필요
+  issues: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 상태 확인
+        id: check
+        env:
+          URL: ${{ secrets.DASHBOARD_URL }}
+        run: |
+          # DASHBOARD_URL은 /api/dashboard를 가리키므로 호스트만 떼어 쓴다.
+          BASE=$(echo "$URL" | sed -E 's#(https?://[^/]+).*#\1#')
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          BODY=$(curl -s -m 20 "$BASE/health" || true)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$BASE/health" || echo 000)
+          echo "HTTP $CODE"
+          if [ "$CODE" = "200" ]; then
+            echo "alive=true" >> "$GITHUB_OUTPUT"
+            echo "$BODY" | head -c 400
+            UP=$(echo "$BODY" | grep -o '"uptime_s":[0-9]*' | cut -d: -f2)
+            MEM=$(echo "$BODY" | grep -o '"peak_rss_mb":[0-9]*' | cut -d: -f2)
+            echo ""
+            echo "살아 있음 — 가동 ${UP:-?}초 · 최대 메모리 ${MEM:-?}MB"
+          else
+            echo "alive=false" >> "$GITHUB_OUTPUT"
+            echo "죽어 있음 (HTTP $CODE) — 배포로 재기동한다"
+          fi
+
+      - name: 재기동
+        if: steps.check.outputs.alive == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GHP_TOKEN }}
+        run: gh workflow run deploy.yml --repo ${{ github.repository }} --ref main
+
+      - name: 복구 확인
+        if: steps.check.outputs.alive == 'false'
+        id: recover
+        run: |
+          BASE="${{ steps.check.outputs.base }}"
+          # 컨테이너 재빌드에 수 분이 걸린다. 최대 9분까지 기다린다.
+          for i in $(seq 1 18); do
+            sleep 30
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$BASE/health" || echo 000)
+            echo "  $((i*30))초 경과 — HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              echo "복구 완료"
+              echo "ok=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "9분 안에 복구되지 않음"
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+
+      - name: 복구 실패 시 이슈 알림
+        if: steps.check.outputs.alive == 'false' && steps.recover.outputs.ok != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 라이브 앱 자동 복구 실패';
+            const { data } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: [] });
+            const found = data.find(i => i.title === title);
+            const body = `자동 재기동을 걸었지만 9분 안에 살아나지 않았습니다.\n\n` +
+              `실행: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
+              `Cloudtype 콘솔에서 앱 상태와 종료 사유를 확인해야 합니다. (#68)`;
+            if (found) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: found.number, body });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo, title, body });
+            }

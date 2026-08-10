@@ -292,9 +292,22 @@ def api_retail():
     return retail_data()
 
 
+_BOOT = time.time()
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "items": [i for i in ITEMS if MODELS.get(ITEMS[i])]}
+    # 살아 있는지만이 아니라 얼마나 오래 살아 있었는지·메모리를 같이 낸다.
+    # 앱이 반복해서 내려가는 원인을 좁히려면 죽기 직전 상태가 필요하다(#68).
+    info = {"status": "ok", "uptime_s": int(time.time() - _BOOT),
+            "items": [i for i in ITEMS if MODELS.get(ITEMS[i])]}
+    try:
+        import resource
+        # 리눅스는 KB 단위로 최대 RSS를 준다.
+        info["peak_rss_mb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
+    except Exception:
+        pass
+    return info
 
 
 import payment
