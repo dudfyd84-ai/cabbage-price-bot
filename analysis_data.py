@@ -347,11 +347,147 @@ def insights():
     }
 
 
+# ── 7. 예측 신뢰도 ─────────────────────────────────────────────
+def _live_status(veg):
+    # 예측 로그를 실측과 대조해 '실전 적중률'이 지금 왜 이 상태인지까지 함께 낸다.
+    # 숫자만 내면 0건이 성능 문제로 오해된다. 몇 건이 어느 사유로 빠졌는지 같이 낸다.
+    out = {"logged": 0, "matured": 0, "comparable": 0, "stale": 0, "valid": 0,
+           "clean_from": None, "next_date": None, "next_n": 0, "result": None}
+    if not os.path.exists(PREDLOG):
+        return out
+    lg = pd.read_csv(PREDLOG)
+    if lg.empty:
+        return out
+    lg["예측일"] = pd.to_datetime(lg["예측일"])
+    lg["목표일"] = pd.to_datetime(lg["목표일"])
+    latest = veg["날짜"].max()
+    out["logged"] = len(lg)
+    out["log_from"] = str(lg["예측일"].min().date())
+    out["log_to"] = str(lg["예측일"].max().date())
+    out["as_of"] = str(latest.date())
+
+    # 예측을 낼 때 기록한 '현재가'가 그날 실측과 같아야 출발점이 맞는 예측이다.
+    base = veg.rename(columns={"품목명": "품목", "날짜": "예측일", "가격": "기준일_실측"})
+    lg = lg.merge(base[["품목", "예측일", "기준일_실측"]], on=["품목", "예측일"], how="left")
+    lg["출발점_정상"] = (lg["현재가"] - lg["기준일_실측"]).abs() <= 1
+
+    mat = lg[lg["목표일"] <= latest]
+    out["matured"] = len(mat)
+    act = veg.rename(columns={"품목명": "품목", "날짜": "목표일", "가격": "실측가"})
+    mat = mat.merge(act[["품목", "목표일", "실측가"]], on=["품목", "목표일"], how="left")
+    cmp_ = mat.dropna(subset=["실측가"])
+    out["comparable"] = len(cmp_)
+    ok = cmp_[cmp_["출발점_정상"]]
+    out["stale"] = len(cmp_) - len(ok)
+    out["valid"] = len(ok)
+    if len(ok):
+        a, p, n = ok["실측가"].values, ok["예측가"].values, ok["현재가"].values
+        out["result"] = {"wape": round(np.abs(a - p).sum() / np.abs(a).sum() * 100, 1),
+                         "dir_acc": round((np.sign(p - n) == np.sign(a - n)).mean() * 100)}
+
+    clean = lg[lg["출발점_정상"]]
+    if len(clean):
+        out["clean_from"] = str(clean["예측일"].min().date())
+        out["clean_n"] = len(clean)
+        fut = clean[clean["목표일"] > latest]
+        if len(fut):
+            d = fut["목표일"].min()
+            out["next_date"] = str(d.date())
+            out["next_n"] = int((fut["목표일"] == d).sum())
+    return out
+
+
+def reliability():
+    acc = _load_json("accuracy.json")
+    iv = _load_json("intervals.json")
+    veg = _prices()
+    ov = acc.get("overall", {})
+    h7, h30 = ov.get("h7", {}), ov.get("h30", {})
+
+    # 검증 구간은 품목마다 길이가 같아 아무 품목에서나 읽어도 된다.
+    per = list((acc.get("items") or {}).values())
+    vp = (per[0].get("h30", {}).get("period") if per else None) or [None, None]
+
+    # 산식을 말로만 두면 안 믿긴다. 실제 배추 평균가에 대입해 원 단위로 보여준다.
+    cab = veg[veg["품목명"] == "배추"]
+    cab_avg = int(cab["가격"].mean()) if len(cab) else 0
+    cab_w30 = ((acc.get("items") or {}).get("배추", {}).get("h30", {}) or {}).get("wape")
+
+    return {
+        "period": {
+            "from": str(veg["날짜"].min().date()), "to": str(veg["날짜"].max().date()),
+            "days": int((veg["날짜"].max() - veg["날짜"].min()).days),
+            "years": round((veg["날짜"].max() - veg["날짜"].min()).days / 365.25, 1),
+            "rows": len(veg), "items": veg["품목명"].nunique(),
+            "generated": acc.get("generated"), "data_latest": acc.get("data_latest"),
+        },
+        "wape": {
+            "formula": "WAPE = Σ|실측가 − 예측가| ÷ Σ실측가 × 100",
+            "means": "빗나간 금액을 전부 더해서, 실제 거래된 금액 전부로 나눈 값입니다. "
+                     "'평균적으로 가격의 몇 %를 빗나가느냐'를 뜻합니다.",
+            "why": "품목마다 값이 100배 넘게 차이 나(깻잎 vs 배추) 오차를 그냥 평균 내면 "
+                   "싼 품목의 큰 비율이 전체를 흔듭니다. 합계로 나누면 거래 규모대로 반영됩니다.",
+            "h7": h7.get("wape"), "h30": h30.get("wape"),
+            "mape7": h7.get("mape"), "mape30": h30.get("mape"),
+            "n7": h7.get("n"), "n30": h30.get("n"),
+            "example": {"item": "배추", "avg": cab_avg, "wape": cab_w30,
+                        "won": int(cab_avg * (cab_w30 or 0) / 100)},
+            "misread": {
+                "claim": "WAPE 15% → 정확도 85%",
+                "why_wrong": "WAPE는 '얼마나 빗나갔나'를 재는 오차율입니다. 100에서 빼도 "
+                             "'몇 %를 맞혔다'는 적중률이 되지 않습니다. 맞고 틀림을 세는 지표가 아니라 "
+                             "빗나간 폭을 재는 지표이기 때문입니다.",
+                "correct": "옳은 읽기는 '평균적으로 실제 가격의 15%쯤을 빗나간다'입니다. "
+                           "맞은 비율이 아니라 빗나간 폭이라, 값이 작을수록 좋습니다.",
+            },
+        },
+        "design": {
+            "split": "Time Series Split — 시간 순으로 앞 80%만 학습하고 뒤 20%로 채점합니다.",
+            "why": "무작위로 섞으면 미래를 보고 과거를 맞히는 꼴이 됩니다(데이터 누수). "
+                   "시간 순서를 지켜야 '오늘 시점에서 내일을 맞히는' 실제 상황과 같아집니다.",
+            "train_end": vp[0], "valid_from": vp[0], "valid_to": vp[1],
+            "valid_n_item": (per[0].get("h30", {}).get("n") if per else None),
+            "valid_n_total": h30.get("n"),
+            "items": len(per),
+        },
+        "interval": {
+            "nominal": iv.get("nominal"), "coverage": iv.get("coverage_avg"),
+            "before": iv.get("coverage_mape_avg"),
+            "why": "이게 가장 정직한 신뢰 지표입니다. '80% 구간'이라고 말했으면 실제로 10번 중 8번은 "
+                   "그 안에 들어와야 합니다. 실측 포함률이 목표치와 붙어 있으면 "
+                   "모델이 자기 불확실성을 제대로 알고 있다는 뜻입니다.",
+            "verdict": "목표 80%에 실측 82%. 2%p 넘침은 구간을 조금 넉넉히 잡았다는 뜻이라 "
+                       "안전한 방향의 오차입니다.",
+        },
+        "live": _live_status(veg),
+        "grades": [
+            {"근거": "백테스트 오차(WAPE)", "표본": f"{h30.get('n', 0):,}건 · 19품목",
+             "등급": "중", "이유": "표본이 크고 시간 순서를 지켰습니다. 다만 과거 데이터로 채점한 값이라 "
+                                  "실제 운영에서 그대로 나온다는 보장은 아닙니다."},
+            {"근거": "예측구간 포함률", "표본": f"{iv.get('cqr_picked', '')} 조합",
+             "등급": "강", "이유": "약속한 확률(80%)과 실제 결과(82%)를 직접 맞대 본 값입니다. "
+                                  "모델이 스스로의 불확실성을 재는 능력을 검증합니다."},
+            {"근거": "방향 적중률", "표본": f"{h30.get('n', 0):,}건",
+             "등급": "중", "이유": "30일 70%는 쓸 만하지만 7일 57%는 동전 던지기와 큰 차이가 없습니다. "
+                                  "단기 방향은 아직 믿을 수준이 아니라고 봅니다."},
+            {"근거": "실전 적중률", "표본": "유효 0건",
+             "등급": "없음", "이유": "아직 근거가 없습니다. 없는 걸 있다고 적지 않기 위해 '집계중'으로 둡니다."},
+        ],
+        "limits": [
+            "가락시장 반입량은 배추에만 있습니다. 나머지 18품목은 공급을 직접 보지 못합니다.",
+            "기상 데이터는 서울 관측치입니다. 산지 날씨와 다를 수 있습니다.",
+            "2026-07 수집 중단처럼 데이터가 끊기면 그 기간 예측은 출발점부터 틀립니다.",
+            "5년 7개월치라 코로나·이상기후 같은 큰 사건은 각각 한두 번씩만 들어 있습니다.",
+        ],
+    }
+
+
 SECTIONS = {
     "structure": ("데이터 구조", data_structure),
     "eda": ("탐색적 분석", eda),
     "preprocessing": ("전처리", preprocessing),
     "modeling": ("모델·지표", modeling),
+    "reliability": ("예측 신뢰도", reliability),
     "regions": ("지역 분석", regions),
     "insights": ("인사이트·액션", insights),
 }

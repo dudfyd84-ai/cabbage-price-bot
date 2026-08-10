@@ -86,6 +86,8 @@
         margin-top:14px;max-width:70ch;line-height:1.75}
   .note.warn{border-left-color:var(--amber)} .note.bad{border-left-color:var(--rose)}
   .note b{font-weight:700}
+  .bullets{margin:12px 0 0;padding-left:18px;font-size:14px;line-height:1.75;word-break:keep-all}
+  .bullets li{margin-bottom:6px}
 
   .chip{display:inline-block;border-radius:9999px;font-size:11px;font-weight:700;padding:3px 10px}
   .c-up{background:var(--amber-tint);color:var(--amber-ink)}
@@ -136,6 +138,7 @@
 
   <div class="navgroup">분석 &amp; 모델링</div>
   <button class="navitem" data-key="modeling"><span class="ic">◑</span>모델 · 핵심 지표</button>
+  <button class="navitem" data-key="reliability"><span class="ic">⊙</span>예측 신뢰도 · 근거</button>
   <button class="navitem" data-key="regions"><span class="ic">◈</span>지역 분석</button>
 
   <div class="navgroup">결론</div>
@@ -402,6 +405,7 @@ const OVERVIEW = [
   ]},
   {g:'분석 & 모델링', items:[
     {k:'modeling', ic:'◑', t:'모델 · 핵심 지표', d:'변수 설계와 XGBoost를 고른 이유, WAPE와 방향 적중률, 예측 구간.'},
+    {k:'reliability', ic:'⊙', t:'예측 신뢰도 · 근거', d:'WAPE가 정확히 무엇인지, 어떤 구간을 몇 건으로 채점했는지, 실전 적중률은 왜 아직 집계중인지.'},
     {k:'regions', ic:'◈', t:'지역 분석', d:'가설 H3을 어떻게 확인했고 지역끼리 얼마나 갈리는지.'},
   ]},
   {g:'결론', items:[
@@ -725,8 +729,124 @@ function renderInsights(d){
     </dl></div>`).join('')}</div>`;
 }
 
+function renderReliability(d){
+  const p=d.period, w=d.wape, dz=d.design, iv=d.interval, l=d.live, ex=w.example, mr=w.misread;
+  const gchip = g => g==='강'?'c-down' : g==='중'?'c-flat' : 'c-bad';
+  const fun = [
+    {label:'예측 로그 전체', rows:l.logged, keep:100, drop:0},
+    {label:'목표일 도달(성숙)', rows:l.matured, keep:Math.round(l.matured/l.logged*100), drop:l.logged-l.matured},
+    {label:'실측과 대조 가능', rows:l.comparable, keep:Math.round(l.comparable/l.logged*100), drop:l.matured-l.comparable},
+    {label:'출발점까지 정상', rows:l.valid, keep:Math.round(l.valid/l.logged*100), drop:l.stale},
+  ];
+  return `<p class="crumb">분석 &amp; 모델링</p><h1>예측 신뢰도 · 근거</h1>
+  <p class="lede">"얼마나 정확한가"에 숫자 하나로 답하지 않습니다. 그 숫자가 <b>어떤 데이터에서</b>,
+    <b>어떤 방식으로</b>, <b>몇 건으로</b> 나왔는지까지 적어야 믿을 수 있는 근거가 됩니다.
+    아직 근거가 없는 항목은 없다고 적었습니다.</p>
+  <div class="kpi">
+    <div class="b"><div class="lab">데이터 수집 기간</div><div class="val" style="font-size:17px">${p.years}년</div>
+      <div class="sub">${esc(p.from)} ~ ${esc(p.to)}</div></div>
+    <div class="b"><div class="lab">학습·검증 표본</div><div class="val num">${(p.rows||0).toLocaleString()}</div>
+      <div class="sub">${p.items}품목 일별 소매가</div></div>
+    <div class="b"><div class="lab">30일 예측 오차</div><div class="val num">${w.h30 ?? '—'}%</div>
+      <div class="sub">WAPE · 검증 ${(w.n30||0).toLocaleString()}건</div></div>
+    <div class="b"><div class="lab">예측구간 실측 포함률</div><div class="val num">${iv.coverage ?? '—'}%</div>
+      <div class="sub">약속 ${iv.nominal ?? 80}% 대비</div></div>
+    <div class="b"><div class="lab">실전 적중률</div><div class="val" style="font-size:17px">집계중</div>
+      <div class="sub">유효 ${l.valid}건 · ${esc(l.next_date||'—')} 첫 산출</div></div>
+  </div>
+
+  <h2 class="sec">1. WAPE가 정확히 무엇인가 — "85%"는 오해입니다</h2>
+  <p class="sec-sub">가장 많이 나오는 질문부터 답합니다. 오차율을 100에서 뺀 값은 적중률이 아닙니다.</p>
+  <div class="note"><b>산식.</b> <code>${esc(w.formula)}</code><br>
+    ${esc(w.means)}</div>
+  <div class="grid">
+    <div class="card"><h3><span style="color:var(--rose)">✕</span>이렇게 읽으면 틀립니다</h3>
+      <p style="font-size:14px;margin-top:6px"><b>"${esc(mr.claim)}"</b></p>
+      <p class="wrap" style="font-size:13.5px;color:var(--muted);margin-top:8px">${esc(mr.why_wrong)}</p></div>
+    <div class="card"><h3><span style="color:var(--teal)">✓</span>이렇게 읽는 게 맞습니다</h3>
+      <p class="wrap" style="font-size:13.5px;margin-top:8px">${esc(mr.correct)}</p>
+      <p class="wrap" style="font-size:13.5px;color:var(--muted);margin-top:10px">
+        실제 예로, <b>${esc(ex.item)}</b>의 5년 평균 소매가는 <b>${(ex.avg||0).toLocaleString()}원</b>이고
+        30일 WAPE는 <b>${ex.wape}%</b>입니다. 30일 뒤 값을 평균 <b>${(ex.won||0).toLocaleString()}원</b>
+        안팎의 오차로 짚는다는 뜻입니다.</p></div>
+  </div>
+  <div class="note"><b>왜 하필 WAPE인가.</b> ${esc(w.why)}
+    참고로 품목별 비율을 단순 평균한 MAPE는 7일 ${w.mape7}% · 30일 ${w.mape30}%로 더 높게 나옵니다.
+    둘 다 공개하는 이유는, 유리한 쪽만 고르면 그 순간 근거가 아니라 홍보가 되기 때문입니다.</div>
+
+  <h2 class="sec">2. 어떤 데이터로 채점했나</h2>
+  <p class="sec-sub">숫자보다 중요한 건 그 숫자를 만든 판입니다. 학습에 쓴 구간으로 채점하면 성적은 언제나 좋게 나옵니다.</p>
+  <div class="tbox"><table><tbody>
+    <tr><th style="width:150px">수집 기간</th><td><b>${esc(p.from)} ~ ${esc(p.to)}</b>
+      · ${p.days.toLocaleString()}일(약 ${p.years}년) · ${(p.rows||0).toLocaleString()}행 · ${p.items}품목</td></tr>
+    <tr><th>출처</th><td>KAMIS 일별 소매가격 + 기상청 ASOS 서울 관측 + 가락시장 배추 반입량</td></tr>
+    <tr><th>분할 방식</th><td>${esc(dz.split)}</td></tr>
+    <tr><th>채점 구간</th><td><b>${esc(dz.valid_from)} ~ ${esc(dz.valid_to)}</b>
+      — 학습에 한 번도 쓰지 않은 구간입니다</td></tr>
+    <tr><th>채점 건수</th><td>품목당 ${dz.valid_n_item}건 × ${dz.items}품목 =
+      <b>30일 ${(w.n30||0).toLocaleString()}건</b> · 7일 ${(w.n7||0).toLocaleString()}건</td></tr>
+    <tr><th>지표 갱신</th><td>${esc(p.generated||'—')} 재학습분 · 반영된 가격 최신일 ${esc(p.data_latest||'—')}</td></tr>
+  </tbody></table></div>
+  <div class="note"><b>왜 시간 순서를 지켰나.</b> ${esc(dz.why)}</div>
+
+  <h2 class="sec">3. 가장 믿을 만한 근거 — 예측구간 포함률</h2>
+  <p class="sec-sub">오차율은 "얼마나 빗나갔나"만 말합니다. 포함률은 모델이 <b>자기가 얼마나 모르는지</b>를 아는지 검사합니다.</p>
+  <div class="note"><b>읽는 법.</b> ${esc(iv.why)}</div>
+  ${barChart(['개선 전 (대칭 근사)','현재 (CQR 적용)'],
+    [{name:'실측 포함률', color:(v)=> v>=78?'#0d9488':'#e11d48', values:[iv.before, iv.coverage]}],
+    {height:180, pct:true, target:iv.nominal||80, label:'예측구간 실측 포함률'})}
+  <p class="cap">빨간 점선이 약속한 ${iv.nominal ?? 80}%입니다. 왼쪽은 약속을 못 지켰고 오른쪽은 지켰습니다.</p>
+  <div class="note"><b>판정.</b> ${esc(iv.verdict)}
+    이 지표가 중요한 이유는 발주 판단이 "얼마가 될까"보다 "최악이면 얼마까지 갈까"에 달려 있기 때문입니다.</div>
+
+  <h2 class="sec">4. 실전 적중률 — 오늘 산출한 결과와 그 근거</h2>
+  <p class="sec-sub">백테스트는 과거로 친 시험입니다. 실제로 낸 예측을 나중 실측과 대조한 것이 실전 적중률이고,
+    이게 진짜 성적표입니다. 오늘 기준 결과를 그대로 적습니다.</p>
+  <div class="note ${l.valid ? '' : 'warn'}"><b>결과. ${l.valid ? `유효 ${l.valid}건 · WAPE ${l.result.wape}% · 방향적중 ${l.result.dir_acc}%`
+    : '아직 산출할 수 없습니다 — 유효 0건, 상태는 「집계중」입니다.'}</b><br>
+    ${l.valid ? '' : `없는 숫자를 만들지 않기 위해 화면에도 '집계중'으로 둡니다. 왜 0건인지는 아래에 전부 적었습니다.`}</div>
+  ${funnelChart(fun, {label:'실전 적중률 집계 퍼널'})}
+  <p class="cap">막대 길이가 남은 예측 건수입니다. 빨간 숫자가 그 단계에서 빠진 건수입니다.</p>
+  <div class="tbox"><table><thead><tr><th>단계</th><th class="n">건수</th><th>빠진 이유</th></tr></thead><tbody>
+    <tr><td>기록된 예측</td><td class="n"><b>${l.logged}</b></td>
+      <td class="wrap">${esc(l.log_from)} ~ ${esc(l.log_to)} 사이에 실제로 낸 예측을 전부 로그에 남겼습니다.</td></tr>
+    <tr><td>목표일 도달</td><td class="n"><b>${l.matured}</b></td>
+      <td class="wrap">나머지는 아직 목표일이 오지 않았습니다. 7일 뒤·30일 뒤를 맞히는 예측이라 시간이 지나야 채점됩니다.</td></tr>
+    <tr><td>실측과 대조 가능</td><td class="n"><b>${l.comparable}</b></td>
+      <td class="wrap">목표일에 해당하는 실제 가격이 아직 안 들어온 건을 뺐습니다. KAMIS 가격은 이틀쯤 늦게 확정됩니다.</td></tr>
+    <tr><td><b>출발점까지 정상</b></td><td class="n"><b style="color:${l.valid?'var(--teal)':'var(--rose)'}">${l.valid}</b></td>
+      <td class="wrap"><b>${l.stale}건을 뺐습니다.</b> 2026-07 수집 중단 기간에 만든 예측이라
+        출발점인 '현재가'가 7월 중순 값에 멈춰 있었습니다. 틀린 출발점에서 낸 예측을 채점하면
+        모델이 아니라 데이터 사고를 채점하는 셈이 됩니다.</td></tr>
+  </tbody></table></div>
+  <div class="grid">
+    <div class="card"><h3><span style="color:var(--teal)">✓</span>깨끗한 예측은 이미 쌓이고 있습니다</h3>
+      <p class="wrap" style="font-size:13.5px;margin-top:8px">
+        ${esc(l.clean_from)}부터 낸 <b>${l.clean_n ?? 0}건</b>은 기록된 현재가가 그날 실측과
+        <b>100% 일치</b>합니다. 수집 파이프라인이 정상으로 돌아왔다는 뜻이고,
+        이 예측들은 목표일이 오면 그대로 채점됩니다.</p></div>
+    <div class="card"><h3><span style="color:var(--blue)">→</span>첫 유효 측정 시점</h3>
+      <p class="wrap" style="font-size:13.5px;margin-top:8px">
+        가장 이른 목표일은 <b>${esc(l.next_date||'—')}</b>이고 <b>${l.next_n}건</b>입니다.
+        해당 일자 실측가가 들어온 뒤 재학습이 돌면 그때 첫 실전 성적이 나옵니다.
+        30일 예측은 그보다 한 달 더 걸립니다.</p></div>
+  </div>
+
+  <h2 class="sec">5. 근거별로 얼마나 믿을 수 있나</h2>
+  <p class="sec-sub">근거마다 무게가 다릅니다. 등급을 매겨 어디까지 주장할 수 있는지 선을 그었습니다.</p>
+  <div class="tbox"><table><thead><tr><th>근거</th><th>표본</th><th>신뢰 등급</th><th>판단 이유</th></tr></thead>
+  <tbody>${d.grades.map(g=>`<tr><td><b>${esc(g.근거)}</b></td><td class="n">${esc(g.표본)}</td>
+    <td><span class="chip ${gchip(g.등급)}">${esc(g.등급)}</span></td>
+    <td class="wrap">${esc(g.이유)}</td></tr>`).join('')}</tbody></table></div>
+
+  <h2 class="sec">6. 아직 못 하는 것</h2>
+  <p class="sec-sub">한계를 먼저 적어 두는 편이 낫습니다. 나중에 발견되면 그때는 숫자 전체가 의심받습니다.</p>
+  <ul class="bullets">${d.limits.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`;
+}
+
 const RENDER = {structure:renderStructure, eda:renderEda, preprocessing:renderPre,
-                modeling:renderModel, regions:renderRegions, insights:renderInsights};
+                modeling:renderModel, reliability:renderReliability,
+                regions:renderRegions, insights:renderInsights};
 
 async function select(key){
   document.querySelectorAll('.navitem').forEach(b => b.classList.toggle('on', b.dataset.key === key));
