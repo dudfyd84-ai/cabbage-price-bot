@@ -7,62 +7,62 @@
  "nominal": 80,
  "method": "CQR+MAPE",
  "cqr_picked": "35/38",
- "coverage_avg": 82,
+ "coverage_avg": 83,
  "coverage_mape_avg": 63,
  "items": {
   "배추": {
    "h7": {
-    "lo": 0.7793,
-    "hi": 1.0516,
+    "lo": 0.8277,
+    "hi": 1.1452,
     "method": "CQR",
     "coverage": 92,
     "coverage_cqr": 92,
     "coverage_mape": 68,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.7999,
-    "hi": 1.0701,
+    "lo": 0.8092,
+    "hi": 1.0158,
     "method": "CQR",
     "coverage": 80,
     "coverage_cqr": 80,
-    "coverage_mape": 58,
+    "coverage_mape": 59,
     "n": 393
    }
   },
   "무": {
    "h7": {
-    "lo": 0.7675,
-    "hi": 1.3252,
+    "lo": 0.7669,
+    "hi": 1.4241,
     "method": "CQR",
     "coverage": 99,
     "coverage_cqr": 99,
-    "coverage_mape": 62,
-    "n": 397
+    "coverage_mape": 63,
+    "n": 398
    },
    "h30": {
-    "lo": 0.8208,
-    "hi": 1.1421,
+    "lo": 0.8225,
+    "hi": 1.2641,
     "method": "CQR",
     "coverage": 98,
     "coverage_cqr": 98,
-    "coverage_mape": 65,
+    "coverage_mape": 66,
     "n": 393
    }
   },
   "양파": {
    "h7": {
-    "lo": 0.8329,
-    "hi": 1.1285,
+    "lo": 0.8694,
+    "hi": 1.1222,
     "method": "CQR",
     "coverage": 75,
     "coverage_cqr": 75,
     "coverage_mape": 61,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8927,
-    "hi": 1.1348,
+    "lo": 0.9142,
+    "hi": 1.1585,
     "method": "CQR",
     "coverage": 93,
     "coverage_cqr": 93,
@@ -72,117 +72,117 @@
   },
   "대파": {
    "h7": {
-    "lo": 0.8586,
-    "hi": 1.01,
+    "lo": 0.9142,
+    "hi": 1.0416,
     "method": "CQR",
     "coverage": 83,
     "coverage_cqr": 83,
     "coverage_mape": 58,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.9189,
-    "hi": 1.1905,
+    "lo": 0.9257,
+    "hi": 1.2804,
     "method": "CQR",
     "coverage": 80,
     "coverage_cqr": 80,
-    "coverage_mape": 61,
+    "coverage_mape": 62,
     "n": 393
    }
   },
   "마늘": {
    "h7": {
-    "lo": 0.9096,
-    "hi": 1.1772,
+    "lo": 0.8954,
+    "hi": 1.1633,
     "method": "CQR",
     "coverage": 71,
     "coverage_cqr": 71,
     "coverage_mape": 57,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8535,
-    "hi": 1.253,
+    "lo": 0.8684,
+    "hi": 1.2366,
     "method": "CQR",
-    "coverage": 68,
-    "coverage_cqr": 68,
-    "coverage_mape": 59,
+    "coverage": 69,
+    "coverage_cqr": 69,
+    "coverage_mape": 57,
     "n": 393
    }
   },
   "당근": {
    "h7": {
-    "lo": 0.8465,
-    "hi": 1.0376,
+    "lo": 0.8678,
+    "hi": 1.0747,
     "method": "CQR",
     "coverage": 100,
     "coverage_cqr": 100,
     "coverage_mape": 61,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.9569,
-    "hi": 1.1915,
+    "lo": 0.9165,
+    "hi": 1.0834,
     "method": "CQR",
     "coverage": 98,
     "coverage_cqr": 98,
-    "coverage_mape": 61,
+    "coverage_mape": 63,
     "n": 393
    }
   },
   "오이": {
    "h7": {
-    "lo": 0.6457,
-    "hi": 1.2287,
+    "lo": 0.6803,
+    "hi": 1.1511,
     "method": "CQR",
     "coverage": 80,
     "coverage_cqr": 80,
     "coverage_mape": 72,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.869,
-    "hi": 1.5141,
+    "lo": 0.7919,
+    "hi": 1.376,
     "method": "CQR",
     "coverage": 72,
     "coverage_cqr": 72,
-    "coverage_mape": 65,
+    "coverage_mape": 64,
     "n": 393
    }
   },
   "시금치": {
    "h7": {
-    "lo": 0.8028,
-    "hi": 1.1119,
+    "lo": 0.8598,
+    "hi": 1.1923,
     "method": "CQR",
     "coverage": 82,
     "coverage_cqr": 82,
     "coverage_mape": 55,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.5466,
-    "hi": 1.1221,
+    "lo": 0.6192,
+    "hi": 1.2368,
     "method": "CQR",
-    "coverage": 76,
-    "coverage_cqr": 76,
-    "coverage_mape": 56,
+    "coverage": 77,
+    "coverage_cqr": 77,
+    "coverage_mape": 57,
     "n": 393
    }
   },
   "상추": {
    "h7": {
-    "lo": 0.9232,
-    "hi": 1.2177,
+    "lo": 0.99,
+    "hi": 1.2092,
     "method": "CQR",
     "coverage": 78,
     "coverage_cqr": 78,
     "coverage_mape": 61,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.9346,
-    "hi": 1.4031,
+    "lo": 0.9069,
+    "hi": 1.3871,
     "method": "CQR",
     "coverage": 71,
     "coverage_cqr": 71,
@@ -192,117 +192,117 @@
   },
   "사과": {
    "h7": {
-    "lo": 0.8416,
-    "hi": 1.1795,
+    "lo": 0.8887,
+    "hi": 1.1843,
     "method": "CQR",
     "coverage": 72,
     "coverage_cqr": 72,
     "coverage_mape": 63,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.6392,
-    "hi": 1.0649,
+    "lo": 0.701,
+    "hi": 1.1428,
     "method": "CQR",
     "coverage": 69,
     "coverage_cqr": 69,
-    "coverage_mape": 62,
+    "coverage_mape": 60,
     "n": 393
    }
   },
   "배": {
    "h7": {
-    "lo": 0.8142,
-    "hi": 1.4147,
+    "lo": 0.7909,
+    "hi": 1.4275,
     "method": "CQR",
     "coverage": 97,
     "coverage_cqr": 97,
     "coverage_mape": 63,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8443,
-    "hi": 1.5642,
+    "lo": 0.7552,
+    "hi": 1.4237,
     "method": "CQR",
     "coverage": 96,
     "coverage_cqr": 96,
-    "coverage_mape": 62,
+    "coverage_mape": 61,
     "n": 393
    }
   },
   "물오징어": {
    "h7": {
-    "lo": 0.8478,
-    "hi": 1.5793,
+    "lo": 0.8141,
+    "hi": 1.454,
     "method": "CQR",
     "coverage": 76,
     "coverage_cqr": 76,
     "coverage_mape": 56,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.6963,
-    "hi": 1.4028,
+    "lo": 0.647,
+    "hi": 1.3992,
     "method": "CQR",
     "coverage": 74,
     "coverage_cqr": 74,
-    "coverage_mape": 57,
+    "coverage_mape": 58,
     "n": 393
    }
   },
   "호박": {
    "h7": {
-    "lo": 0.7426,
-    "hi": 1.4066,
+    "lo": 0.8209,
+    "hi": 1.3852,
     "method": "CQR",
     "coverage": 70,
     "coverage_cqr": 70,
     "coverage_mape": 66,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.721,
-    "hi": 1.279,
+    "lo": 0.724,
+    "hi": 1.276,
     "method": "MAPE",
-    "coverage": 75,
-    "coverage_cqr": 62,
-    "coverage_mape": 75,
+    "coverage": 73,
+    "coverage_cqr": 61,
+    "coverage_mape": 73,
     "n": 393
    }
   },
   "토마토": {
    "h7": {
-    "lo": 0.9642,
-    "hi": 1.5526,
+    "lo": 0.8914,
+    "hi": 1.4687,
     "method": "CQR",
     "coverage": 83,
     "coverage_cqr": 83,
     "coverage_mape": 68,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.7709,
-    "hi": 1.331,
+    "lo": 0.6191,
+    "hi": 1.1881,
     "method": "CQR",
     "coverage": 94,
     "coverage_cqr": 94,
-    "coverage_mape": 64,
+    "coverage_mape": 65,
     "n": 393
    }
   },
   "열무": {
    "h7": {
-    "lo": 0.8879,
-    "hi": 1.1417,
+    "lo": 0.8576,
+    "hi": 1.1255,
     "method": "CQR",
     "coverage": 91,
     "coverage_cqr": 91,
     "coverage_mape": 64,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8093,
-    "hi": 1.1883,
+    "lo": 0.8104,
+    "hi": 1.1145,
     "method": "CQR",
     "coverage": 95,
     "coverage_cqr": 95,
@@ -312,17 +312,17 @@
   },
   "파프리카": {
    "h7": {
-    "lo": 0.464,
-    "hi": 1.536,
+    "lo": 0.453,
+    "hi": 1.547,
     "method": "MAPE",
     "coverage": 90,
-    "coverage_cqr": 71,
+    "coverage_cqr": 70,
     "coverage_mape": 90,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.464,
-    "hi": 1.536,
+    "lo": 0.444,
+    "hi": 1.556,
     "method": "MAPE",
     "coverage": 92,
     "coverage_cqr": 59,
@@ -332,61 +332,61 @@
   },
   "피망": {
    "h7": {
-    "lo": 0.9155,
-    "hi": 1.0856,
+    "lo": 0.9289,
+    "hi": 1.0944,
     "method": "CQR",
     "coverage": 85,
     "coverage_cqr": 85,
     "coverage_mape": 56,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.989,
-    "hi": 1.2634,
+    "lo": 0.9849,
+    "hi": 1.1822,
     "method": "CQR",
     "coverage": 85,
     "coverage_cqr": 85,
-    "coverage_mape": 59,
+    "coverage_mape": 57,
     "n": 393
    }
   },
   "얼갈이배추": {
    "h7": {
-    "lo": 0.8625,
-    "hi": 1.1366,
+    "lo": 0.9871,
+    "hi": 1.2492,
     "method": "CQR",
     "coverage": 75,
     "coverage_cqr": 75,
     "coverage_mape": 59,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8202,
-    "hi": 1.3645,
+    "lo": 0.7648,
+    "hi": 1.3057,
     "method": "CQR",
     "coverage": 76,
     "coverage_cqr": 76,
-    "coverage_mape": 63,
+    "coverage_mape": 61,
     "n": 393
    }
   },
   "브로콜리": {
    "h7": {
-    "lo": 0.773,
-    "hi": 1.1003,
+    "lo": 0.7805,
+    "hi": 1.076,
     "method": "CQR",
-    "coverage": 63,
-    "coverage_cqr": 63,
+    "coverage": 64,
+    "coverage_cqr": 64,
     "coverage_mape": 59,
-    "n": 397
+    "n": 398
    },
    "h30": {
-    "lo": 0.8752,
-    "hi": 1.1584,
+    "lo": 0.9164,
+    "hi": 1.196,
     "method": "CQR",
     "coverage": 81,
     "coverage_cqr": 81,
-    "coverage_mape": 59,
+    "coverage_mape": 58,
     "n": 393
    }
   }
